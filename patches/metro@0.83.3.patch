@@ -1,8 +1,30 @@
 diff --git a/src/node-haste/DependencyGraph.js b/src/node-haste/DependencyGraph.js
-index bd42485a8a6647757c0f5b2f2c4a5e659125fcdd..9a5b08c1feb5457024fbdc0c9730c64a2b8ed8df 100644
 --- a/src/node-haste/DependencyGraph.js
 +++ b/src/node-haste/DependencyGraph.js
-@@ -186,6 +186,14 @@ class DependencyGraph extends _events.default {
+@@ -109,6 +109,22 @@
+           realPath: result.realPath,
+           type: result.type,
+         };
++      }
++      if (path.includes("react-native-worklets/.worklets/")) {
++        // Temporary workaround for bundle-mode preview:
++        // worklet chunk files are generated during Babel transforms, after
++        // Metro has already built its initial file-map snapshot. Fall back to
++        // the real filesystem so a cold release bundle can resolve a just-
++        // generated `.worklets` module without requiring a second build.
++        const fs = require("fs");
++        if (fs.existsSync(path)) {
++          const stat = fs.statSync(path);
++          return {
++            exists: true,
++            realPath: fs.realpathSync(path),
++            type: stat.isDirectory() ? "d" : "f",
++          };
++        }
+       }
+       return {
+         exists: false,
+@@ -186,6 +202,14 @@
      return (0, _nullthrows.default)(this._fileSystem).getAllFiles();
    }
    async getOrComputeSha1(mixedPath) {
@@ -17,3 +39,16 @@ index bd42485a8a6647757c0f5b2f2c4a5e659125fcdd..9a5b08c1feb5457024fbdc0c9730c64a
      const result = await this._fileSystem.getOrComputeSha1(mixedPath);
      if (!result || !result.sha1) {
        throw new Error(`Failed to get the SHA-1 for: ${mixedPath}.
+@@ -277,6 +301,12 @@
+     return resolution;
+   }
+   _doesFileExist = (filePath) => {
++    if (filePath.includes("react-native-worklets/.worklets/")) {
++      // Keep this in sync with `fileSystemLookup` above so resolution paths
++      // that still use `doesFileExist` can see generated bundle-mode worklets
++      // before Metro's file map has observed them.
++      return require("fs").existsSync(filePath);
++    }
+     return this._fileSystem.exists(filePath);
+   };
+   getHasteName(filePath) {

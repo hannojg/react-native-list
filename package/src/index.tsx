@@ -49,6 +49,7 @@ export function setup() {
   scheduleOnUI(() => {
     'worklet'
     boxed.setupExternalSurface(iosWorkletsModuleHolder)
+    global._log(`global.nativeModuleProxy: ${global.nativeModuleProxy}`)
   })
 
   scheduleOnUI(setupWorklet)

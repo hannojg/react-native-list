@@ -67,7 +67,7 @@
     "react": "19.2.0",
     "react-native": "0.83.1",
     "react-native-nitro-modules": "^0.33.2",
-    "react-native-worklets": "*",
+    "react-native-worklets": "bundle-mode-preview",
     "react-reconciler": "^0.33.0",
     "typescript": "^5.8.3"
   },
@@ -110,5 +110,8 @@
     "trailingComma": "es5",
     "useTabs": false,
     "semi": false
+  },
+  "patchedDependencies": {
+    "react-native-worklets@0.8.0-bundle-mode-preview-1": "patches/react-native-worklets@0.8.0-bundle-mode-preview-1.patch"
   }
 }

@@ -3,17 +3,24 @@
 #include "HybridUiManagerHelper.hpp"
 
 #include <android/log.h>
+#include <react/utils/jsi-utils.h>
 #include <react/fabric/FabricUIManagerBinding.h>
 #include <worklets/android/WorkletsModule.h>
 
 namespace margelo::nitro::nitrolist
 {
+    static bool isOnAndroidUiThread()
+    {
+        return getpid() == gettid();
+    }
 
     std::shared_ptr<react::CallInvoker> JHybridUiListModule::uiCallInvoker_ = nullptr;
 
     void JHybridUiListModule::registerNatives()
     {
         javaClassStatic()->registerNatives({
+            makeNativeMethod("prepareUiRuntime",
+                             prepareUiRuntime),
             makeNativeMethod("getUiCallInvokerHolder",
                              getUiCallInvokerHolder),
             makeNativeMethod("getUiRuntimeExecutor",
@@ -56,8 +63,7 @@ namespace margelo::nitro::nitrolist
             throw std::runtime_error("Failed to get UIWorkletRuntime from WorkletsModuleProxy");
         }
 
-        uiCallInvoker_ = std::make_shared<WorkletsUiCallInvoker>(uiScheduler, uiWorkletRuntime, []()
-                                                                 { return getpid() == gettid(); });
+        uiCallInvoker_ = std::make_shared<WorkletsUiCallInvoker>(uiScheduler, uiWorkletRuntime, isOnAndroidUiThread);
         return uiCallInvoker_;
     }
 
@@ -71,6 +77,38 @@ namespace margelo::nitro::nitrolist
         return react::CallInvokerHolder::newObjectCxxArgs(uiCallInvoker);
     }
 
+    void JHybridUiListModule::prepareUiRuntime(
+        jni::alias_ref<JHybridUiListModule> jThis,
+        jni::alias_ref<worklets::WorkletsModule::javaobject> workletsModule)
+    {
+        if (!workletsModule)
+        {
+            throw std::runtime_error("WorkletsModule reference is null");
+        }
+
+        auto workletsModuleProxy =
+            workletsModule->cthis()->getWorkletsModuleProxy();
+
+        if (!workletsModuleProxy)
+        {
+            throw std::runtime_error("Failed to get WorkletsModuleProxy from WorkletsModule");
+        }
+
+        auto uiWorkletRuntime = workletsModuleProxy->getUIWorkletRuntime();
+        if (!uiWorkletRuntime)
+        {
+            throw std::runtime_error("Failed to get UIWorkletRuntime from WorkletsModuleProxy");
+        }
+
+        uiWorkletRuntime->runSync([](jsi::Runtime &runtime)
+                                  {
+                                      if (!runtime.global().hasProperty(runtime, "RN$Bridgeless"))
+                                      {
+                                          react::defineReadOnlyGlobal(runtime, "RN$Bridgeless", jsi::Value(true));
+                                      }
+                                  });
+    }
+
     jni::local_ref<react::JRuntimeExecutor::javaobject>
     JHybridUiListModule::getUiRuntimeExecutor(
         jni::alias_ref<JHybridUiListModule> jThis,
@@ -80,6 +118,12 @@ namespace margelo::nitro::nitrolist
 
         RuntimeExecutor uiRuntimeExecutor = [uiCallInvoker](auto callback)
         {
+            if (isOnAndroidUiThread())
+            {
+                uiCallInvoker->invokeSync(std::move(callback));
+                return;
+            }
+
             uiCallInvoker->invokeAsync(std::move(callback));
         };
 

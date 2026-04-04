@@ -16,16 +16,25 @@ namespace margelo::nitro::nitrolist
                 func(runtime);
             });
 
-        // Check: is ui thread
-        if (!isOnUIThread_())
+        if (isOnUIThread_())
         {
-            uiScheduler_->triggerUI();
+            return;
         }
+
+        uiScheduler_->triggerUI();
     }
 
     void WorkletsUiCallInvoker::invokeSync(facebook::react::CallFunc &&func)
     {
-        throw std::runtime_error("invokeSync is currently not supported.");
+        if (!isOnUIThread_())
+        {
+            throw std::runtime_error("WorkletsUiCallInvoker::invokeSync must be called on the UI thread.");
+        }
+
+        uiWorkletRuntime_->runSync([func = std::move(func)](jsi::Runtime &runtime)
+        {
+            func(runtime);
+        });
     }
 
 } // namespace margelo::nitro::nitrolist

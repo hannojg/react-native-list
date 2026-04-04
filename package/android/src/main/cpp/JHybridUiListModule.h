@@ -30,6 +30,10 @@ namespace margelo::nitro::nitrolist
             jni::alias_ref<JHybridUiListModule> jThis,
             jni::alias_ref<worklets::WorkletsModule::javaobject> workletsModule);
 
+        static void prepareUiRuntime(
+            jni::alias_ref<JHybridUiListModule> jThis,
+            jni::alias_ref<worklets::WorkletsModule::javaobject> workletsModule);
+
         static void setupEventInterceptor(
             jni::alias_ref<JHybridUiListModule> jThis,
             jni::alias_ref<JFabricUIManager::javaobject> fabricUIManager);

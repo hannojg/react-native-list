@@ -70,6 +70,7 @@ class HybridUiListModule : HybridUiListModuleSpec() {
 
         val workletsModule = context.getNativeModule(WorkletsModule::class.java)
             ?: throw IllegalStateException("WorkletsModule is null! Is the WorkletsModule properly registered?")
+        prepareUiRuntime(workletsModule)
 
         val reactHostImpl = reactHost as? ReactHostImpl
             ?: throw IllegalStateException("ReactHost is not a ReactHostImpl! Is the New Architecture enabled?")
@@ -150,6 +151,9 @@ class HybridUiListModule : HybridUiListModuleSpec() {
 
             android.util.Log.d("HannoDebug", "✅✅✅✅ UI runtime setup complete!")
     }
+
+    @OptIn(FrameworkAPI::class)
+    private external fun prepareUiRuntime(workletsModule: WorkletsModule)
 
     @OptIn(FrameworkAPI::class)
     private external fun getUiCallInvokerHolder(workletsModule: WorkletsModule): CallInvokerHolderImpl

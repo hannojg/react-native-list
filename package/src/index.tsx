@@ -48,27 +48,7 @@ export function setup() {
     Platform.OS === 'ios' ? uiListModule.iosGetWorkletsModule() : null
   scheduleOnUI(() => {
     'worklet'
-    const logUiRuntimeGlobals = (label: string) => {
-      'worklet'
-      global._log(
-        `[nitro-list setup] ${label} RN$Bridgeless=${String(global['RN$Bridgeless'])}`
-      )
-      global._log(
-        `[nitro-list setup] ${label} typeof global.nativeModuleProxy=${typeof global.nativeModuleProxy}`
-      )
-      global._log(
-        `[nitro-list setup] ${label} typeof global.__turboModuleProxy=${typeof global.__turboModuleProxy}`
-      )
-    }
-
-    logUiRuntimeGlobals('before setupExternalSurface')
     boxed.setupExternalSurface(iosWorkletsModuleHolder)
-    logUiRuntimeGlobals('after setupExternalSurface')
-
-    scheduleOnUI(() => {
-      'worklet'
-      logUiRuntimeGlobals('next UI tick after setupExternalSurface')
-    })
   })
 
   scheduleOnUI(setupWorklet)

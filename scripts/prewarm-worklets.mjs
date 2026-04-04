@@ -11,23 +11,17 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 const exampleRoot = path.join(repoRoot, 'example')
 const exampleBabelConfig = path.join(exampleRoot, 'babel.config.js')
 const workspacePackageRoot = path.join(repoRoot, 'package')
+const rootWorkletsPackageJsonPath = path.join(
+  repoRoot,
+  'node_modules',
+  'react-native-worklets',
+  'package.json'
+)
+const rootWorkletsRoot = path.dirname(rootWorkletsPackageJsonPath)
 
 const requestedPlatforms = process.argv.includes('--platform')
   ? [process.argv[process.argv.indexOf('--platform') + 1]]
   : ['ios', 'android']
-
-const rnwPackageJsonPaths = new Set()
-for (const searchRoot of [repoRoot, exampleRoot, workspacePackageRoot]) {
-  try {
-    rnwPackageJsonPaths.add(
-      require.resolve('react-native-worklets/package.json', {
-        paths: [searchRoot],
-      })
-    )
-  } catch {
-    // Ignore missing workspace-local installs.
-  }
-}
 
 function collectFiles(dir) {
   const entries = fs.readdirSync(dir, { withFileTypes: true })
@@ -61,14 +55,13 @@ for (const filePath of collectFiles(path.join(workspacePackageRoot, 'src'))) {
     filesToTransform.add(filePath)
   }
 }
-for (const packageJsonPath of rnwPackageJsonPaths) {
-  const srcDir = path.join(path.dirname(packageJsonPath), 'src')
-  for (const filePath of collectFiles(srcDir)) {
-    if (maybeWorkletFile(filePath)) {
-      filesToTransform.add(filePath)
-    }
+for (const filePath of collectFiles(path.join(rootWorkletsRoot, 'src'))) {
+  if (maybeWorkletFile(filePath)) {
+    filesToTransform.add(filePath)
   }
 }
+
+const workletsDir = path.join(rootWorkletsRoot, '.worklets')
 
 // Temporary workaround for bundle-mode preview:
 // Metro resolves `react-native-worklets/.worklets/<hash>.js` during graph
@@ -76,6 +69,8 @@ for (const packageJsonPath of rnwPackageJsonPaths) {
 // transforms during that same bundle pass. On cold builds this means Metro can
 // try to resolve a chunk before it exists. Prewarming forces Babel to emit the
 // generated worklet modules ahead of Metro for both dev and release callers.
+fs.mkdirSync(workletsDir, { recursive: true })
+
 for (const platform of requestedPlatforms) {
   for (const isDev of [true, false]) {
     for (const filePath of filesToTransform) {

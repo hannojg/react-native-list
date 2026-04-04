@@ -1,7 +1,21 @@
+diff --git a/lib/module/initializers/initializers.native.js b/lib/module/initializers/initializers.native.js
+index ecb484f1e384624ed3e6c851b02272fac9c3fca8..8b1f594fc0c296e41d36185f9a2066eacf024c2f 100644
+--- a/lib/module/initializers/initializers.native.js
++++ b/lib/module/initializers/initializers.native.js
+@@ -125,7 +125,7 @@ function initializeWorkletRuntime() {
+     setupCallGuard();
+     if (__DEV__) {
+       silenceHMRWarnings();
+-      disallowRNImports();
++      // disallowRNImports();
+     }
+     if (getStaticFeatureFlag('FETCH_PREVIEW_ENABLED')) {
+       mockTurboModuleRegistry();
 diff --git a/plugin/index.js b/plugin/index.js
+index 8a23fe50daeb5e6bc5bb3758fc2a5a313ec78682..c3354cdb102a777b308074b3b57c9ef7cc402538 100644
 --- a/plugin/index.js
 +++ b/plugin/index.js
-@@ -671,26 +671,58 @@
+@@ -671,29 +671,58 @@ var require_generate = __commonJS({
      function generateWorkletFile(libraryBindingsToImport, relativeBindingsToImport, factory, workletHash, state) {
        var _a;
        const libraryImports = Array.from(libraryBindingsToImport).filter((binding) => (binding.path.isImportSpecifier() || binding.path.isImportDefaultSpecifier()) && binding.path.parentPath.isImportDeclaration()).map((binding) => (0, types_12.importDeclaration)([(0, types_12.cloneNode)(binding.path.node, true)], (0, types_12.stringLiteral)(binding.path.parentPath.node.source.value)));
@@ -23,8 +37,8 @@ diff --git a/plugin/index.js b/plugin/index.js
 -        comments: false
 -      })) === null || _a === void 0 ? void 0 : _a.code;
 -      (0, assert_1.default)(transformedProg, "[Worklets] `transformedProg` is undefined.");
--      const dedicatedFilePath = (0, path_1.resolve)(filesDirPath, `${workletHash}.js`);
--      (0, fs_1.writeFileSync)(dedicatedFilePath, transformedProg);
+-      if (!(0, fs_1.existsSync)(filesDirPath)) {
+-        (0, fs_1.mkdirSync)(filesDirPath, {});
 +      const packageJsonPaths = new Set([require.resolve("react-native-worklets/package.json")]);
 +      try {
 +        if (state.file.opts.filename) {
@@ -76,7 +90,22 @@ diff --git a/plugin/index.js b/plugin/index.js
 +        }
 +        const dedicatedFilePath = (0, path_1.resolve)(filesDirPath, `${workletHash}.js`);
 +        (0, fs_1.writeFileSync)(dedicatedFilePath, transformedProg);
-+      }
+       }
+-      const dedicatedFilePath = (0, path_1.resolve)(filesDirPath, `${workletHash}.js`);
+-      (0, fs_1.writeFileSync)(dedicatedFilePath, transformedProg);
      }
    }
  });
+diff --git a/src/initializers/initializers.native.ts b/src/initializers/initializers.native.ts
+index 7ac1f00b67c086f173a59a7a21b8005e4fcd8848..a10ca8bf12c69be0651c9e866d9d465e335293ae 100644
+--- a/src/initializers/initializers.native.ts
++++ b/src/initializers/initializers.native.ts
+@@ -145,7 +145,7 @@ function initializeWorkletRuntime() {
+ 
+     if (__DEV__) {
+       silenceHMRWarnings();
+-      disallowRNImports();
++      // disallowRNImports();
+     }
+ 
+     if (getStaticFeatureFlag('FETCH_PREVIEW_ENABLED')) {

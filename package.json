@@ -8,7 +8,7 @@
   ],
   "devDependencies": {
     "@types/bun": "latest",
-    "react-native-worklets": "bundle-mode-preview"
+    "react-native-worklets": "0.8.0-bundle-mode-preview-1"
   },
   "overrides": {
     "react-native-worklets": "$react-native-worklets"

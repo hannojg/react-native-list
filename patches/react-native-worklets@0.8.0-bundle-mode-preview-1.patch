@@ -12,9 +12,27 @@ index ecb484f1e384624ed3e6c851b02272fac9c3fca8..8b1f594fc0c296e41d36185f9a2066ea
      if (getStaticFeatureFlag('FETCH_PREVIEW_ENABLED')) {
        mockTurboModuleRegistry();
 diff --git a/plugin/index.js b/plugin/index.js
-index 8a23fe50daeb5e6bc5bb3758fc2a5a313ec78682..c3354cdb102a777b308074b3b57c9ef7cc402538 100644
+index 8a23fe50daeb5e6bc5bb3758fc2a5a313ec78682..701fbad71a08ad6ccda9ea6b7030ec0fb8d7ec9d 100644
 --- a/plugin/index.js
 +++ b/plugin/index.js
+@@ -575,10 +575,16 @@ var require_closure = __commonJS({
+         "TSType|TSTypeAliasDeclaration|TSInterfaceDeclaration"(typePath) {
+           typePath.skip();
+         },
+         ReferencedIdentifier(idPath) {
+-          if (idPath.isJSXIdentifier()) {
+-            return;
+-          }
+           const name = idPath.node.name;
++          if (idPath.isJSXIdentifier()) {
++            const isJsxMemberProperty = idPath.parentPath.isJSXMemberExpression() && idPath.parentKey === "property";
++            if (isJsxMemberProperty || types_12.react.isCompatTag(name)) {
++              return;
++            }
++          }
+           if (capturedNames.has(name)) {
+             return;
+           }
 @@ -671,29 +671,58 @@ var require_generate = __commonJS({
      function generateWorkletFile(libraryBindingsToImport, relativeBindingsToImport, factory, workletHash, state) {
        var _a;

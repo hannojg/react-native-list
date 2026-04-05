@@ -68,11 +68,6 @@ export default function App() {
             ref.setMakeNativeViewCallback(uiListModuleUnboxed, () => {
               "worklet";
 
-              global.log("Make native view callback called", typeof View);
-              global.log(typeof Pressable)
-              global.log(typeof Text)
-              global.log(typeof Image)
-
               const ref = global.React.createRef();
               global.itemId = (global.itemId ?? 0) + 1;
               const NewElement = (
@@ -153,11 +148,6 @@ export default function App() {
                   `[JS] Update view callback called for tag ${reactTag} at index ${index}`,
                   tagToArrayPosition
                 );
-
-              global.log("View", typeof View)
-              global.log("Pressable", typeof Pressable)
-              global.log("Text", typeof Text)
-              global.log("Image", typeof Image)
 
                 const itemId = tagToItemId[reactTag];
                 if (itemId == null) {

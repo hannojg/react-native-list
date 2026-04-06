@@ -12,28 +12,26 @@ index ecb484f1e384624ed3e6c851b02272fac9c3fca8..8b1f594fc0c296e41d36185f9a2066ea
      if (getStaticFeatureFlag('FETCH_PREVIEW_ENABLED')) {
        mockTurboModuleRegistry();
 diff --git a/plugin/index.js b/plugin/index.js
-index 8a23fe50daeb5e6bc5bb3758fc2a5a313ec78682..701fbad71a08ad6ccda9ea6b7030ec0fb8d7ec9d 100644
+index 8a23fe50daeb5e6bc5bb3758fc2a5a313ec78682..06c405cd801ffbce5c6e26cf047958b1800afb46 100644
 --- a/plugin/index.js
 +++ b/plugin/index.js
-@@ -575,10 +575,16 @@ var require_closure = __commonJS({
-         "TSType|TSTypeAliasDeclaration|TSInterfaceDeclaration"(typePath) {
+@@ -573,10 +573,13 @@ var require_closure = __commonJS({
            typePath.skip();
          },
          ReferencedIdentifier(idPath) {
--          if (idPath.isJSXIdentifier()) {
++          const name = idPath.node.name;
+           if (idPath.isJSXIdentifier()) {
 -            return;
--          }
-           const name = idPath.node.name;
-+          if (idPath.isJSXIdentifier()) {
 +            const isJsxMemberProperty = idPath.parentPath.isJSXMemberExpression() && idPath.parentKey === "property";
 +            if (isJsxMemberProperty || types_12.react.isCompatTag(name)) {
 +              return;
 +            }
-+          }
+           }
+-          const name = idPath.node.name;
            if (capturedNames.has(name)) {
              return;
            }
-@@ -671,29 +671,58 @@ var require_generate = __commonJS({
+@@ -671,29 +674,58 @@ var require_generate = __commonJS({
      function generateWorkletFile(libraryBindingsToImport, relativeBindingsToImport, factory, workletHash, state) {
        var _a;
        const libraryImports = Array.from(libraryBindingsToImport).filter((binding) => (binding.path.isImportSpecifier() || binding.path.isImportDefaultSpecifier()) && binding.path.parentPath.isImportDeclaration()).map((binding) => (0, types_12.importDeclaration)([(0, types_12.cloneNode)(binding.path.node, true)], (0, types_12.stringLiteral)(binding.path.parentPath.node.source.value)));

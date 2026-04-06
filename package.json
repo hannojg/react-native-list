@@ -21,10 +21,10 @@
     "example/"
   ],
   "patchedDependencies": {
-    "metro@0.83.3": "patches/metro@0.83.3.patch",
     "metro-runtime@0.83.3": "patches/metro-runtime@0.83.3.patch",
     "react-native@0.83.1": "patches/react-native@0.83.1.patch",
     "@expo/metro-config@55.0.3": "patches/@expo%2Fmetro-config@55.0.3.patch",
-    "react-native-worklets@0.8.0-bundle-mode-preview-1": "patches/react-native-worklets@0.8.0-bundle-mode-preview-1.patch"
+    "react-native-worklets@0.8.0-bundle-mode-preview-1": "patches/react-native-worklets@0.8.0-bundle-mode-preview-1.patch",
+    "metro@0.83.3": "patches/metro@0.83.3.patch"
   }
 }

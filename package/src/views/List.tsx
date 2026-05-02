@@ -13,7 +13,6 @@ export interface ListProps {
     style?: ViewStyle;
 }
 
-// TODO: global pattern right now prevents us from having multiple lists as far as i can tell
 export function List({renderItemWorklet, style}: ListProps) {
     let isSetup = useRef(false);
 
@@ -34,34 +33,31 @@ export function List({renderItemWorklet, style}: ListProps) {
             );
 
             const tagToArrayPosition: Record<number, number> = {};
-            global.tagToArrayPosition = tagToArrayPosition;
             const tagToItemId: Record<number, number> = {};
-            global.tagToItemId = tagToItemId;
+            let nextItemId = 0; // TODO: this might needs to become a mutable, let's see
+            const elementsRendered: React.ReactElement[] = [];
 
             const uiListModuleUnboxed = uiListModuleBoxed.unbox();
 
             // TODO: can we enable this somehow as a prop?
             ref.setMakeNativeViewCallback(uiListModuleUnboxed, () => {
-              "worklet";
-
               const ref = global.React.createRef();
-              global.itemId = (global.itemId ?? 0) + 1;
+              const itemId = nextItemId++;
               const newElement = renderItemWorklet(undefined);
               const newElementWithKey = global.React.cloneElement(newElement, {
-                // by creating the views with a key, we can later just update a single view 
-                key: "itemid-" + global.itemId,
+                // by creating the views with a key, we can later just update this view specifically
+                key: "itemid-" + itemId,
+                // ref needed to get native react tag after rendering later
                 ref,
-                collapsable: false, // important so the native layer can find this view
+                // important so the native layer can find this view
+                collapsable: false,
               });
 
-              if (global.elementsRendered == null) {
-                global.elementsRendered = [];
-              }
-              const newLength = global.elementsRendered.push(newElementWithKey);
+              const newLength = elementsRendered.push(newElementWithKey);
               const currentIndex = newLength - 1;
 
               // We have to render n-items in a single view:
-              const ParentContainer = <View>{global.elementsRendered}</View>;
+              const ParentContainer = <View>{elementsRendered}</View>;
 
               // global.log("Render result:");
               // global.log(ParentContainer.props.children);
@@ -79,7 +75,7 @@ export function List({renderItemWorklet, style}: ListProps) {
               const tag = ref.current.__nativeTag;
               global.log("Ref current nativeTag: ", tag);
               tagToArrayPosition[tag] = currentIndex;
-              tagToItemId[tag] = global.itemId;
+              tagToItemId[tag] = itemId;
 
               // cause a sync render to create the actual native view
               const start = performance.now();
@@ -92,7 +88,6 @@ export function List({renderItemWorklet, style}: ListProps) {
             ref.setUpdateViewCallback(
               uiListModuleUnboxed,
               (reactTag: number, index: number) => {
-                "worklet";
                 global.log(
                   `[JS] Update view callback called for tag ${reactTag} at index ${index}`,
                   tagToArrayPosition
@@ -118,12 +113,12 @@ export function List({renderItemWorklet, style}: ListProps) {
                 if (position == null) {
                   throw new Error("No position for tag " + reactTag);
                 }
-                global.elementsRendered[position] = newElementWithKey;
+                elementsRendered[position] = newElementWithKey;
 
                 // TODO: can we unify this following part?
 
                 // Update the parent container
-                const ParentContainer = <View>{global.elementsRendered}</View>;
+                const ParentContainer = <View>{elementsRendered}</View>;
 
                 global.Render(ParentContainer, () => {
                   global._log("Update Render complete");

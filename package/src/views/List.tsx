@@ -29,7 +29,6 @@ export function List({ renderItemWorklet, style }: ListProps) {
         if (isSetup.current) return
         isSetup.current = true
 
-        console.log('hybrid ref received!')
         scheduleOnUI(() => {
           'worklet'
 

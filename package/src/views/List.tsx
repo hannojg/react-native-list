@@ -82,9 +82,9 @@ export function List({renderItemWorklet, style}: ListProps) {
               tagToItemId[tag] = itemId;
 
               // cause a sync render to create the actual native view
-              const start = performance.now();
+              const start = globalThis.performance.now();
               renderSyncWorklet();
-              globalThis.log("renderSync took ", performance.now() - start, "ms");
+              globalThis.log("renderSync took ", globalThis.performance.now() - start, "ms");
 
               return tag;
             });
@@ -129,11 +129,11 @@ export function List({renderItemWorklet, style}: ListProps) {
                 });
 
                 // Cause a sync render to update the actual native view
-                const start = performance.now();
+                const start = globalThis.performance.now();
                 renderSyncWorklet();
                 globalThis.log(
                   "Update renderSync took ",
-                  performance.now() - start,
+                  globalThis.performance.now() - start,
                   "ms"
                 );
 

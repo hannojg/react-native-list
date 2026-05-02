@@ -9,6 +9,8 @@ type NativeTaggedRef = {
   __nativeTag: number
 }
 
+type ReactFabricMirrorModule = typeof import('../ReactFabricMirror')
+
 export interface ListProps {
   renderItemWorklet: (itemInfo?: {
     index: number
@@ -31,10 +33,8 @@ export function List({ renderItemWorklet, style }: ListProps) {
         scheduleOnUI(() => {
           'worklet'
 
-          const {
-            nativeLog,
-            reactRender,
-          }: typeof import('../ReactFabricMirror') = require('react-native-list/src/ReactFabricMirror.bundle')
+          const ReactFabricMirror: ReactFabricMirrorModule = require('react-native-list/src/ReactFabricMirror.bundle')
+          const { nativeLog, reactRender } = ReactFabricMirror
 
           nativeLog(
             'Setting makeNativeViewCallback on UiListView on',

@@ -31,6 +31,7 @@ import { uiListModule } from './UiListModule'
 import { uiManagerHelper } from './renderer/fabric/UiManagerHelper'
 import { List } from './views/List'
 import { Platform } from 'react-native'
+import { getReactFabricRenderer } from './renderer/react/ReactFabricRenderer'
 
 export { Adapter, AdapterFactory } from './specs/Adapter.nitro'
 export { ViewHolder } from './specs/ViewHolder.nitro'
@@ -49,7 +50,7 @@ function setup() {
     boxed.setupExternalSurface(iosWorkletsModuleHolder)
 
     // This will setup the react instance on the UI runtime:
-    require('react-native-list/src/renderer/react/ReactFabricMirror.bundle')
+    getReactFabricRenderer()
   })
 }
 setup()

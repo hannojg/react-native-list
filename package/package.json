@@ -90,6 +90,29 @@
       "prettier"
     ],
     "rules": {
+      "no-restricted-syntax": [
+        "error",
+        {
+          "selector": "ImportDeclaration[source.value=/ReactFabricMirror(\\.bundle)?(\\.[jt]sx?)?$/]",
+          "message": "Import React Fabric mirror through src/renderer/react/ReactFabricRenderer instead."
+        },
+        {
+          "selector": "ExportNamedDeclaration[source.value=/ReactFabricMirror(\\.bundle)?(\\.[jt]sx?)?$/]",
+          "message": "Export React Fabric mirror through src/renderer/react/ReactFabricRenderer instead."
+        },
+        {
+          "selector": "ExportAllDeclaration[source.value=/ReactFabricMirror(\\.bundle)?(\\.[jt]sx?)?$/]",
+          "message": "Export React Fabric mirror through src/renderer/react/ReactFabricRenderer instead."
+        },
+        {
+          "selector": "CallExpression[callee.name='require'][arguments.0.value=/ReactFabricMirror(\\.bundle)?(\\.[jt]sx?)?$/]",
+          "message": "Require React Fabric mirror through src/renderer/react/ReactFabricRenderer instead."
+        },
+        {
+          "selector": "TSImportType Literal[value=/ReactFabricMirror(\\.bundle)?(\\.[jt]sx?)?$/]",
+          "message": "Reference React Fabric mirror types through src/renderer/react/ReactFabricRenderer instead."
+        }
+      ],
       "prettier/prettier": [
         "warn",
         {
@@ -100,7 +123,17 @@
           "useTabs": false
         }
       ]
-    }
+    },
+    "overrides": [
+      {
+        "files": [
+          "src/renderer/react/ReactFabricRenderer.ts"
+        ],
+        "rules": {
+          "no-restricted-syntax": "off"
+        }
+      }
+    ]
   },
   "eslintIgnore": [
     "node_modules/",

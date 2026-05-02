@@ -7,13 +7,11 @@ import {
   uiListModuleBoxed,
 } from '../renderer/fabric/RenderHelper'
 import { View, ViewStyle } from 'react-native'
+import { getReactFabricRenderer } from '../renderer/react/ReactFabricRenderer'
 
 type NativeTaggedRef = {
   __nativeTag: number
 }
-
-type ReactFabricMirrorModule =
-  typeof import('../renderer/react/ReactFabricMirror')
 
 export interface ListProps {
   renderItemWorklet: (itemInfo?: {
@@ -36,8 +34,7 @@ export function List({ renderItemWorklet, style }: ListProps) {
         scheduleOnUI(() => {
           'worklet'
 
-          const ReactFabricMirror: ReactFabricMirrorModule = require('react-native-list/src/renderer/react/ReactFabricMirror.bundle')
-          const { nativeLog, reactRender } = ReactFabricMirror
+          const { nativeLog, reactRender } = getReactFabricRenderer()
 
           nativeLog(
             'Setting makeNativeViewCallback on UiListView on',

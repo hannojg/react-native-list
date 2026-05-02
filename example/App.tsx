@@ -125,16 +125,9 @@ export default function App() {
         getItemType={(item) => {
           return item.type
         }}
-        getItemSize={(item) => {
-          if (item.type === 'image') {
-            return {
-              width: 140,
-              height: 140,
-            }
-          }
+        getItemSize={() => {
           return {
             width: 140,
-            height: 80,
           }
         }}
         renderers={renderers}

@@ -199,6 +199,8 @@ class HybridUiListView : HybridUiListViewSpec {
     private var collectionView: UICollectionView?
     private var collectionDataSourceProxy: CollectionViewDataSourceProxy?
     private var registeredReuseIdentifiers = Set<String>()
+    private var measuredContentSizeByType: [String: CGSize] = [:]
+    private var premeasuredViewByType: [String: (view: UIView, tag: ReactTag)] = [:]
     private var items: [DiffableListItem] = []
 
     let listTopInset: CGFloat = 16
@@ -241,6 +243,7 @@ class HybridUiListView : HybridUiListViewSpec {
             let wrappedItem = self.wrap(item)
             self.items.insert(wrappedItem, at: itemIndex)
             self.ensureReuseRegistered(for: item.type)
+            self.premeasureItemTypeIfNeeded(for: item)
             self.collectionView?.collectionViewLayout.invalidateLayout()
             self.collectionView?.insertItems(at: [IndexPath(item: itemIndex, section: 0)])
         }
@@ -252,6 +255,7 @@ class HybridUiListView : HybridUiListViewSpec {
             let itemIndex = self.validExistingIndex(index)
             self.items[itemIndex] = self.wrap(item)
             self.ensureReuseRegistered(for: item.type)
+            self.premeasureItemTypeIfNeeded(for: item)
             self.collectionView?.collectionViewLayout.invalidateLayout()
             self.collectionView?.reloadItems(at: [IndexPath(item: itemIndex, section: 0)])
         }
@@ -289,6 +293,7 @@ class HybridUiListView : HybridUiListViewSpec {
         }
         for item in newItems {
             ensureReuseRegistered(for: item.type)
+            premeasureItemTypeIfNeeded(for: item)
         }
 
         guard animated, let collectionView else {
@@ -329,15 +334,80 @@ class HybridUiListView : HybridUiListViewSpec {
         self.collectionView = collectionView
     }
 
-    private func makeView(type: String) throws -> (UIView, ReactTag) {
+    private func makeView(type: String) throws -> (UIView, ReactTag, CGSize?) {
         guard let createViewCallback else {
             throw RuntimeError.error(withMessage: "Can only call makeView after setListCallbacks.")
         }
 
         let viewTag = ReactTag(createViewCallback(type))
         let resolvedView = try SurfaceHelper.getViewByTag(viewTag)
+        let measuredSize = measure(view: resolvedView)
         resolvedView.removeFromSuperview()
-        return (resolvedView, viewTag)
+        return (resolvedView, viewTag, measuredSize)
+    }
+
+    private func measure(view: UIView) -> CGSize? {
+        let measuredWidth = [view.bounds.width, view.frame.width]
+            .filter { $0.isFinite && $0 > 0 }
+            .max()
+        let measuredHeight = [view.bounds.height, view.frame.height]
+            .filter { $0.isFinite && $0 > 0 }
+            .max()
+
+        guard let measuredWidth, let measuredHeight else {
+            return nil
+        }
+        return CGSize(width: measuredWidth, height: measuredHeight)
+    }
+
+    private func premeasureItemTypeIfNeeded(for item: NativeListItem) {
+        let needsMeasuredWidth = item.width == nil
+        let needsMeasuredHeight = item.height == nil
+        guard needsMeasuredWidth || needsMeasuredHeight else { return }
+        guard measuredContentSizeByType[item.type] == nil else { return }
+
+        do {
+            let result = try makeView(type: item.type)
+            guard let measuredSize = result.2 else {
+                fatalError(
+                    "Developer error: Failed to measure item type '\(item.type)'. " +
+                    "The shell view must render finite non-zero bounds when width or height is omitted."
+                )
+            }
+            measuredContentSizeByType[item.type] = measuredSize
+            premeasuredViewByType[item.type] = (view: result.0, tag: result.1)
+        } catch {
+            fatalError("Developer error: Failed to pre-measure item type '\(item.type)': \(error)")
+        }
+    }
+
+    private func takePremeasuredView(for type: String) -> (UIView, ReactTag)? {
+        guard let result = premeasuredViewByType[type] else {
+            return nil
+        }
+        premeasuredViewByType[type] = nil
+        return result
+    }
+
+    private func resolvedContentSize(for item: NativeListItem) -> CGSize {
+        let measuredSize = measuredContentSizeByType[item.type]
+        let width = item.width.map { CGFloat($0) } ?? measuredSize?.width
+        let height = item.height.map { CGFloat($0) } ?? measuredSize?.height
+
+        guard let width, width.isFinite, width > 0 else {
+            fatalError(
+                "Developer error: Missing width for item type '\(item.type)'. " +
+                "Provide width from getItemSize or render a measurable shell."
+            )
+        }
+        guard let height, height.isFinite, height > 0 else {
+            fatalError(
+                "Developer error: Missing height for item type '\(item.type)'. " +
+                "Provide height from getItemSize or render a measurable shell."
+            )
+        }
+
+        return CGSize(width: width, height: height)
     }
 
     private func wrap(_ item: NativeListItem) -> DiffableListItem {
@@ -385,8 +455,9 @@ class HybridUiListView : HybridUiListViewSpec {
 
     func layoutSizeForItem(at index: Int, in collectionView: UICollectionView) -> CGSize {
         let item = items[index].nativeItem
-        let width = collectionView.bounds.width
-        let height = CGFloat(item.height) + HostCell.verticalInset * 2
+        let contentSize = resolvedContentSize(for: item)
+        let width = ceil(contentSize.width + HostCell.horizontalInset * 2)
+        let height = ceil(contentSize.height + HostCell.verticalInset * 2)
         return CGSize(width: width, height: height)
     }
 
@@ -402,13 +473,18 @@ class HybridUiListView : HybridUiListViewSpec {
             for: indexPath
         ) as! HostCell
 
-        let contentSize = CGSize(width: item.width, height: item.height)
+        let contentSize = resolvedContentSize(for: item)
 
         if !cell.hasHostedView {
             do {
-                let result = try makeView(type: item.type)
-                cell.install(view: result.0, contentSize: contentSize)
-                cell.reactTag = result.1
+                if let result = takePremeasuredView(for: item.type) {
+                    cell.install(view: result.0, contentSize: contentSize)
+                    cell.reactTag = result.1
+                } else {
+                    let result = try makeView(type: item.type)
+                    cell.install(view: result.0, contentSize: contentSize)
+                    cell.reactTag = result.1
+                }
             } catch {
                 print("Failed to create list item view: \(error)")
             }

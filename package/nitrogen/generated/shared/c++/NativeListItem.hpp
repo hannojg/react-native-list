@@ -31,6 +31,7 @@
 
 
 #include <string>
+#include <optional>
 #include <NitroModules/AnyMap.hpp>
 
 namespace margelo::nitro::reactnativelist {
@@ -42,13 +43,13 @@ namespace margelo::nitro::reactnativelist {
   public:
     std::string key     SWIFT_PRIVATE;
     std::string type     SWIFT_PRIVATE;
-    double width     SWIFT_PRIVATE;
-    double height     SWIFT_PRIVATE;
+    std::optional<double> width     SWIFT_PRIVATE;
+    std::optional<double> height     SWIFT_PRIVATE;
     std::shared_ptr<AnyMap> data     SWIFT_PRIVATE;
 
   public:
     NativeListItem() = default;
-    explicit NativeListItem(std::string key, std::string type, double width, double height, std::shared_ptr<AnyMap> data): key(key), type(type), width(width), height(height), data(data) {}
+    explicit NativeListItem(std::string key, std::string type, std::optional<double> width, std::optional<double> height, std::shared_ptr<AnyMap> data): key(key), type(type), width(width), height(height), data(data) {}
 
   public:
     friend bool operator==(const NativeListItem& lhs, const NativeListItem& rhs) = default;
@@ -66,8 +67,8 @@ namespace margelo::nitro {
       return margelo::nitro::reactnativelist::NativeListItem(
         JSIConverter<std::string>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "key"))),
         JSIConverter<std::string>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "type"))),
-        JSIConverter<double>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "width"))),
-        JSIConverter<double>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "height"))),
+        JSIConverter<std::optional<double>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "width"))),
+        JSIConverter<std::optional<double>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "height"))),
         JSIConverter<std::shared_ptr<AnyMap>>::fromJSI(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "data")))
       );
     }
@@ -75,8 +76,8 @@ namespace margelo::nitro {
       jsi::Object obj(runtime);
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "key"), JSIConverter<std::string>::toJSI(runtime, arg.key));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "type"), JSIConverter<std::string>::toJSI(runtime, arg.type));
-      obj.setProperty(runtime, PropNameIDCache::get(runtime, "width"), JSIConverter<double>::toJSI(runtime, arg.width));
-      obj.setProperty(runtime, PropNameIDCache::get(runtime, "height"), JSIConverter<double>::toJSI(runtime, arg.height));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "width"), JSIConverter<std::optional<double>>::toJSI(runtime, arg.width));
+      obj.setProperty(runtime, PropNameIDCache::get(runtime, "height"), JSIConverter<std::optional<double>>::toJSI(runtime, arg.height));
       obj.setProperty(runtime, PropNameIDCache::get(runtime, "data"), JSIConverter<std::shared_ptr<AnyMap>>::toJSI(runtime, arg.data));
       return obj;
     }
@@ -90,8 +91,8 @@ namespace margelo::nitro {
       }
       if (!JSIConverter<std::string>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "key")))) return false;
       if (!JSIConverter<std::string>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "type")))) return false;
-      if (!JSIConverter<double>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "width")))) return false;
-      if (!JSIConverter<double>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "height")))) return false;
+      if (!JSIConverter<std::optional<double>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "width")))) return false;
+      if (!JSIConverter<std::optional<double>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "height")))) return false;
       if (!JSIConverter<std::shared_ptr<AnyMap>>::canConvert(runtime, obj.getProperty(runtime, PropNameIDCache::get(runtime, "data")))) return false;
       return true;
     }

@@ -10,8 +10,8 @@ import { UiListModule } from './UIListModule.nitro'
 export interface NativeListItem {
   key: string
   type: string
-  width: number
-  height: number
+  width?: number
+  height?: number
   data: AnyMap
 }
 

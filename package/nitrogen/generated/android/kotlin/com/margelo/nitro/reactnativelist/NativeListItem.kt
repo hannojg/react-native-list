@@ -26,10 +26,10 @@ data class NativeListItem(
   val type: String,
   @DoNotStrip
   @Keep
-  val width: Double,
+  val width: Double?,
   @DoNotStrip
   @Keep
-  val height: Double,
+  val height: Double?,
   @DoNotStrip
   @Keep
   val data: AnyMap
@@ -64,7 +64,7 @@ data class NativeListItem(
     @Keep
     @Suppress("unused")
     @JvmStatic
-    private fun fromCpp(key: String, type: String, width: Double, height: Double, data: AnyMap): NativeListItem {
+    private fun fromCpp(key: String, type: String, width: Double?, height: Double?, data: AnyMap): NativeListItem {
       return NativeListItem(key, type, width, height, data)
     }
   }

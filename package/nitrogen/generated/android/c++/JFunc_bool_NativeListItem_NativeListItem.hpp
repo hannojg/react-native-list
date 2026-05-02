@@ -15,6 +15,7 @@
 #include <NitroModules/JNICallable.hpp>
 #include "JNativeListItem.hpp"
 #include <string>
+#include <optional>
 #include <NitroModules/AnyMap.hpp>
 #include <NitroModules/JAnyMap.hpp>
 

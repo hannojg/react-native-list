@@ -12,6 +12,7 @@
 
 #include <NitroModules/AnyMap.hpp>
 #include <NitroModules/JAnyMap.hpp>
+#include <optional>
 #include <string>
 
 namespace margelo::nitro::reactnativelist {
@@ -37,17 +38,17 @@ namespace margelo::nitro::reactnativelist {
       jni::local_ref<jni::JString> key = this->getFieldValue(fieldKey);
       static const auto fieldType = clazz->getField<jni::JString>("type");
       jni::local_ref<jni::JString> type = this->getFieldValue(fieldType);
-      static const auto fieldWidth = clazz->getField<double>("width");
-      double width = this->getFieldValue(fieldWidth);
-      static const auto fieldHeight = clazz->getField<double>("height");
-      double height = this->getFieldValue(fieldHeight);
+      static const auto fieldWidth = clazz->getField<jni::JDouble>("width");
+      jni::local_ref<jni::JDouble> width = this->getFieldValue(fieldWidth);
+      static const auto fieldHeight = clazz->getField<jni::JDouble>("height");
+      jni::local_ref<jni::JDouble> height = this->getFieldValue(fieldHeight);
       static const auto fieldData = clazz->getField<JAnyMap::javaobject>("data");
       jni::local_ref<JAnyMap::javaobject> data = this->getFieldValue(fieldData);
       return NativeListItem(
         key->toStdString(),
         type->toStdString(),
-        width,
-        height,
+        width != nullptr ? std::make_optional(width->value()) : std::nullopt,
+        height != nullptr ? std::make_optional(height->value()) : std::nullopt,
         data->cthis()->getMap()
       );
     }
@@ -58,15 +59,15 @@ namespace margelo::nitro::reactnativelist {
      */
     [[maybe_unused]]
     static jni::local_ref<JNativeListItem::javaobject> fromCpp(const NativeListItem& value) {
-      using JSignature = JNativeListItem(jni::alias_ref<jni::JString>, jni::alias_ref<jni::JString>, double, double, jni::alias_ref<JAnyMap::javaobject>);
+      using JSignature = JNativeListItem(jni::alias_ref<jni::JString>, jni::alias_ref<jni::JString>, jni::alias_ref<jni::JDouble>, jni::alias_ref<jni::JDouble>, jni::alias_ref<JAnyMap::javaobject>);
       static const auto clazz = javaClassStatic();
       static const auto create = clazz->getStaticMethod<JSignature>("fromCpp");
       return create(
         clazz,
         jni::make_jstring(value.key),
         jni::make_jstring(value.type),
-        value.width,
-        value.height,
+        value.width.has_value() ? jni::JDouble::valueOf(value.width.value()) : nullptr,
+        value.height.has_value() ? jni::JDouble::valueOf(value.height.value()) : nullptr,
         JAnyMap::create(value.data)
       );
     }

@@ -22,6 +22,7 @@ namespace margelo::nitro::reactnativelist { struct NativeListItem; }
 #include "NativeListItem.hpp"
 #include "JFunc_bool_double_NativeListItem_double.hpp"
 #include "JNativeListItem.hpp"
+#include <optional>
 #include <NitroModules/AnyMap.hpp>
 #include <NitroModules/JAnyMap.hpp>
 #include "JFunc_bool_NativeListItem_NativeListItem.hpp"

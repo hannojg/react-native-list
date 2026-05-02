@@ -18,8 +18,20 @@ public extension NativeListItem {
   /**
    * Create a new instance of `NativeListItem`.
    */
-  init(key: String, type: String, width: Double, height: Double, data: AnyMap) {
-    self.init(std.string(key), std.string(type), width, height, data.cppPart)
+  init(key: String, type: String, width: Double?, height: Double?, data: AnyMap) {
+    self.init(std.string(key), std.string(type), { () -> bridge.std__optional_double_ in
+      if let __unwrappedValue = width {
+        return bridge.create_std__optional_double_(__unwrappedValue)
+      } else {
+        return .init()
+      }
+    }(), { () -> bridge.std__optional_double_ in
+      if let __unwrappedValue = height {
+        return bridge.create_std__optional_double_(__unwrappedValue)
+      } else {
+        return .init()
+      }
+    }(), data.cppPart)
   }
 
   @inline(__always)
@@ -33,13 +45,27 @@ public extension NativeListItem {
   }
   
   @inline(__always)
-  var width: Double {
-    return self.__width
+  var width: Double? {
+    return { () -> Double? in
+      if bridge.has_value_std__optional_double_(self.__width) {
+        let __unwrapped = bridge.get_std__optional_double_(self.__width)
+        return __unwrapped
+      } else {
+        return nil
+      }
+    }()
   }
   
   @inline(__always)
-  var height: Double {
-    return self.__height
+  var height: Double? {
+    return { () -> Double? in
+      if bridge.has_value_std__optional_double_(self.__height) {
+        let __unwrapped = bridge.get_std__optional_double_(self.__height)
+        return __unwrapped
+      } else {
+        return nil
+      }
+    }()
   }
   
   @inline(__always)

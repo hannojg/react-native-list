@@ -28,8 +28,8 @@ type NativeTaggedRef = {
 export type ListKey = string | number
 
 export type ListItemSize = {
-  width: number
-  height: number
+  width?: number
+  height?: number
 }
 
 export type ListRenderer<T extends AnyMap, TType extends string> = {
@@ -46,7 +46,7 @@ export type ListProps<T extends AnyMap, TType extends string> = {
   data: readonly T[]
   keyExtractor: (item: T, index: number) => ListKey
   getItemType: (item: T, index: number) => TType
-  getItemSize: (item: T, index: number) => ListItemSize
+  getItemSize?: (item: T, index: number) => ListItemSize
   renderers: Record<TType, ListRenderer<T, TType>>
   style?: ViewStyle
 }
@@ -67,13 +67,11 @@ export type ListRef<T extends AnyMap> = {
 function assertValidSize(size: ListItemSize, index: number) {
   const width = size.width
   const height = size.height
-  const isWidthFinite = Number.isFinite(width)
-  const isHeightFinite = Number.isFinite(height)
 
-  if (!isWidthFinite || width <= 0) {
+  if (width != null && (!Number.isFinite(width) || width <= 0)) {
     throw new Error(`List item at index ${index} has an invalid width.`)
   }
-  if (!isHeightFinite || height <= 0) {
+  if (height != null && (!Number.isFinite(height) || height <= 0)) {
     throw new Error(`List item at index ${index} has an invalid height.`)
   }
 }
@@ -102,7 +100,7 @@ function createNativeItem<T extends AnyMap, TType extends string>(
     throw new Error(`List item at index ${index} uses unknown type "${type}".`)
   }
 
-  const size = props.getItemSize(item, index)
+  const size = props.getItemSize?.(item, index) ?? {}
   assertValidSize(size, index)
 
   return {

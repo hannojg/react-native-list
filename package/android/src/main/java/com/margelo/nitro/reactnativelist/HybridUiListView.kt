@@ -275,8 +275,8 @@ class HybridUiListView(val reactContext: ThemedReactContext) : HybridUiListViewS
         }
 
         private fun bindContainerLayout(container: FrameLayout, item: NativeListItem) {
-            val width = toPixels(item.width)
-            val height = toPixels(item.height)
+            val width = toLayoutDimension(item.width, ViewGroup.LayoutParams.MATCH_PARENT)
+            val height = toLayoutDimension(item.height, ViewGroup.LayoutParams.WRAP_CONTENT)
             val layoutParams = container.layoutParams as? RecyclerView.LayoutParams
                 ?: RecyclerView.LayoutParams(width, height)
             layoutParams.width = width
@@ -285,10 +285,17 @@ class HybridUiListView(val reactContext: ThemedReactContext) : HybridUiListViewS
         }
 
         private fun bindChildLayout(child: View, item: NativeListItem) {
-            val width = toPixels(item.width)
-            val height = toPixels(item.height)
+            val width = toLayoutDimension(item.width, ViewGroup.LayoutParams.MATCH_PARENT)
+            val height = toLayoutDimension(item.height, ViewGroup.LayoutParams.WRAP_CONTENT)
             val layoutParams = FrameLayout.LayoutParams(width, height)
             child.layoutParams = layoutParams
+        }
+
+        private fun toLayoutDimension(value: Double?, fallback: Int): Int {
+            if (value == null) {
+                return fallback
+            }
+            return toPixels(value)
         }
 
         private fun toPixels(value: Double): Int {

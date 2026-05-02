@@ -22,6 +22,7 @@ namespace margelo::nitro::reactnativelist { struct NativeListItem; }
 #include <string>
 #include <functional>
 #include "NativeListItem.hpp"
+#include <optional>
 #include <NitroModules/AnyMap.hpp>
 #include <vector>
 

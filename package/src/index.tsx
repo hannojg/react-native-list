@@ -29,7 +29,7 @@
 import { scheduleOnUI } from 'react-native-worklets'
 import { uiListModule } from './UiListModule'
 import { uiManagerHelper } from './renderer/UiManagerHelper'
-import { UiList } from './views/UiList'
+import { List } from './views/List'
 import { Platform } from 'react-native'
 
 export { Adapter, AdapterFactory } from './specs/Adapter.nitro'
@@ -67,6 +67,6 @@ export function renderSync() {
   uiManagerHelperUnboxed.renderSync(capturedOnJS)
 }
 
-export { UiList, uiListModule, uiManagerHelper }
+export { List, uiListModule, uiManagerHelper }
 
-export { uiListModuleBoxed, renderSyncWorklet } from './renderer/RenderHelper'
+// export { uiListModuleBoxed, renderSyncWorklet } from './renderer/RenderHelper'

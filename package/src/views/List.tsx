@@ -2,14 +2,18 @@ import React, { useRef } from 'react'
 import { UiListHostComponent } from './UiListHostComponent'
 import { callback } from 'react-native-nitro-modules'
 import { scheduleOnUI } from 'react-native-worklets'
-import { renderSyncWorklet, uiListModuleBoxed } from '../renderer/RenderHelper'
+import {
+  renderSyncWorklet,
+  uiListModuleBoxed,
+} from '../renderer/fabric/RenderHelper'
 import { View, ViewStyle } from 'react-native'
 
 type NativeTaggedRef = {
   __nativeTag: number
 }
 
-type ReactFabricMirrorModule = typeof import('../ReactFabricMirror')
+type ReactFabricMirrorModule =
+  typeof import('../renderer/react/ReactFabricMirror')
 
 export interface ListProps {
   renderItemWorklet: (itemInfo?: {
@@ -32,7 +36,7 @@ export function List({ renderItemWorklet, style }: ListProps) {
         scheduleOnUI(() => {
           'worklet'
 
-          const ReactFabricMirror: ReactFabricMirrorModule = require('react-native-list/src/ReactFabricMirror.bundle')
+          const ReactFabricMirror: ReactFabricMirrorModule = require('react-native-list/src/renderer/react/ReactFabricMirror.bundle')
           const { nativeLog, reactRender } = ReactFabricMirror
 
           nativeLog(

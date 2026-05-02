@@ -1,5 +1,5 @@
 import { NitroModules } from 'react-native-nitro-modules'
-import { uiListModule } from '../UiListModule'
+import { uiListModule } from '../../UiListModule'
 import { uiManagerHelper } from './UiManagerHelper'
 
 export const uiListModuleBoxed = NitroModules.box(uiListModule)

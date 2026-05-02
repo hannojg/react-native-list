@@ -28,7 +28,7 @@
 
 import { scheduleOnUI } from 'react-native-worklets'
 import { uiListModule } from './UiListModule'
-import { uiManagerHelper } from './renderer/UiManagerHelper'
+import { uiManagerHelper } from './renderer/fabric/UiManagerHelper'
 import { List } from './views/List'
 import { Platform } from 'react-native'
 
@@ -37,7 +37,7 @@ export { ViewHolder } from './specs/ViewHolder.nitro'
 export { IOSWorkletsModuleProxyHolder } from './specs/IOSWorkletsModuleProxyHolder.nitro'
 
 const boxed = uiListModule
-const nativeFabricUIManager = global.nativeFabricUIManager
+const nativeFabricUIManager = globalThis.nativeFabricUIManager
 
 function setup() {
   // TODO: ask SWM if they can remove their JS thread checks, then we could just access this from the UI thread.
@@ -45,10 +45,11 @@ function setup() {
     Platform.OS === 'ios' ? uiListModule.iosGetWorkletsModule() : null
   scheduleOnUI(() => {
     'worklet'
-    global.nativeFabricUIManager = nativeFabricUIManager
+    globalThis.nativeFabricUIManager = nativeFabricUIManager
     boxed.setupExternalSurface(iosWorkletsModuleHolder)
 
-    require('react-native-list/src/ReactFabricMirror.bundle')
+    // This will setup the react instance on the UI runtime:
+    require('react-native-list/src/renderer/react/ReactFabricMirror.bundle')
   })
 }
 setup()

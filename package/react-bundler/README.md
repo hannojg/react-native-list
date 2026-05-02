@@ -9,8 +9,8 @@ For that we need to bundle:
 
 into one JS file that can be loaded in the runtime.
 
-The "entry point" to that bundle is `./src/ReactFabricMirror.ts`.
-The output of the bundler is `./src/ReactFabricMirror.bundle.js`.
+The "entry point" to that bundle is `./src/renderer/react/ReactFabricMirror.ts`.
+The output of the bundler is `./src/renderer/react/ReactFabricMirror.bundle.js`.
 
 There are some special things we have to do to make this bundle work:
 

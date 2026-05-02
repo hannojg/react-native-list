@@ -52,28 +52,30 @@ global.rootInstance = {
   publicInstance: null,
 }
 
-const { getPublicInstance } = require('../shims/react-fiber-config-fabric.js')
+const {
+  getPublicInstance,
+} = require('../../../shims/react-fiber-config-fabric.js')
 
 //#region Event handling
-const EventPluginUtilsModule = require('../../third_party/react/packages/react-native-renderer/src/legacy-events/EventPluginUtils')
+const EventPluginUtilsModule = require('../../../../third_party/react/packages/react-native-renderer/src/legacy-events/EventPluginUtils')
 const { setComponentTree } = EventPluginUtilsModule
 const {
   injectEventPluginOrder,
   injectEventPluginsByName,
   plugins: legacyPlugins,
-} = require('../../third_party/react/packages/react-native-renderer/src/legacy-events/EventPluginRegistry')
-const ResponderEventPluginModule = require('../../third_party/react/packages/react-native-renderer/src/legacy-events/ResponderEventPlugin')
-const ReactNativeEventPluginOrderModule = require('../../third_party/react/packages/react-native-renderer/src/ReactNativeEventPluginOrder')
-const ReactFabricGlobalResponderHandlerModule = require('../../third_party/react/packages/react-native-renderer/src/ReactFabricGlobalResponderHandler')
-const SyntheticEventModule = require('../../third_party/react/packages/react-native-renderer/src/legacy-events/SyntheticEvent')
-const accumulateIntoModule = require('../../third_party/react/packages/react-native-renderer/src/legacy-events/accumulateInto')
-const forEachAccumulatedModule = require('../../third_party/react/packages/react-native-renderer/src/legacy-events/forEachAccumulated')
+} = require('../../../../third_party/react/packages/react-native-renderer/src/legacy-events/EventPluginRegistry')
+const ResponderEventPluginModule = require('../../../../third_party/react/packages/react-native-renderer/src/legacy-events/ResponderEventPlugin')
+const ReactNativeEventPluginOrderModule = require('../../../../third_party/react/packages/react-native-renderer/src/ReactNativeEventPluginOrder')
+const ReactFabricGlobalResponderHandlerModule = require('../../../../third_party/react/packages/react-native-renderer/src/ReactFabricGlobalResponderHandler')
+const SyntheticEventModule = require('../../../../third_party/react/packages/react-native-renderer/src/legacy-events/SyntheticEvent')
+const accumulateIntoModule = require('../../../../third_party/react/packages/react-native-renderer/src/legacy-events/accumulateInto')
+const forEachAccumulatedModule = require('../../../../third_party/react/packages/react-native-renderer/src/legacy-events/forEachAccumulated')
 const {
   batchedUpdates,
-} = require('../../third_party/react/packages/react-native-renderer/src/legacy-events/ReactGenericBatching')
+} = require('../../../../third_party/react/packages/react-native-renderer/src/legacy-events/ReactGenericBatching')
 const {
   runEventsInBatch,
-} = require('../../third_party/react/packages/react-native-renderer/src/legacy-events/EventBatching')
+} = require('../../../../third_party/react/packages/react-native-renderer/src/legacy-events/EventBatching')
 const { HostComponent } = require('react-reconciler/src/ReactWorkTags')
 
 const ResponderEventPlugin =

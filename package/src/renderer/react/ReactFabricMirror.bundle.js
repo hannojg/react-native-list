@@ -1537,7 +1537,7 @@ var require_EventBatching = __commonJS((exports2) => {
   }
 });
 
-// src/ReactFabricMirror.ts
+// src/renderer/react/ReactFabricMirror.ts
 var exports_ReactFabricMirror = {};
 __export(exports_ReactFabricMirror, {
   reactRender: () => reactRender,
@@ -1578,7 +1578,9 @@ global.rootInstance = {
   containerTag: 3,
   publicInstance: null
 };
-var { getPublicInstance } = require_react_fiber_config_fabric();
+var {
+  getPublicInstance
+} = require_react_fiber_config_fabric();
 var EventPluginUtilsModule = require_EventPluginUtils();
 var { setComponentTree } = EventPluginUtilsModule;
 var {

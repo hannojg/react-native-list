@@ -8,7 +8,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { List } from "react-native-list";
-// import "react-native-list/src/privateGlobals"
+import "react-native-list/src/privateGlobals"
 
 export default function App() {
   const { height, width } = useWindowDimensions();

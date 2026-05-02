@@ -5,8 +5,11 @@ import type { UiManagerBinding } from './specs/UIManagerHelper.nitro'
 
 declare global {
   var log: (...args: unknown[]) => void
-  var React: typeof ReactModule
   var nativeFabricUIManager: UiManagerBinding
+
+  interface GlobalThis {
+    React: typeof ReactModule
+  }
 
   interface Performance {
     now(): number

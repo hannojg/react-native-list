@@ -125,16 +125,28 @@ open class HybridUiListViewSpec_cxx {
 
   // Methods
   @inline(__always)
-  public final func setMakeNativeViewCallback(uiListModule: bridge.std__shared_ptr_HybridUiListModuleSpec_, callback: bridge.Func_double) -> bridge.Result_void_ {
+  public final func setListCallbacks(uiListModule: bridge.std__shared_ptr_HybridUiListModuleSpec_, createView: bridge.Func_double_std__string, updateView: bridge.Func_bool_double_NativeListItem_double, isContentEqual: bridge.Func_bool_NativeListItem_NativeListItem) -> bridge.Result_void_ {
     do {
-      try self.__implementation.setMakeNativeViewCallback(uiListModule: { () -> any HybridUiListModuleSpec in
+      try self.__implementation.setListCallbacks(uiListModule: { () -> any HybridUiListModuleSpec in
         let __unsafePointer = bridge.get_std__shared_ptr_HybridUiListModuleSpec_(uiListModule)
         let __instance = HybridUiListModuleSpec_cxx.fromUnsafe(__unsafePointer)
         return __instance.getHybridUiListModuleSpec()
-      }(), callback: { () -> () -> Double in
-        let __wrappedFunction = bridge.wrap_Func_double(callback)
-        return { () -> Double in
-          let __result = __wrappedFunction.call()
+      }(), createView: { () -> (String) -> Double in
+        let __wrappedFunction = bridge.wrap_Func_double_std__string(createView)
+        return { (__type: String) -> Double in
+          let __result = __wrappedFunction.call(std.string(__type))
+          return __result
+        }
+      }(), updateView: { () -> (Double, NativeListItem, Double) -> Bool in
+        let __wrappedFunction = bridge.wrap_Func_bool_double_NativeListItem_double(updateView)
+        return { (__reactTag: Double, __item: NativeListItem, __index: Double) -> Bool in
+          let __result = __wrappedFunction.call(__reactTag, __item, __index)
+          return __result
+        }
+      }(), isContentEqual: { () -> (NativeListItem, NativeListItem) -> Bool in
+        let __wrappedFunction = bridge.wrap_Func_bool_NativeListItem_NativeListItem(isContentEqual)
+        return { (__oldItem: NativeListItem, __newItem: NativeListItem) -> Bool in
+          let __result = __wrappedFunction.call(__oldItem, __newItem)
           return __result
         }
       }())
@@ -146,19 +158,53 @@ open class HybridUiListViewSpec_cxx {
   }
   
   @inline(__always)
-  public final func setUpdateViewCallback(uiListModule: bridge.std__shared_ptr_HybridUiListModuleSpec_, callback: bridge.Func_bool_double_double) -> bridge.Result_void_ {
+  public final func setData(items: bridge.std__vector_NativeListItem_, animated: Bool) -> bridge.Result_void_ {
     do {
-      try self.__implementation.setUpdateViewCallback(uiListModule: { () -> any HybridUiListModuleSpec in
-        let __unsafePointer = bridge.get_std__shared_ptr_HybridUiListModuleSpec_(uiListModule)
-        let __instance = HybridUiListModuleSpec_cxx.fromUnsafe(__unsafePointer)
-        return __instance.getHybridUiListModuleSpec()
-      }(), callback: { () -> (Double, Double) -> Bool in
-        let __wrappedFunction = bridge.wrap_Func_bool_double_double(callback)
-        return { (__reactTag: Double, __index: Double) -> Bool in
-          let __result = __wrappedFunction.call(__reactTag, __index)
-          return __result
-        }
-      }())
+      try self.__implementation.setData(items: items.map({ __item in __item }), animated: animated)
+      return bridge.create_Result_void_()
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_void_(__exceptionPtr)
+    }
+  }
+  
+  @inline(__always)
+  public final func insertItem(index: Double, item: NativeListItem) -> bridge.Result_void_ {
+    do {
+      try self.__implementation.insertItem(index: index, item: item)
+      return bridge.create_Result_void_()
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_void_(__exceptionPtr)
+    }
+  }
+  
+  @inline(__always)
+  public final func updateItem(index: Double, item: NativeListItem) -> bridge.Result_void_ {
+    do {
+      try self.__implementation.updateItem(index: index, item: item)
+      return bridge.create_Result_void_()
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_void_(__exceptionPtr)
+    }
+  }
+  
+  @inline(__always)
+  public final func removeItem(index: Double) -> bridge.Result_void_ {
+    do {
+      try self.__implementation.removeItem(index: index)
+      return bridge.create_Result_void_()
+    } catch (let __error) {
+      let __exceptionPtr = __error.toCpp()
+      return bridge.create_Result_void_(__exceptionPtr)
+    }
+  }
+  
+  @inline(__always)
+  public final func moveItem(fromIndex: Double, toIndex: Double) -> bridge.Result_void_ {
+    do {
+      try self.__implementation.moveItem(fromIndex: fromIndex, toIndex: toIndex)
       return bridge.create_Result_void_()
     } catch (let __error) {
       let __exceptionPtr = __error.toCpp()

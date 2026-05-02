@@ -49,20 +49,29 @@ namespace margelo::nitro::reactnativelist::bridge::swift {
     return swiftPart.toUnsafe();
   }
   
-  // pragma MARK: std::function<double()>
-  Func_double create_Func_double(void* NON_NULL swiftClosureWrapper) noexcept {
-    auto swiftClosure = ReactNativeList::Func_double::fromUnsafe(swiftClosureWrapper);
-    return [swiftClosure = std::move(swiftClosure)]() mutable -> double {
-      auto __result = swiftClosure.call();
+  // pragma MARK: std::function<double(const std::string& /* type */)>
+  Func_double_std__string create_Func_double_std__string(void* NON_NULL swiftClosureWrapper) noexcept {
+    auto swiftClosure = ReactNativeList::Func_double_std__string::fromUnsafe(swiftClosureWrapper);
+    return [swiftClosure = std::move(swiftClosure)](const std::string& type) mutable -> double {
+      auto __result = swiftClosure.call(type);
       return __result;
     };
   }
   
-  // pragma MARK: std::function<bool(double /* reactTag */, double /* index */)>
-  Func_bool_double_double create_Func_bool_double_double(void* NON_NULL swiftClosureWrapper) noexcept {
-    auto swiftClosure = ReactNativeList::Func_bool_double_double::fromUnsafe(swiftClosureWrapper);
-    return [swiftClosure = std::move(swiftClosure)](double reactTag, double index) mutable -> bool {
-      auto __result = swiftClosure.call(reactTag, index);
+  // pragma MARK: std::function<bool(double /* reactTag */, const NativeListItem& /* item */, double /* index */)>
+  Func_bool_double_NativeListItem_double create_Func_bool_double_NativeListItem_double(void* NON_NULL swiftClosureWrapper) noexcept {
+    auto swiftClosure = ReactNativeList::Func_bool_double_NativeListItem_double::fromUnsafe(swiftClosureWrapper);
+    return [swiftClosure = std::move(swiftClosure)](double reactTag, const NativeListItem& item, double index) mutable -> bool {
+      auto __result = swiftClosure.call(reactTag, item, index);
+      return __result;
+    };
+  }
+  
+  // pragma MARK: std::function<bool(const NativeListItem& /* oldItem */, const NativeListItem& /* newItem */)>
+  Func_bool_NativeListItem_NativeListItem create_Func_bool_NativeListItem_NativeListItem(void* NON_NULL swiftClosureWrapper) noexcept {
+    auto swiftClosure = ReactNativeList::Func_bool_NativeListItem_NativeListItem::fromUnsafe(swiftClosureWrapper);
+    return [swiftClosure = std::move(swiftClosure)](const NativeListItem& oldItem, const NativeListItem& newItem) mutable -> bool {
+      auto __result = swiftClosure.call(oldItem, newItem);
       return __result;
     };
   }

@@ -29,23 +29,34 @@ abstract class HybridUiListViewSpec: HybridView() {
   
 
   // Methods
-  abstract fun setMakeNativeViewCallback(uiListModule: HybridUiListModuleSpec, callback: () -> Double): Unit
+  abstract fun setListCallbacks(uiListModule: HybridUiListModuleSpec, createView: (type: String) -> Double, updateView: (reactTag: Double, item: NativeListItem, index: Double) -> Boolean, isContentEqual: (oldItem: NativeListItem, newItem: NativeListItem) -> Boolean): Unit
   
   @DoNotStrip
   @Keep
-  private fun setMakeNativeViewCallback_cxx(uiListModule: HybridUiListModuleSpec, callback: Func_double): Unit {
-    val __result = setMakeNativeViewCallback(uiListModule, callback)
+  private fun setListCallbacks_cxx(uiListModule: HybridUiListModuleSpec, createView: Func_double_std__string, updateView: Func_bool_double_NativeListItem_double, isContentEqual: Func_bool_NativeListItem_NativeListItem): Unit {
+    val __result = setListCallbacks(uiListModule, createView, updateView, isContentEqual)
     return __result
   }
-  
-  abstract fun setUpdateViewCallback(uiListModule: HybridUiListModuleSpec, callback: (reactTag: Double, index: Double) -> Boolean): Unit
   
   @DoNotStrip
   @Keep
-  private fun setUpdateViewCallback_cxx(uiListModule: HybridUiListModuleSpec, callback: Func_bool_double_double): Unit {
-    val __result = setUpdateViewCallback(uiListModule, callback)
-    return __result
-  }
+  abstract fun setData(items: Array<NativeListItem>, animated: Boolean): Unit
+  
+  @DoNotStrip
+  @Keep
+  abstract fun insertItem(index: Double, item: NativeListItem): Unit
+  
+  @DoNotStrip
+  @Keep
+  abstract fun updateItem(index: Double, item: NativeListItem): Unit
+  
+  @DoNotStrip
+  @Keep
+  abstract fun removeItem(index: Double): Unit
+  
+  @DoNotStrip
+  @Keep
+  abstract fun moveItem(fromIndex: Double, toIndex: Double): Unit
 
   // Default implementation of `HybridObject.toString()`
   override fun toString(): String {

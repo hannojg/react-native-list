@@ -21,9 +21,6 @@
       "kotlin": "HybridUiListView",
       "swift": "HybridUiListView"
     },
-    "AdapterFactory": {
-      "kotlin": "HybridAdapterFactory"
-    },
     "UiListModule": {
       "kotlin": "HybridUiListModule",
       "swift": "HybridUiListModule"

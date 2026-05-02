@@ -5,89 +5,89 @@
 //  Created by Hanno Gödecke on 14.02.26.
 //
 
+import DifferenceKit
 import Foundation
-import UIKit
 import NitroModules
+import UIKit
 
-// MARK: - Item Protocol
-
-protocol CollectionItem {
-    /// A reuse identifier derived from the concrete type
-    var reuseIdentifier: String { get }
-
-    /// Create a fresh UIView for this kind of item
-    func makeView() -> UIView
-
-    /// Bind data into an already-created view
-    func bind(view: UIView)
-}
-
-extension CollectionItem {
-    var reuseIdentifier: String { String(describing: type(of: self)) }
-}
-
-struct AnyCollectionItem: Hashable {
-    let item: any CollectionItem
-    private let id: String
-    private let typeId: String
-
-    init(_ item: any CollectionItem & Hashable) {
-        self.item = item
-        // Use the underlying Hashable conformance for identity
-        self.typeId = item.reuseIdentifier
-        // We need a stable id — use the hash
-        var hasher = Hasher()
-        item.hash(into: &hasher)
-        self.id = "\(self.typeId)-\(hasher.finalize())"
-    }
-
-    static func == (lhs: AnyCollectionItem, rhs: AnyCollectionItem) -> Bool {
-        lhs.id == rhs.id && lhs.typeId == rhs.typeId
-    }
-
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-        hasher.combine(typeId)
-    }
-}
-
-/// A cell that hosts an arbitrary UIView produced by a CollectionItem.
-/// The hosted view is pinned horizontally and top-aligned; explicit height
-/// from React bounds drives sizing to avoid expensive Auto Layout solving.
 final class HostCell: UICollectionViewCell {
 
     static let verticalInset: CGFloat = 8
     static let horizontalInset: CGFloat = 16
 
     private var hostedView: UIView?
-    
-    var reactTag: Int?
+    private var widthConstraint: NSLayoutConstraint?
+    private var heightConstraint: NSLayoutConstraint?
 
-    /// Install a view created by `item.makeView()`.
-    func install(view: UIView, contentHeight: CGFloat) {
+    var reactTag: Int?
+    var hasHostedView: Bool {
+        return hostedView != nil
+    }
+
+    func install(view: UIView, contentSize: CGSize) {
         hostedView?.removeFromSuperview()
         hostedView = view
 
         view.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(view)
 
+        let widthConstraint = view.widthAnchor.constraint(equalToConstant: contentSize.width)
+        let heightConstraint = view.heightAnchor.constraint(equalToConstant: contentSize.height)
+        self.widthConstraint = widthConstraint
+        self.heightConstraint = heightConstraint
+
         NSLayoutConstraint.activate([
             view.topAnchor.constraint(equalTo: contentView.topAnchor, constant: Self.verticalInset),
             view.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Self.horizontalInset),
-            view.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Self.horizontalInset),
-            view.heightAnchor.constraint(equalToConstant: contentHeight),
+            widthConstraint,
+            heightConstraint,
         ])
+    }
+
+    func updateContentSize(_ contentSize: CGSize) {
+        widthConstraint?.constant = contentSize.width
+        heightConstraint?.constant = contentSize.height
     }
 
     override func prepareForReuse() {
         super.prepareForReuse()
-        // We keep the hosted view — it will be re-bound.
-        // If reuse identifiers match, the view hierarchy is compatible.
+        if let hostedView {
+            contentView.bringSubviewToFront(hostedView)
+        }
     }
-
 }
 
-// MARK: - List
+final class DiffableListItem: Differentiable {
+    typealias DifferenceIdentifier = String
+
+    let nativeItem: NativeListItem
+    private let contentEqual: (NativeListItem, NativeListItem) -> Bool
+
+    init(
+        nativeItem: NativeListItem,
+        contentEqual: @escaping (NativeListItem, NativeListItem) -> Bool
+    ) {
+        self.nativeItem = nativeItem
+        self.contentEqual = contentEqual
+    }
+
+    var differenceIdentifier: String {
+        return nativeItem.type + ":" + nativeItem.key
+    }
+
+    func isContentEqual(to source: DiffableListItem) -> Bool {
+        if nativeItem.type != source.nativeItem.type {
+            return false
+        }
+        if nativeItem.width != source.nativeItem.width {
+            return false
+        }
+        if nativeItem.height != source.nativeItem.height {
+            return false
+        }
+        return contentEqual(source.nativeItem, nativeItem)
+    }
+}
 
 final class CollectionViewDataSourceProxy: NSObject, UICollectionViewDataSource {
     weak var owner: HybridUiListView?
@@ -101,11 +101,17 @@ final class CollectionViewDataSourceProxy: NSObject, UICollectionViewDataSource 
         return owner?.numberOfSections(in: collectionView) ?? 0
     }
 
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+    func collectionView(
+        _ collectionView: UICollectionView,
+        numberOfItemsInSection section: Int
+    ) -> Int {
         return owner?.collectionView(collectionView, numberOfItemsInSection: section) ?? 0
     }
 
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+    func collectionView(
+        _ collectionView: UICollectionView,
+        cellForItemAt indexPath: IndexPath
+    ) -> UICollectionViewCell {
         guard let owner else {
             return UICollectionViewCell()
         }
@@ -113,117 +119,138 @@ final class CollectionViewDataSourceProxy: NSObject, UICollectionViewDataSource 
     }
 }
 
+final class CollectionViewDelegateProxy: NSObject, UICollectionViewDelegateFlowLayout {
+    weak var owner: HybridUiListView?
+
+    init(owner: HybridUiListView) {
+        self.owner = owner
+        super.init()
+    }
+
+    func collectionView(
+        _ collectionView: UICollectionView,
+        layout collectionViewLayout: UICollectionViewLayout,
+        sizeForItemAt indexPath: IndexPath
+    ) -> CGSize {
+        return owner?.collectionView(collectionView, sizeForItemAt: indexPath) ?? .zero
+    }
+}
+
 class HybridUiListView : HybridUiListViewSpec {
     let view: UIView
+
     private var collectionView: UICollectionView?
-    private let reuseId = "main"
-    private var mainItems: [Int] = []
     private var collectionDataSourceProxy: CollectionViewDataSourceProxy?
-    private var measuredContentSizeByReuseIdentifier: [String: CGSize] = [:]
-    private var premeasuredViewByReuseIdentifier: [String: (view: UIView, tag: ReactTag)] = [:]
-    
+    private var collectionDelegateProxy: CollectionViewDelegateProxy?
+    private var registeredReuseIdentifiers = Set<String>()
+    private var items: [DiffableListItem] = []
+
+    private var createViewCallback: ((_ type: String) -> Double)?
+    private var updateViewCallback: ((_ reactTag: Double, _ item: NativeListItem, _ index: Double) -> Bool)?
+    private var isContentEqualCallback: ((_ oldItem: NativeListItem, _ newItem: NativeListItem) -> Bool)?
+
     override init() {
         view = UIView(frame: .zero)
         super.init()
     }
-    
-    var makeViewCallback: (() -> Double)?
-    func setMakeNativeViewCallback(uiListModule: any HybridUiListModuleSpec, callback: @escaping () -> Double) throws {
-        makeViewCallback = callback
-    }
-    
-    var updateViewCallback: ((_ reactTag: Double, _ index: Double) -> Bool)?
-    func setUpdateViewCallback(uiListModule: any HybridUiListModuleSpec, callback: @escaping (Double, Double) -> Bool) throws {
-        updateViewCallback = callback;
 
-        premeasureItemTypeIfNeeded(reuseIdentifier: reuseId)
-        guard let contentSize = measuredContentSizeByReuseIdentifier[reuseId] else {
-            fatalError("Developer error: Missing measured content size for reuseIdentifier '\(reuseId)'.")
-        }
-        
-        collectionView = UICollectionView(frame: .zero, collectionViewLayout: createLayout(contentSize: contentSize))
-
-        configureRootView()
-        configureCollectionView(collectionView: collectionView!)
-        configureDataSource(collectionView: collectionView!)
-        applySnapshot()
-    }
-    
-    func makeView() throws -> (UIView, ReactTag, CGSize?) {
-        guard let safeMakeViewCallback = makeViewCallback else {
-            throw RuntimeError.error(withMessage: "Can only call makeView when setMakeNativeViewCallback called prior")
-        }
-
-        let viewTag = ReactTag(safeMakeViewCallback())
-        let resolvedView = try SurfaceHelper.getViewByTag(viewTag)
-        let measuredWidth = [resolvedView.bounds.width, resolvedView.frame.width]
-            .filter { $0.isFinite && $0 > 0 }
-            .max()
-        let measuredHeight = [resolvedView.bounds.height, resolvedView.frame.height]
-            .filter { $0.isFinite && $0 > 0 }
-            .max()
-        resolvedView.removeFromSuperview()
-        if let measuredWidth, let measuredHeight {
-            return (resolvedView, viewTag, CGSize(width: measuredWidth, height: measuredHeight))
-        } else {
-            return (resolvedView, viewTag, nil)
-        }
-    }
-    
-    // MARK: - Collection View
-    private func createLayout(contentSize: CGSize) -> UICollectionViewCompositionalLayout {
-        let containerWidth = ceil(contentSize.width + HostCell.horizontalInset * 2)
-        let containerHeight = ceil(contentSize.height + HostCell.verticalInset * 2)
-        return UICollectionViewCompositionalLayout { _, _ in
-            // Fixed-size list rows (per type) to avoid self-sizing solver churn while scrolling.
-            let itemSize = NSCollectionLayoutSize(
-                widthDimension: .absolute(containerWidth),
-                heightDimension: .absolute(containerHeight)
-            )
-            let item = NSCollectionLayoutItem(layoutSize: itemSize)
-
-            let groupSize = NSCollectionLayoutSize(
-                widthDimension: .absolute(containerWidth),
-                heightDimension: .absolute(containerHeight)
-            )
-            let group = NSCollectionLayoutGroup.vertical(
-                layoutSize: groupSize, subitems: [item]
-            )
-
-            let section = NSCollectionLayoutSection(group: group)
-            section.interGroupSpacing = 12
-            section.contentInsets = NSDirectionalEdgeInsets(
-                top: 16, leading: 0, bottom: 16, trailing: 0
-            )
-            return section
+    func setListCallbacks(
+        uiListModule: any HybridUiListModuleSpec,
+        createView: @escaping (String) -> Double,
+        updateView: @escaping (Double, NativeListItem, Double) -> Bool,
+        isContentEqual: @escaping (NativeListItem, NativeListItem) -> Bool
+    ) throws {
+        createViewCallback = createView
+        updateViewCallback = updateView
+        isContentEqualCallback = isContentEqual
+        runOnMain { [weak self] in
+            self?.configureCollectionViewIfNeeded()
         }
     }
 
-    private func premeasureItemTypeIfNeeded(reuseIdentifier: String) {
-        guard measuredContentSizeByReuseIdentifier[reuseIdentifier] == nil else { return }
-
-        do {
-            let (view, tag, measuredSize) = try makeView()
-            guard let measuredSize else {
-                fatalError(
-                    "Developer error: Failed to measure item size for reuseIdentifier '\(reuseIdentifier)'. " +
-                    "makeView() returned a view without finite non-zero bounds/frame size."
-                )
-            }
-            measuredContentSizeByReuseIdentifier[reuseIdentifier] = measuredSize
-            premeasuredViewByReuseIdentifier[reuseIdentifier] = (view: view, tag: tag)
-        } catch {
-            fatalError(
-                "Developer error: Failed to pre-measure item type '\(reuseIdentifier)': \(error)"
-            )
+    func setData(items newItems: [NativeListItem], animated: Bool) throws {
+        runOnMain { [weak self] in
+            self?.setDataOnMain(items: newItems, animated: animated)
         }
     }
-    
 
-    func configureCollectionView(collectionView: UICollectionView) {
+    func insertItem(index: Double, item: NativeListItem) throws {
+        runOnMain { [weak self] in
+            guard let self else { return }
+            let itemIndex = self.validInsertionIndex(index)
+            let wrappedItem = self.wrap(item)
+            self.items.insert(wrappedItem, at: itemIndex)
+            self.ensureReuseRegistered(for: item.type)
+            self.collectionView?.insertItems(at: [IndexPath(item: itemIndex, section: 0)])
+        }
+    }
+
+    func updateItem(index: Double, item: NativeListItem) throws {
+        runOnMain { [weak self] in
+            guard let self else { return }
+            let itemIndex = self.validExistingIndex(index)
+            self.items[itemIndex] = self.wrap(item)
+            self.ensureReuseRegistered(for: item.type)
+            self.collectionView?.reloadItems(at: [IndexPath(item: itemIndex, section: 0)])
+        }
+    }
+
+    func removeItem(index: Double) throws {
+        runOnMain { [weak self] in
+            guard let self else { return }
+            let itemIndex = self.validExistingIndex(index)
+            self.items.remove(at: itemIndex)
+            self.collectionView?.deleteItems(at: [IndexPath(item: itemIndex, section: 0)])
+        }
+    }
+
+    func moveItem(fromIndex: Double, toIndex: Double) throws {
+        runOnMain { [weak self] in
+            guard let self else { return }
+            let sourceIndex = self.validExistingIndex(fromIndex)
+            let targetIndex = self.validExistingIndex(toIndex)
+            let item = self.items.remove(at: sourceIndex)
+            self.items.insert(item, at: targetIndex)
+            let sourceIndexPath = IndexPath(item: sourceIndex, section: 0)
+            let targetIndexPath = IndexPath(item: targetIndex, section: 0)
+            self.collectionView?.moveItem(at: sourceIndexPath, to: targetIndexPath)
+        }
+    }
+
+    private func setDataOnMain(items newItems: [NativeListItem], animated: Bool) {
+        configureCollectionViewIfNeeded()
+
+        let targetItems = newItems.map { item in
+            wrap(item)
+        }
+        for item in newItems {
+            ensureReuseRegistered(for: item.type)
+        }
+
+        guard animated, let collectionView else {
+            items = targetItems
+            collectionView?.reloadData()
+            return
+        }
+
+        let changeset = StagedChangeset(source: items, target: targetItems)
+        collectionView.reload(using: changeset) { nextItems in
+            self.items = nextItems
+        }
+    }
+
+    private func configureCollectionViewIfNeeded() {
+        guard collectionView == nil else { return }
+
+        let layout = UICollectionViewFlowLayout()
+        layout.minimumLineSpacing = 12
+        layout.sectionInset = UIEdgeInsets(top: 16, left: 0, bottom: 16, right: 0)
+
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         collectionView.backgroundColor = .systemBackground
         collectionView.translatesAutoresizingMaskIntoConstraints = false
 
+        view.backgroundColor = .clear
         view.addSubview(collectionView)
         NSLayoutConstraint.activate([
             collectionView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -231,78 +258,109 @@ class HybridUiListView : HybridUiListViewSpec {
             collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
+
+        let dataSourceProxy = CollectionViewDataSourceProxy(owner: self)
+        let delegateProxy = CollectionViewDelegateProxy(owner: self)
+        collectionDataSourceProxy = dataSourceProxy
+        collectionDelegateProxy = delegateProxy
+        collectionView.dataSource = dataSourceProxy
+        collectionView.delegate = delegateProxy
+        self.collectionView = collectionView
     }
 
-    func configureRootView() {
-        view.backgroundColor = .clear
-    }
-
-    // MARK: - Data Source
-
-    func configureDataSource(collectionView: UICollectionView) {
-        collectionView.register(HostCell.self, forCellWithReuseIdentifier: reuseId)
-        let proxy = CollectionViewDataSourceProxy(owner: self)
-        collectionDataSourceProxy = proxy
-        collectionView.dataSource = proxy
-    }
-
-    // MARK: - Snapshot
-
-    func applySnapshot(animating: Bool = true) {
-        var items: [Int] = []
-        for i in 0..<10000 {
-            items.append(i)
+    private func makeView(type: String) throws -> (UIView, ReactTag) {
+        guard let createViewCallback else {
+            throw RuntimeError.error(withMessage: "Can only call makeView after setListCallbacks.")
         }
-        mainItems = items
 
-        let reload: () -> Void = { [weak self] in
-            guard let self else { return }
-            self.collectionView?.reloadData()
-        }
+        let viewTag = ReactTag(createViewCallback(type))
+        let resolvedView = try SurfaceHelper.getViewByTag(viewTag)
+        resolvedView.removeFromSuperview()
+        return (resolvedView, viewTag)
+    }
+
+    private func wrap(_ item: NativeListItem) -> DiffableListItem {
+        let contentEqual = isContentEqualCallback ?? { _, _ in false }
+        return DiffableListItem(nativeItem: item, contentEqual: contentEqual)
+    }
+
+    private func ensureReuseRegistered(for type: String) {
+        guard !registeredReuseIdentifiers.contains(type) else { return }
+
+        collectionView?.register(HostCell.self, forCellWithReuseIdentifier: type)
+        registeredReuseIdentifiers.insert(type)
+    }
+
+    private func validExistingIndex(_ value: Double) -> Int {
+        let index = Int(value)
+        precondition(index >= 0 && index < items.count, "List index \(index) is out of bounds.")
+        return index
+    }
+
+    private func validInsertionIndex(_ value: Double) -> Int {
+        let index = Int(value)
+        precondition(index >= 0 && index <= items.count, "List index \(index) is out of bounds.")
+        return index
+    }
+
+    private func runOnMain(_ block: @escaping () -> Void) {
         if Thread.isMainThread {
-            reload()
+            block()
         } else {
-            DispatchQueue.main.async(execute: reload)
+            DispatchQueue.main.async(execute: block)
         }
     }
-
-    // MARK: - UICollectionViewDataSource
 
     func numberOfSections(in collectionView: UICollectionView) -> Int {
         return 1
     }
 
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return mainItems.count
+    func collectionView(
+        _ collectionView: UICollectionView,
+        numberOfItemsInSection section: Int
+    ) -> Int {
+        return items.count
     }
 
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+    func collectionView(
+        _ collectionView: UICollectionView,
+        sizeForItemAt indexPath: IndexPath
+    ) -> CGSize {
+        let item = items[indexPath.item].nativeItem
+        //let width = CGFloat(item.width) + HostCell.horizontalInset * 2
+        let width = collectionView.bounds.width
+        let height = CGFloat(item.height) + HostCell.verticalInset * 2
+        return CGSize(width: width, height: height)
+    }
+
+    func collectionView(
+        _ collectionView: UICollectionView,
+        cellForItemAt indexPath: IndexPath
+    ) -> UICollectionViewCell {
+        let item = items[indexPath.item].nativeItem
+        ensureReuseRegistered(for: item.type)
+
         let cell = collectionView.dequeueReusableCell(
-            withReuseIdentifier: reuseId,
+            withReuseIdentifier: item.type,
             for: indexPath
         ) as! HostCell
 
-        guard let contentSize = measuredContentSizeByReuseIdentifier[reuseId] else {
-            fatalError("Developer error: Missing measured content size for reuseIdentifier '\(reuseId)'.")
-        }
-        if cell.contentView.subviews.isEmpty {
-            if let premeasured = premeasuredViewByReuseIdentifier.removeValue(forKey: reuseId) {
-                cell.install(view: premeasured.view, contentHeight: contentSize.height)
-                cell.reactTag = premeasured.tag
-            } else {
-                do {
-                    let res = try makeView()
-                    cell.install(view: res.0, contentHeight: contentSize.height)
-                    cell.reactTag = res.1
-                } catch {
-                    print("❌ Failed to create view: \(error)")
-                }
+        let contentSize = CGSize(width: item.width, height: item.height)
+
+        if !cell.hasHostedView {
+            do {
+                let result = try makeView(type: item.type)
+                cell.install(view: result.0, contentSize: contentSize)
+                cell.reactTag = result.1
+            } catch {
+                print("Failed to create list item view: \(error)")
             }
+        } else {
+            cell.updateContentSize(contentSize)
         }
 
         if let reactTag = cell.reactTag {
-            let index = mainItems[indexPath.item]
-            _ = updateViewCallback?(Double(reactTag), Double(index))
+            _ = updateViewCallback?(Double(reactTag), item, Double(indexPath.item))
         }
 
         return cell

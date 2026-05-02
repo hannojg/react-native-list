@@ -16,6 +16,8 @@ namespace margelo::nitro::reactnativelist { class HybridUiListModuleSpec; }
 namespace margelo::nitro::reactnativelist { class HybridUiListViewSpec; }
 // Forward declaration of `HybridViewHolderSpec` to properly resolve imports.
 namespace margelo::nitro::reactnativelist { class HybridViewHolderSpec; }
+// Forward declaration of `NativeListItem` to properly resolve imports.
+namespace margelo::nitro::reactnativelist { struct NativeListItem; }
 
 // Forward declarations of Swift defined types
 // Forward declaration of `HybridIOSWorkletsModuleProxyHolderSpec_cxx` to properly resolve imports.
@@ -32,13 +34,17 @@ namespace ReactNativeList { class HybridViewHolderSpec_cxx; }
 #include "HybridUiListModuleSpec.hpp"
 #include "HybridUiListViewSpec.hpp"
 #include "HybridViewHolderSpec.hpp"
+#include "NativeListItem.hpp"
+#include <NitroModules/AnyMap.hpp>
 #include <NitroModules/Null.hpp>
 #include <NitroModules/Result.hpp>
 #include <exception>
 #include <functional>
 #include <memory>
 #include <optional>
+#include <string>
 #include <variant>
+#include <vector>
 
 /**
  * Contains specialized versions of C++ templated types so they can be accessed from Swift,
@@ -132,50 +138,84 @@ namespace margelo::nitro::reactnativelist::bridge::swift {
     return Result<void>::withError(error);
   }
   
-  // pragma MARK: std::function<double()>
+  // pragma MARK: std::function<double(const std::string& /* type */)>
   /**
-   * Specialized version of `std::function<double()>`.
+   * Specialized version of `std::function<double(const std::string&)>`.
    */
-  using Func_double = std::function<double()>;
+  using Func_double_std__string = std::function<double(const std::string& /* type */)>;
   /**
-   * Wrapper class for a `std::function<double()>`, this can be used from Swift.
+   * Wrapper class for a `std::function<double(const std::string& / * type * /)>`, this can be used from Swift.
    */
-  class Func_double_Wrapper final {
+  class Func_double_std__string_Wrapper final {
   public:
-    explicit Func_double_Wrapper(std::function<double()>&& func): _function(std::make_unique<std::function<double()>>(std::move(func))) {}
-    inline double call() const noexcept {
-      auto __result = _function->operator()();
+    explicit Func_double_std__string_Wrapper(std::function<double(const std::string& /* type */)>&& func): _function(std::make_unique<std::function<double(const std::string& /* type */)>>(std::move(func))) {}
+    inline double call(std::string type) const noexcept {
+      auto __result = _function->operator()(type);
       return __result;
     }
   private:
-    std::unique_ptr<std::function<double()>> _function;
+    std::unique_ptr<std::function<double(const std::string& /* type */)>> _function;
   } SWIFT_NONCOPYABLE;
-  Func_double create_Func_double(void* NON_NULL swiftClosureWrapper) noexcept;
-  inline Func_double_Wrapper wrap_Func_double(Func_double value) noexcept {
-    return Func_double_Wrapper(std::move(value));
+  Func_double_std__string create_Func_double_std__string(void* NON_NULL swiftClosureWrapper) noexcept;
+  inline Func_double_std__string_Wrapper wrap_Func_double_std__string(Func_double_std__string value) noexcept {
+    return Func_double_std__string_Wrapper(std::move(value));
   }
   
-  // pragma MARK: std::function<bool(double /* reactTag */, double /* index */)>
+  // pragma MARK: std::function<bool(double /* reactTag */, const NativeListItem& /* item */, double /* index */)>
   /**
-   * Specialized version of `std::function<bool(double, double)>`.
+   * Specialized version of `std::function<bool(double, const NativeListItem&, double)>`.
    */
-  using Func_bool_double_double = std::function<bool(double /* reactTag */, double /* index */)>;
+  using Func_bool_double_NativeListItem_double = std::function<bool(double /* reactTag */, const NativeListItem& /* item */, double /* index */)>;
   /**
-   * Wrapper class for a `std::function<bool(double / * reactTag * /, double / * index * /)>`, this can be used from Swift.
+   * Wrapper class for a `std::function<bool(double / * reactTag * /, const NativeListItem& / * item * /, double / * index * /)>`, this can be used from Swift.
    */
-  class Func_bool_double_double_Wrapper final {
+  class Func_bool_double_NativeListItem_double_Wrapper final {
   public:
-    explicit Func_bool_double_double_Wrapper(std::function<bool(double /* reactTag */, double /* index */)>&& func): _function(std::make_unique<std::function<bool(double /* reactTag */, double /* index */)>>(std::move(func))) {}
-    inline bool call(double reactTag, double index) const noexcept {
-      auto __result = _function->operator()(reactTag, index);
+    explicit Func_bool_double_NativeListItem_double_Wrapper(std::function<bool(double /* reactTag */, const NativeListItem& /* item */, double /* index */)>&& func): _function(std::make_unique<std::function<bool(double /* reactTag */, const NativeListItem& /* item */, double /* index */)>>(std::move(func))) {}
+    inline bool call(double reactTag, NativeListItem item, double index) const noexcept {
+      auto __result = _function->operator()(reactTag, item, index);
       return __result;
     }
   private:
-    std::unique_ptr<std::function<bool(double /* reactTag */, double /* index */)>> _function;
+    std::unique_ptr<std::function<bool(double /* reactTag */, const NativeListItem& /* item */, double /* index */)>> _function;
   } SWIFT_NONCOPYABLE;
-  Func_bool_double_double create_Func_bool_double_double(void* NON_NULL swiftClosureWrapper) noexcept;
-  inline Func_bool_double_double_Wrapper wrap_Func_bool_double_double(Func_bool_double_double value) noexcept {
-    return Func_bool_double_double_Wrapper(std::move(value));
+  Func_bool_double_NativeListItem_double create_Func_bool_double_NativeListItem_double(void* NON_NULL swiftClosureWrapper) noexcept;
+  inline Func_bool_double_NativeListItem_double_Wrapper wrap_Func_bool_double_NativeListItem_double(Func_bool_double_NativeListItem_double value) noexcept {
+    return Func_bool_double_NativeListItem_double_Wrapper(std::move(value));
+  }
+  
+  // pragma MARK: std::function<bool(const NativeListItem& /* oldItem */, const NativeListItem& /* newItem */)>
+  /**
+   * Specialized version of `std::function<bool(const NativeListItem&, const NativeListItem&)>`.
+   */
+  using Func_bool_NativeListItem_NativeListItem = std::function<bool(const NativeListItem& /* oldItem */, const NativeListItem& /* newItem */)>;
+  /**
+   * Wrapper class for a `std::function<bool(const NativeListItem& / * oldItem * /, const NativeListItem& / * newItem * /)>`, this can be used from Swift.
+   */
+  class Func_bool_NativeListItem_NativeListItem_Wrapper final {
+  public:
+    explicit Func_bool_NativeListItem_NativeListItem_Wrapper(std::function<bool(const NativeListItem& /* oldItem */, const NativeListItem& /* newItem */)>&& func): _function(std::make_unique<std::function<bool(const NativeListItem& /* oldItem */, const NativeListItem& /* newItem */)>>(std::move(func))) {}
+    inline bool call(NativeListItem oldItem, NativeListItem newItem) const noexcept {
+      auto __result = _function->operator()(oldItem, newItem);
+      return __result;
+    }
+  private:
+    std::unique_ptr<std::function<bool(const NativeListItem& /* oldItem */, const NativeListItem& /* newItem */)>> _function;
+  } SWIFT_NONCOPYABLE;
+  Func_bool_NativeListItem_NativeListItem create_Func_bool_NativeListItem_NativeListItem(void* NON_NULL swiftClosureWrapper) noexcept;
+  inline Func_bool_NativeListItem_NativeListItem_Wrapper wrap_Func_bool_NativeListItem_NativeListItem(Func_bool_NativeListItem_NativeListItem value) noexcept {
+    return Func_bool_NativeListItem_NativeListItem_Wrapper(std::move(value));
+  }
+  
+  // pragma MARK: std::vector<NativeListItem>
+  /**
+   * Specialized version of `std::vector<NativeListItem>`.
+   */
+  using std__vector_NativeListItem_ = std::vector<NativeListItem>;
+  inline std::vector<NativeListItem> create_std__vector_NativeListItem_(size_t size) noexcept {
+    std::vector<NativeListItem> vector;
+    vector.reserve(size);
+    return vector;
   }
   
   // pragma MARK: std::shared_ptr<HybridUiListViewSpec>

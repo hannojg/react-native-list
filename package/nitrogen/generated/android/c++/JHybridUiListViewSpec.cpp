@@ -9,14 +9,23 @@
 
 // Forward declaration of `HybridUiListModuleSpec` to properly resolve imports.
 namespace margelo::nitro::reactnativelist { class HybridUiListModuleSpec; }
+// Forward declaration of `NativeListItem` to properly resolve imports.
+namespace margelo::nitro::reactnativelist { struct NativeListItem; }
 
 #include <memory>
 #include "HybridUiListModuleSpec.hpp"
 #include "JHybridUiListModuleSpec.hpp"
+#include <string>
 #include <functional>
-#include "JFunc_double.hpp"
+#include "JFunc_double_std__string.hpp"
 #include <NitroModules/JNICallable.hpp>
-#include "JFunc_bool_double_double.hpp"
+#include "NativeListItem.hpp"
+#include "JFunc_bool_double_NativeListItem_double.hpp"
+#include "JNativeListItem.hpp"
+#include <NitroModules/AnyMap.hpp>
+#include <NitroModules/JAnyMap.hpp>
+#include "JFunc_bool_NativeListItem_NativeListItem.hpp"
+#include <vector>
 
 namespace margelo::nitro::reactnativelist {
 
@@ -51,13 +60,38 @@ namespace margelo::nitro::reactnativelist {
   
 
   // Methods
-  void JHybridUiListViewSpec::setMakeNativeViewCallback(const std::shared_ptr<HybridUiListModuleSpec>& uiListModule, const std::function<double()>& callback) {
-    static const auto method = _javaPart->javaClassStatic()->getMethod<void(jni::alias_ref<JHybridUiListModuleSpec::JavaPart> /* uiListModule */, jni::alias_ref<JFunc_double::javaobject> /* callback */)>("setMakeNativeViewCallback_cxx");
-    method(_javaPart, std::dynamic_pointer_cast<JHybridUiListModuleSpec>(uiListModule)->getJavaPart(), JFunc_double_cxx::fromCpp(callback));
+  void JHybridUiListViewSpec::setListCallbacks(const std::shared_ptr<HybridUiListModuleSpec>& uiListModule, const std::function<double(const std::string& /* type */)>& createView, const std::function<bool(double /* reactTag */, const NativeListItem& /* item */, double /* index */)>& updateView, const std::function<bool(const NativeListItem& /* oldItem */, const NativeListItem& /* newItem */)>& isContentEqual) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<void(jni::alias_ref<JHybridUiListModuleSpec::JavaPart> /* uiListModule */, jni::alias_ref<JFunc_double_std__string::javaobject> /* createView */, jni::alias_ref<JFunc_bool_double_NativeListItem_double::javaobject> /* updateView */, jni::alias_ref<JFunc_bool_NativeListItem_NativeListItem::javaobject> /* isContentEqual */)>("setListCallbacks_cxx");
+    method(_javaPart, std::dynamic_pointer_cast<JHybridUiListModuleSpec>(uiListModule)->getJavaPart(), JFunc_double_std__string_cxx::fromCpp(createView), JFunc_bool_double_NativeListItem_double_cxx::fromCpp(updateView), JFunc_bool_NativeListItem_NativeListItem_cxx::fromCpp(isContentEqual));
   }
-  void JHybridUiListViewSpec::setUpdateViewCallback(const std::shared_ptr<HybridUiListModuleSpec>& uiListModule, const std::function<bool(double /* reactTag */, double /* index */)>& callback) {
-    static const auto method = _javaPart->javaClassStatic()->getMethod<void(jni::alias_ref<JHybridUiListModuleSpec::JavaPart> /* uiListModule */, jni::alias_ref<JFunc_bool_double_double::javaobject> /* callback */)>("setUpdateViewCallback_cxx");
-    method(_javaPart, std::dynamic_pointer_cast<JHybridUiListModuleSpec>(uiListModule)->getJavaPart(), JFunc_bool_double_double_cxx::fromCpp(callback));
+  void JHybridUiListViewSpec::setData(const std::vector<NativeListItem>& items, bool animated) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<void(jni::alias_ref<jni::JArrayClass<JNativeListItem>> /* items */, jboolean /* animated */)>("setData");
+    method(_javaPart, [&](auto&& __input) {
+      size_t __size = __input.size();
+      jni::local_ref<jni::JArrayClass<JNativeListItem>> __array = jni::JArrayClass<JNativeListItem>::newArray(__size);
+      for (size_t __i = 0; __i < __size; __i++) {
+        const auto& __element = __input[__i];
+        auto __elementJni = JNativeListItem::fromCpp(__element);
+        __array->setElement(__i, *__elementJni);
+      }
+      return __array;
+    }(items), animated);
+  }
+  void JHybridUiListViewSpec::insertItem(double index, const NativeListItem& item) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<void(double /* index */, jni::alias_ref<JNativeListItem> /* item */)>("insertItem");
+    method(_javaPart, index, JNativeListItem::fromCpp(item));
+  }
+  void JHybridUiListViewSpec::updateItem(double index, const NativeListItem& item) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<void(double /* index */, jni::alias_ref<JNativeListItem> /* item */)>("updateItem");
+    method(_javaPart, index, JNativeListItem::fromCpp(item));
+  }
+  void JHybridUiListViewSpec::removeItem(double index) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<void(double /* index */)>("removeItem");
+    method(_javaPart, index);
+  }
+  void JHybridUiListViewSpec::moveItem(double fromIndex, double toIndex) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<void(double /* fromIndex */, double /* toIndex */)>("moveItem");
+    method(_javaPart, fromIndex, toIndex);
   }
 
 } // namespace margelo::nitro::reactnativelist

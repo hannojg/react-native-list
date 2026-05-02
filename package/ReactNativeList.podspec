@@ -33,6 +33,7 @@ Pod::Spec.new do |s|
 
   s.dependency 'React-jsi'
   s.dependency 'React-callinvoker'
+  s.dependency 'DifferenceKit', '~> 1.3'
   s.dependency "RNWorklets"
   install_modules_dependencies(s)
 end

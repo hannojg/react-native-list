@@ -54,8 +54,12 @@ namespace margelo::nitro::reactnativelist {
 
   public:
     // Methods
-    void setMakeNativeViewCallback(const std::shared_ptr<HybridUiListModuleSpec>& uiListModule, const std::function<double()>& callback) override;
-    void setUpdateViewCallback(const std::shared_ptr<HybridUiListModuleSpec>& uiListModule, const std::function<bool(double /* reactTag */, double /* index */)>& callback) override;
+    void setListCallbacks(const std::shared_ptr<HybridUiListModuleSpec>& uiListModule, const std::function<double(const std::string& /* type */)>& createView, const std::function<bool(double /* reactTag */, const NativeListItem& /* item */, double /* index */)>& updateView, const std::function<bool(const NativeListItem& /* oldItem */, const NativeListItem& /* newItem */)>& isContentEqual) override;
+    void setData(const std::vector<NativeListItem>& items, bool animated) override;
+    void insertItem(double index, const NativeListItem& item) override;
+    void updateItem(double index, const NativeListItem& item) override;
+    void removeItem(double index) override;
+    void moveItem(double fromIndex, double toIndex) override;
 
   private:
     jni::global_ref<JHybridUiListViewSpec::JavaPart> _javaPart;

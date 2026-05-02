@@ -13,8 +13,12 @@ public protocol HybridUiListViewSpec_protocol: HybridObject, HybridView {
   
 
   // Methods
-  func setMakeNativeViewCallback(uiListModule: (any HybridUiListModuleSpec), callback: @escaping () -> Double) throws -> Void
-  func setUpdateViewCallback(uiListModule: (any HybridUiListModuleSpec), callback: @escaping (_ reactTag: Double, _ index: Double) -> Bool) throws -> Void
+  func setListCallbacks(uiListModule: (any HybridUiListModuleSpec), createView: @escaping (_ type: String) -> Double, updateView: @escaping (_ reactTag: Double, _ item: NativeListItem, _ index: Double) -> Bool, isContentEqual: @escaping (_ oldItem: NativeListItem, _ newItem: NativeListItem) -> Bool) throws -> Void
+  func setData(items: [NativeListItem], animated: Bool) throws -> Void
+  func insertItem(index: Double, item: NativeListItem) throws -> Void
+  func updateItem(index: Double, item: NativeListItem) throws -> Void
+  func removeItem(index: Double) throws -> Void
+  func moveItem(fromIndex: Double, toIndex: Double) throws -> Void
 }
 
 public extension HybridUiListViewSpec_protocol {

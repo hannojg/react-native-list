@@ -14,10 +14,16 @@ namespace ReactNativeList { class HybridUiListViewSpec_cxx; }
 
 // Forward declaration of `HybridUiListModuleSpec` to properly resolve imports.
 namespace margelo::nitro::reactnativelist { class HybridUiListModuleSpec; }
+// Forward declaration of `NativeListItem` to properly resolve imports.
+namespace margelo::nitro::reactnativelist { struct NativeListItem; }
 
 #include <memory>
 #include "HybridUiListModuleSpec.hpp"
+#include <string>
 #include <functional>
+#include "NativeListItem.hpp"
+#include <NitroModules/AnyMap.hpp>
+#include <vector>
 
 #include "ReactNativeList-Swift-Cxx-Umbrella.hpp"
 
@@ -69,14 +75,38 @@ namespace margelo::nitro::reactnativelist {
 
   public:
     // Methods
-    inline void setMakeNativeViewCallback(const std::shared_ptr<HybridUiListModuleSpec>& uiListModule, const std::function<double()>& callback) override {
-      auto __result = _swiftPart.setMakeNativeViewCallback(uiListModule, callback);
+    inline void setListCallbacks(const std::shared_ptr<HybridUiListModuleSpec>& uiListModule, const std::function<double(const std::string& /* type */)>& createView, const std::function<bool(double /* reactTag */, const NativeListItem& /* item */, double /* index */)>& updateView, const std::function<bool(const NativeListItem& /* oldItem */, const NativeListItem& /* newItem */)>& isContentEqual) override {
+      auto __result = _swiftPart.setListCallbacks(uiListModule, createView, updateView, isContentEqual);
       if (__result.hasError()) [[unlikely]] {
         std::rethrow_exception(__result.error());
       }
     }
-    inline void setUpdateViewCallback(const std::shared_ptr<HybridUiListModuleSpec>& uiListModule, const std::function<bool(double /* reactTag */, double /* index */)>& callback) override {
-      auto __result = _swiftPart.setUpdateViewCallback(uiListModule, callback);
+    inline void setData(const std::vector<NativeListItem>& items, bool animated) override {
+      auto __result = _swiftPart.setData(items, std::forward<decltype(animated)>(animated));
+      if (__result.hasError()) [[unlikely]] {
+        std::rethrow_exception(__result.error());
+      }
+    }
+    inline void insertItem(double index, const NativeListItem& item) override {
+      auto __result = _swiftPart.insertItem(std::forward<decltype(index)>(index), std::forward<decltype(item)>(item));
+      if (__result.hasError()) [[unlikely]] {
+        std::rethrow_exception(__result.error());
+      }
+    }
+    inline void updateItem(double index, const NativeListItem& item) override {
+      auto __result = _swiftPart.updateItem(std::forward<decltype(index)>(index), std::forward<decltype(item)>(item));
+      if (__result.hasError()) [[unlikely]] {
+        std::rethrow_exception(__result.error());
+      }
+    }
+    inline void removeItem(double index) override {
+      auto __result = _swiftPart.removeItem(std::forward<decltype(index)>(index));
+      if (__result.hasError()) [[unlikely]] {
+        std::rethrow_exception(__result.error());
+      }
+    }
+    inline void moveItem(double fromIndex, double toIndex) override {
+      auto __result = _swiftPart.moveItem(std::forward<decltype(fromIndex)>(fromIndex), std::forward<decltype(toIndex)>(toIndex));
       if (__result.hasError()) [[unlikely]] {
         std::rethrow_exception(__result.error());
       }

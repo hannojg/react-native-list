@@ -16,19 +16,25 @@ namespace margelo::nitro::reactnativelist { class HybridUiListModuleSpec; }
 namespace margelo::nitro::reactnativelist { class HybridUiListViewSpec; }
 // Forward declaration of `HybridViewHolderSpec` to properly resolve imports.
 namespace margelo::nitro::reactnativelist { class HybridViewHolderSpec; }
+// Forward declaration of `NativeListItem` to properly resolve imports.
+namespace margelo::nitro::reactnativelist { struct NativeListItem; }
 
 // Include C++ defined types
 #include "HybridIOSWorkletsModuleProxyHolderSpec.hpp"
 #include "HybridUiListModuleSpec.hpp"
 #include "HybridUiListViewSpec.hpp"
 #include "HybridViewHolderSpec.hpp"
+#include "NativeListItem.hpp"
+#include <NitroModules/AnyMap.hpp>
 #include <NitroModules/Null.hpp>
 #include <NitroModules/Result.hpp>
 #include <exception>
 #include <functional>
 #include <memory>
 #include <optional>
+#include <string>
 #include <variant>
+#include <vector>
 
 // C++ helpers for Swift
 #include "ReactNativeList-Swift-Cxx-Bridge.hpp"

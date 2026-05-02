@@ -119,20 +119,77 @@ final class CollectionViewDataSourceProxy: NSObject, UICollectionViewDataSource 
     }
 }
 
-final class CollectionViewDelegateProxy: NSObject, UICollectionViewDelegateFlowLayout {
+final class ListCollectionViewLayout: UICollectionViewLayout {
     weak var owner: HybridUiListView?
+    private var itemAttributes: [UICollectionViewLayoutAttributes] = []
+    private var contentSize = CGSize.zero
 
     init(owner: HybridUiListView) {
         self.owner = owner
         super.init()
     }
 
-    func collectionView(
-        _ collectionView: UICollectionView,
-        layout collectionViewLayout: UICollectionViewLayout,
-        sizeForItemAt indexPath: IndexPath
-    ) -> CGSize {
-        return owner?.collectionView(collectionView, sizeForItemAt: indexPath) ?? .zero
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func prepare() {
+        guard let collectionView, let owner else {
+            itemAttributes = []
+            contentSize = .zero
+            return
+        }
+
+        var attributes: [UICollectionViewLayoutAttributes] = []
+        var yOffset = owner.listTopInset
+        let itemCount = owner.collectionView(collectionView, numberOfItemsInSection: 0)
+
+        for itemIndex in 0..<itemCount {
+            let indexPath = IndexPath(item: itemIndex, section: 0)
+            let itemSize = owner.layoutSizeForItem(at: itemIndex, in: collectionView)
+            let frame = CGRect(
+                x: 0,
+                y: yOffset,
+                width: itemSize.width,
+                height: itemSize.height
+            )
+            let itemAttributes = UICollectionViewLayoutAttributes(forCellWith: indexPath)
+            itemAttributes.frame = frame
+            attributes.append(itemAttributes)
+            yOffset += itemSize.height + owner.listInterItemSpacing
+        }
+
+        if itemCount > 0 {
+            yOffset -= owner.listInterItemSpacing
+        }
+        yOffset += owner.listBottomInset
+
+        itemAttributes = attributes
+        contentSize = CGSize(width: collectionView.bounds.width, height: max(yOffset, 0))
+    }
+
+    override var collectionViewContentSize: CGSize {
+        return contentSize
+    }
+
+    override func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
+        return itemAttributes.filter { attributes in
+            attributes.frame.intersects(rect)
+        }
+    }
+
+    override func layoutAttributesForItem(at indexPath: IndexPath) -> UICollectionViewLayoutAttributes? {
+        guard indexPath.item >= 0 && indexPath.item < itemAttributes.count else {
+            return nil
+        }
+        return itemAttributes[indexPath.item]
+    }
+
+    override func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {
+        guard let collectionView else {
+            return false
+        }
+        return collectionView.bounds.width != newBounds.width
     }
 }
 
@@ -141,9 +198,12 @@ class HybridUiListView : HybridUiListViewSpec {
 
     private var collectionView: UICollectionView?
     private var collectionDataSourceProxy: CollectionViewDataSourceProxy?
-    private var collectionDelegateProxy: CollectionViewDelegateProxy?
     private var registeredReuseIdentifiers = Set<String>()
     private var items: [DiffableListItem] = []
+
+    let listTopInset: CGFloat = 16
+    let listBottomInset: CGFloat = 16
+    let listInterItemSpacing: CGFloat = 12
 
     private var createViewCallback: ((_ type: String) -> Double)?
     private var updateViewCallback: ((_ reactTag: Double, _ item: NativeListItem, _ index: Double) -> Bool)?
@@ -181,6 +241,7 @@ class HybridUiListView : HybridUiListViewSpec {
             let wrappedItem = self.wrap(item)
             self.items.insert(wrappedItem, at: itemIndex)
             self.ensureReuseRegistered(for: item.type)
+            self.collectionView?.collectionViewLayout.invalidateLayout()
             self.collectionView?.insertItems(at: [IndexPath(item: itemIndex, section: 0)])
         }
     }
@@ -191,6 +252,7 @@ class HybridUiListView : HybridUiListViewSpec {
             let itemIndex = self.validExistingIndex(index)
             self.items[itemIndex] = self.wrap(item)
             self.ensureReuseRegistered(for: item.type)
+            self.collectionView?.collectionViewLayout.invalidateLayout()
             self.collectionView?.reloadItems(at: [IndexPath(item: itemIndex, section: 0)])
         }
     }
@@ -200,6 +262,7 @@ class HybridUiListView : HybridUiListViewSpec {
             guard let self else { return }
             let itemIndex = self.validExistingIndex(index)
             self.items.remove(at: itemIndex)
+            self.collectionView?.collectionViewLayout.invalidateLayout()
             self.collectionView?.deleteItems(at: [IndexPath(item: itemIndex, section: 0)])
         }
     }
@@ -211,6 +274,7 @@ class HybridUiListView : HybridUiListViewSpec {
             let targetIndex = self.validExistingIndex(toIndex)
             let item = self.items.remove(at: sourceIndex)
             self.items.insert(item, at: targetIndex)
+            self.collectionView?.collectionViewLayout.invalidateLayout()
             let sourceIndexPath = IndexPath(item: sourceIndex, section: 0)
             let targetIndexPath = IndexPath(item: targetIndex, section: 0)
             self.collectionView?.moveItem(at: sourceIndexPath, to: targetIndexPath)
@@ -229,6 +293,7 @@ class HybridUiListView : HybridUiListViewSpec {
 
         guard animated, let collectionView else {
             items = targetItems
+            collectionView?.collectionViewLayout.invalidateLayout()
             collectionView?.reloadData()
             return
         }
@@ -236,15 +301,14 @@ class HybridUiListView : HybridUiListViewSpec {
         let changeset = StagedChangeset(source: items, target: targetItems)
         collectionView.reload(using: changeset) { nextItems in
             self.items = nextItems
+            collectionView.collectionViewLayout.invalidateLayout()
         }
     }
 
     private func configureCollectionViewIfNeeded() {
         guard collectionView == nil else { return }
 
-        let layout = UICollectionViewFlowLayout()
-        layout.minimumLineSpacing = 12
-        layout.sectionInset = UIEdgeInsets(top: 16, left: 0, bottom: 16, right: 0)
+        let layout = ListCollectionViewLayout(owner: self)
 
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         collectionView.backgroundColor = .systemBackground
@@ -260,11 +324,8 @@ class HybridUiListView : HybridUiListViewSpec {
         ])
 
         let dataSourceProxy = CollectionViewDataSourceProxy(owner: self)
-        let delegateProxy = CollectionViewDelegateProxy(owner: self)
         collectionDataSourceProxy = dataSourceProxy
-        collectionDelegateProxy = delegateProxy
         collectionView.dataSource = dataSourceProxy
-        collectionView.delegate = delegateProxy
         self.collectionView = collectionView
     }
 
@@ -322,12 +383,8 @@ class HybridUiListView : HybridUiListViewSpec {
         return items.count
     }
 
-    func collectionView(
-        _ collectionView: UICollectionView,
-        sizeForItemAt indexPath: IndexPath
-    ) -> CGSize {
-        let item = items[indexPath.item].nativeItem
-        //let width = CGFloat(item.width) + HostCell.horizontalInset * 2
+    func layoutSizeForItem(at index: Int, in collectionView: UICollectionView) -> CGSize {
+        let item = items[index].nativeItem
         let width = collectionView.bounds.width
         let height = CGFloat(item.height) + HostCell.verticalInset * 2
         return CGSize(width: width, height: height)

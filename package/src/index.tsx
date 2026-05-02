@@ -36,21 +36,21 @@ export { Adapter, AdapterFactory } from './specs/Adapter.nitro'
 export { ViewHolder } from './specs/ViewHolder.nitro'
 export { IOSWorkletsModuleProxyHolder } from './specs/IOSWorkletsModuleProxyHolder.nitro'
 
-// @ts-expect-error shrug
-import { setupWorklet } from './ReactFabricMirror.bundle'
-
 const boxed = uiListModule
+const nativeFabricUIManager = global.nativeFabricUIManager
+
 function setup() {
   // TODO: ask SWM if they can remove their JS thread checks, then we could just access this from the UI thread.
   const iosWorkletsModuleHolder =
     Platform.OS === 'ios' ? uiListModule.iosGetWorkletsModule() : null
   scheduleOnUI(() => {
     'worklet'
+    global.nativeFabricUIManager = nativeFabricUIManager
     boxed.setupExternalSurface(iosWorkletsModuleHolder)
-  })
 
-  scheduleOnUI(setupWorklet)
+    require('react-native-list/src/ReactFabricMirror.bundle')
+  })
 }
-setup();
+setup()
 
 export { List, uiListModule, uiManagerHelper }

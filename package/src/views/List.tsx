@@ -31,7 +31,9 @@ export function List({ renderItemWorklet, style }: ListProps) {
         scheduleOnUI(() => {
           'worklet'
 
-          globalThis.log(
+          const {nativeLog, reactRender}: typeof import('../ReactFabricMirror.bundle') = require('react-native-list/src/ReactFabricMirror.bundle')
+
+          nativeLog(
             'Setting makeNativeViewCallback on UiListView on',
             typeof ref.setMakeNativeViewCallback
           )
@@ -45,19 +47,20 @@ export function List({ renderItemWorklet, style }: ListProps) {
 
           // TODO: can we enable this somehow as a prop?
           ref.setMakeNativeViewCallback(uiListModuleUnboxed, () => {
-            const ref = globalThis.React.createRef<NativeTaggedRef>()
+            const nativeRef = globalThis.React.createRef<NativeTaggedRef>()
             const itemId = nextItemId++
             const newElement = renderItemWorklet(undefined)
+            const newProps = {
+              // by creating the views with a key, we can later just update this view specifically
+              key: 'itemid-' + itemId,
+              // ref needed to get native react tag after rendering later
+              ref: nativeRef,
+              // important so the native layer can find this view
+              collapsable: false,
+            }
             const newElementWithKey = globalThis.React.cloneElement(
               newElement,
-              {
-                // by creating the views with a key, we can later just update this view specifically
-                key: 'itemid-' + itemId,
-                // ref needed to get native react tag after rendering later
-                ref,
-                // important so the native layer can find this view
-                collapsable: false,
-              }
+              newProps
             )
 
             const newLength = elementsRendered.push(newElementWithKey)
@@ -69,29 +72,27 @@ export function List({ renderItemWorklet, style }: ListProps) {
             // global.log("Render result:");
             // global.log(ParentContainer.props.children);
 
-            globalThis.Render(ParentContainer, () => {
-              globalThis.log('Render complete')
+            reactRender(ParentContainer, () => {
+              nativeLog('Render complete')
             })
 
-            if (ref.current == null) {
+            if (nativeRef.current == null) {
               throw new Error('Ref is null after render')
             }
 
             // const shadowNode = ref.current.node; // jsi::Object NativeState ShadowNodeWrapper
-            globalThis.log('Ref current:', Object.keys(ref.current))
-            const tag = ref.current.__nativeTag
-            globalThis.log('Ref current nativeTag: ', tag)
+            const currentKeys = Object.keys(nativeRef.current)
+            nativeLog('Ref current:', currentKeys)
+            const tag = nativeRef.current.__nativeTag
+            nativeLog('Ref current nativeTag: ', tag)
             tagToArrayPosition[tag] = currentIndex
             tagToItemId[tag] = itemId
 
             // cause a sync render to create the actual native view
             const start = globalThis.performance.now()
             renderSyncWorklet()
-            globalThis.log(
-              'renderSync took ',
-              globalThis.performance.now() - start,
-              'ms'
-            )
+            const end = globalThis.performance.now()
+            nativeLog('renderSync took ', end - start, 'ms')
 
             return tag
           })
@@ -99,7 +100,7 @@ export function List({ renderItemWorklet, style }: ListProps) {
           ref.setUpdateViewCallback(
             uiListModuleUnboxed,
             (reactTag: number, index: number) => {
-              globalThis.log(
+              nativeLog(
                 `[JS] Update view callback called for tag ${reactTag} at index ${index}`,
                 tagToArrayPosition
               )
@@ -114,12 +115,13 @@ export function List({ renderItemWorklet, style }: ListProps) {
                 index,
                 data: null, // TODO
               })
+              const newProps = {
+                key: 'itemid-' + itemId,
+                collapsable: false, // important so the native layer can find this view
+              }
               const newElementWithKey = globalThis.React.cloneElement(
                 newElement,
-                {
-                  key: 'itemid-' + itemId,
-                  collapsable: false, // important so the native layer can find this view
-                }
+                newProps
               )
 
               // Update the new element in the global array
@@ -134,18 +136,15 @@ export function List({ renderItemWorklet, style }: ListProps) {
               // Update the parent container
               const ParentContainer = <View>{elementsRendered}</View>
 
-              globalThis.Render(ParentContainer, () => {
-                globalThis.log('Update Render complete')
+              reactRender(ParentContainer, () => {
+                nativeLog('Update Render complete')
               })
 
               // Cause a sync render to update the actual native view
               const start = globalThis.performance.now()
               renderSyncWorklet()
-              globalThis.log(
-                'Update renderSync took ',
-                globalThis.performance.now() - start,
-                'ms'
-              )
+              const end = globalThis.performance.now()
+              nativeLog('Update renderSync took ', end - start, 'ms')
 
               return true
             }

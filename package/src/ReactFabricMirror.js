@@ -1,5 +1,4 @@
-function log(...args) {
-  // log('[ReactFabricMirror]', ...args)
+function nativeLog(...args) {
   global._log?.(
     '[ReactFabricMirror] ' +
       args
@@ -13,7 +12,7 @@ function log(...args) {
         .join(' ')
   )
 }
-global.log = log
+global.log = nativeLog
 
 const Reconciler = require('react-reconciler')
 
@@ -23,7 +22,6 @@ const {
   getFabricUIManager,
 } = require('react-native/Libraries/ReactNative/FabricUIManager')
 const uiManager = getFabricUIManager()
-// console.log('[ReactFabricMirror] got FabricUIManager:', uiManager)
 
 const {
   create: createAttributePayload,
@@ -398,8 +396,13 @@ const HostConfig = {
 
     let node
     try {
-      log('[createInstance] calling createNode with type=', type, 'tag=', tag)
-      log('[createInstance] props=', updatePayload)
+      nativeLog(
+        '[createInstance] calling createNode with type=',
+        type,
+        'tag=',
+        tag
+      )
+      nativeLog('[createInstance] props=', updatePayload)
       node = uiManager.createNode(
         tag, // reactTag
         viewConfig.uiViewClassName, // viewName
@@ -408,8 +411,11 @@ const HostConfig = {
         workInProgress // internalInstanceHandle
       )
     } catch (e) {
-      log('[createInstance] ERROR in createNode:', e.message || String(e))
-      log('Stack:', new Error().stack)
+      nativeLog(
+        '[createInstance] ERROR in createNode:',
+        e.message || String(e)
+      )
+      nativeLog('Stack:', new Error().stack)
       throw e
     }
 
@@ -427,12 +433,12 @@ const HostConfig = {
   },
 
   finalizeInitialChildren(parentInstance, type, props, hostContext) {
-    log('[finalizeInitialChildren]')
+    nativeLog('[finalizeInitialChildren]')
     return false
   },
 
   cloneInstance(instance, type, oldProps, newProps, keepChildren, newChildSet) {
-    log('[cloneInstance] tag=', instance.canonical.nativeTag)
+    nativeLog('[cloneInstance] tag=', instance.canonical.nativeTag)
 
     const viewConfig = instance.canonical.viewConfig
     const updatePayload = diffAttributePayloads(
@@ -440,7 +446,7 @@ const HostConfig = {
       newProps,
       viewConfig.validAttributes
     )
-    log('[cloneInstance] updatePayload=', updatePayload)
+    nativeLog('[cloneInstance] updatePayload=', updatePayload)
     // TODO: If the event handlers have changed, we need to update the current props
     // in the commit phase but there is no host config hook to do it yet.
     // So instead we hack it by updating it in the render phase.
@@ -506,23 +512,23 @@ const HostConfig = {
     }
   },
   createContainerChildSet() {
-    log('[createContainerChildSet]')
+    nativeLog('[createContainerChildSet]')
     return uiManager.createChildSet()
   },
   appendChildToContainerChildSet(childSet, child) {
-    log('[appendChildToContainerChildSet]')
+    nativeLog('[appendChildToContainerChildSet]')
     uiManager.appendChildToSet(childSet, child.node)
   },
   finalizeContainerChildren(container, newChildren) {
     // Noop - children will be replaced in replaceContainerChildren
-    log('[finalizeContainerChildren]')
+    nativeLog('[finalizeContainerChildren]')
   },
   appendInitialChild(parentInstance, child) {
-    log('[appendInitialChild]')
+    nativeLog('[appendInitialChild]')
     uiManager.appendChild(parentInstance.node, child.node)
   },
   replaceContainerChildren(container, newChildren) {
-    log('[replaceContainerChildren]')
+    nativeLog('[replaceContainerChildren]')
     uiManager.completeRoot(container.containerTag, newChildren)
   },
 
@@ -670,7 +676,7 @@ const HostConfig = {
 const Renderer = Reconciler(HostConfig)
 global.React = require('react')
 
-global.Render = function (element, callback) {
+function reactRender(element, callback) {
   if (!global.rootContainer) {
     global.rootContainer = Renderer.createContainer(
       global.rootInstance,
@@ -680,21 +686,21 @@ global.Render = function (element, callback) {
       null,
       'ui-renderer',
       function onUncaughtError(error, info) {
-        global.log(
+        nativeLog(
           '[Error][ReactFabricMirror] Uncaught error in React renderer: ',
           error,
           info
         )
       },
       function onCaughtError(error, info) {
-        global.log(
+        nativeLog(
           '[Error][ReactFabricMirror] Caught error in React renderer: ',
           error,
           info
         )
       },
       function onRecoverableError(error, info) {
-        global.log(
+        nativeLog(
           '[Error][ReactFabricMirror] Recoverable error in React renderer: ',
           error,
           info
@@ -710,6 +716,8 @@ global.Render = function (element, callback) {
   Renderer.updateContainerSync(element, global.rootContainer, null, callback)
   // Renderer.flushPassiveEffects();
   Renderer.flushSyncWork()
-  global.log('[ReactFabricMirror] updateContainer finished')
+  nativeLog('[ReactFabricMirror] updateContainer finished')
 }
-global.log('[ReactFabricMirror] ReactFabricMirror initialized')
+nativeLog('[ReactFabricMirror] ReactFabricMirror initialized')
+
+export { nativeLog, reactRender }

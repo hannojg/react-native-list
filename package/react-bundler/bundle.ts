@@ -18,11 +18,6 @@ const res = await Bun.build({
     'react-native/src/private/webapis/dom/nodes/ReactNativeElement',
   ],
   banner: `
-  const capturedManager = nativeFabricUIManager;
-  
-  export function setupWorklet() {
-    "worklet";
-  global.nativeFabricUIManager = capturedManager;
   var IS_REACT_ACT_ENVIRONMENT = false;
   var reportError = console.error;
   var MessageChannel = undefined;
@@ -30,6 +25,5 @@ const res = await Bun.build({
   var AbortController = undefined;
 
     `,
-  footer: `}`,
 })
 console.log('ReactFabricMirror worklet built.', res)

@@ -1,9 +1,4 @@
 
-  const capturedManager = nativeFabricUIManager;
-  
-  export function setupWorklet() {
-    "worklet";
-  global.nativeFabricUIManager = capturedManager;
   var IS_REACT_ACT_ENVIRONMENT = false;
   var reportError = console.error;
   var MessageChannel = undefined;
@@ -11,7 +6,44 @@
   var AbortController = undefined;
 
     
+var __defProp = Object.defineProperty;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+function __accessProp(key) {
+  return this[key];
+}
+var __toCommonJS = (from) => {
+  var entry = (__moduleCache ??= new WeakMap).get(from), desc;
+  if (entry)
+    return entry;
+  entry = __defProp({}, "__esModule", { value: true });
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (var key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(entry, key))
+        __defProp(entry, key, {
+          get: __accessProp.bind(from, key),
+          enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable
+        });
+  }
+  __moduleCache.set(from, entry);
+  return entry;
+};
+var __moduleCache;
 var __commonJS = (cb, mod) => () => (mod || cb((mod = { exports: {} }).exports, mod), mod.exports);
+var __returnValue = (v) => v;
+function __exportSetter(name, newValue) {
+  this[name] = __returnValue.bind(null, newValue);
+}
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, {
+      get: all[name],
+      enumerable: true,
+      configurable: true,
+      set: __exportSetter.bind(all, name)
+    });
+};
 
 // ../node_modules/@babel/runtime/helpers/interopRequireDefault.js
 var require_interopRequireDefault = __commonJS((exports2, module2) => {
@@ -1506,7 +1538,13 @@ var require_EventBatching = __commonJS((exports2) => {
 });
 
 // src/ReactFabricMirror.js
-function log(...args) {
+var exports_ReactFabricMirror = {};
+__export(exports_ReactFabricMirror, {
+  reactRender: () => reactRender,
+  nativeLog: () => nativeLog
+});
+module.exports = __toCommonJS(exports_ReactFabricMirror);
+function nativeLog(...args) {
   global._log?.("[ReactFabricMirror] " + args.map((a) => {
     try {
       return JSON.stringify(a);
@@ -1515,7 +1553,7 @@ function log(...args) {
     }
   }).join(" "));
 }
-global.log = log;
+global.log = nativeLog;
 var Reconciler = require("react-reconciler");
 var {
   getFabricUIManager
@@ -1750,12 +1788,12 @@ var HostConfig = {
     const updatePayload = createAttributePayload(props, viewConfig.validAttributes);
     let node;
     try {
-      log("[createInstance] calling createNode with type=", type, "tag=", tag);
-      log("[createInstance] props=", updatePayload);
+      nativeLog("[createInstance] calling createNode with type=", type, "tag=", tag);
+      nativeLog("[createInstance] props=", updatePayload);
       node = uiManager.createNode(tag, viewConfig.uiViewClassName, rootContainerInstance.containerTag, updatePayload, workInProgress);
     } catch (e) {
-      log("[createInstance] ERROR in createNode:", e.message || String(e));
-      log("Stack:", new Error().stack);
+      nativeLog("[createInstance] ERROR in createNode:", e.message || String(e));
+      nativeLog("Stack:", new Error().stack);
       throw e;
     }
     return {
@@ -1771,14 +1809,14 @@ var HostConfig = {
     };
   },
   finalizeInitialChildren(parentInstance, type, props, hostContext) {
-    log("[finalizeInitialChildren]");
+    nativeLog("[finalizeInitialChildren]");
     return false;
   },
   cloneInstance(instance, type, oldProps, newProps, keepChildren, newChildSet) {
-    log("[cloneInstance] tag=", instance.canonical.nativeTag);
+    nativeLog("[cloneInstance] tag=", instance.canonical.nativeTag);
     const viewConfig = instance.canonical.viewConfig;
     const updatePayload = diffAttributePayloads(oldProps, newProps, viewConfig.validAttributes);
-    log("[cloneInstance] updatePayload=", updatePayload);
+    nativeLog("[cloneInstance] updatePayload=", updatePayload);
     instance.canonical.currentProps = newProps;
     const node = instance.node;
     let clone;
@@ -1817,22 +1855,22 @@ var HostConfig = {
     };
   },
   createContainerChildSet() {
-    log("[createContainerChildSet]");
+    nativeLog("[createContainerChildSet]");
     return uiManager.createChildSet();
   },
   appendChildToContainerChildSet(childSet, child) {
-    log("[appendChildToContainerChildSet]");
+    nativeLog("[appendChildToContainerChildSet]");
     uiManager.appendChildToSet(childSet, child.node);
   },
   finalizeContainerChildren(container, newChildren) {
-    log("[finalizeContainerChildren]");
+    nativeLog("[finalizeContainerChildren]");
   },
   appendInitialChild(parentInstance, child) {
-    log("[appendInitialChild]");
+    nativeLog("[appendInitialChild]");
     uiManager.appendChild(parentInstance.node, child.node);
   },
   replaceContainerChildren(container, newChildren) {
-    log("[replaceContainerChildren]");
+    nativeLog("[replaceContainerChildren]");
     uiManager.completeRoot(container.containerTag, newChildren);
   },
   setCurrentUpdatePriority(priority) {
@@ -1902,20 +1940,18 @@ var HostConfig = {
 };
 var Renderer = Reconciler(HostConfig);
 global.React = require("react");
-global.Render = function(element, callback) {
+function reactRender(element, callback) {
   if (!global.rootContainer) {
     global.rootContainer = Renderer.createContainer(global.rootInstance, 0, null, false, null, "ui-renderer", function onUncaughtError(error, info) {
-      global.log("[Error][ReactFabricMirror] Uncaught error in React renderer: ", error, info);
+      nativeLog("[Error][ReactFabricMirror] Uncaught error in React renderer: ", error, info);
     }, function onCaughtError(error, info) {
-      global.log("[Error][ReactFabricMirror] Caught error in React renderer: ", error, info);
+      nativeLog("[Error][ReactFabricMirror] Caught error in React renderer: ", error, info);
     }, function onRecoverableError(error, info) {
-      global.log("[Error][ReactFabricMirror] Recoverable error in React renderer: ", error, info);
+      nativeLog("[Error][ReactFabricMirror] Recoverable error in React renderer: ", error, info);
     }, function nativeOnDefaultTransitionIndicator() {});
   }
   Renderer.updateContainerSync(element, global.rootContainer, null, callback);
   Renderer.flushSyncWork();
-  global.log("[ReactFabricMirror] updateContainer finished");
-};
-global.log("[ReactFabricMirror] ReactFabricMirror initialized");
-
+  nativeLog("[ReactFabricMirror] updateContainer finished");
 }
+nativeLog("[ReactFabricMirror] ReactFabricMirror initialized");

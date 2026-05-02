@@ -38,11 +38,9 @@ export { IOSWorkletsModuleProxyHolder } from './specs/IOSWorkletsModuleProxyHold
 
 // @ts-expect-error shrug
 import { setupWorklet } from './ReactFabricMirror.bundle'
-import { BoxedHybridObject, NitroModules } from 'react-native-nitro-modules'
-import { UiManagerHelper } from './specs/UIManagerHelper.nitro'
 
 const boxed = uiListModule
-export function setup() {
+function setup() {
   // TODO: ask SWM if they can remove their JS thread checks, then we could just access this from the UI thread.
   const iosWorkletsModuleHolder =
     Platform.OS === 'ios' ? uiListModule.iosGetWorkletsModule() : null
@@ -53,20 +51,6 @@ export function setup() {
 
   scheduleOnUI(setupWorklet)
 }
-
-// TODO: this import doesn't work right now in bundle mode :/
-// @ts-expect-error
-const capturedOnJS = global.nativeFabricUIManager
-let uiManagerHelperBoxed: BoxedHybridObject<UiManagerHelper> =
-  NitroModules.box(uiManagerHelper)
-export function renderSync() {
-  // todo: we might have to pass uiManagerHelper here, or consume from global?
-  'worklet'
-
-  const uiManagerHelperUnboxed = uiManagerHelperBoxed.unbox()
-  uiManagerHelperUnboxed.renderSync(capturedOnJS)
-}
+setup();
 
 export { List, uiListModule, uiManagerHelper }
-
-// export { uiListModuleBoxed, renderSyncWorklet } from './renderer/RenderHelper'

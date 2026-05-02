@@ -4,7 +4,7 @@ type UiManagerBidningType = {
   _stubToMakeNitroHappy_doesNotExist_doNotUse: void
 }
 
-type UiManagerBinding = CustomType<
+export type UiManagerBinding = CustomType<
   UiManagerBidningType,
   'std::shared_ptr<facebook::react::UIManagerBinding>',
   { include: 'JSIConverter+UIManagerBinding.hpp' }

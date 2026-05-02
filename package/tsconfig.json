@@ -1,7 +1,5 @@
 {
-  "include": [
-    "src"
-  ],
+  "include": ["src"],
   "compilerOptions": {
     "composite": true,
     "outDir": "lib",
@@ -26,6 +24,7 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "esnext",
-    "verbatimModuleSyntax": false
+    "verbatimModuleSyntax": false,
+    "declaration": true
   }
 }

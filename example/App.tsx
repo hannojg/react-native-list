@@ -7,10 +7,7 @@ import {
   Pressable,
   StyleSheet,
 } from "react-native";
-import { setup, List } from "react-native-list";
-
-setup();
-
+import { List } from "react-native-list";
 
 export default function App() {
   const { height, width } = useWindowDimensions();
@@ -41,7 +38,7 @@ export default function App() {
                 collapsable={false}
                 onPressIn={() => {
                   "worklet";
-                  global.log("onPressIn item with id ", itemInfo?.index);
+                  globalThis.log("onPressIn item with id ", itemInfo?.index);
                 }}
                 onPress={() => {
                   "worklet";

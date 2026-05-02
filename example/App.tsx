@@ -2,9 +2,11 @@ import React from "react";
 import { View, Text, useWindowDimensions, Image, Pressable, StyleSheet } from "react-native";
 import { scheduleOnUI } from "react-native-worklets";
 import {
+  renderSyncWorklet,
   setup,
   UiList,
   uiListModule,
+  uiListModuleBoxed,
   uiManagerHelper,
 } from "react-native-list";
 import { callback, NitroModules } from "react-native-nitro-modules";
@@ -12,20 +14,6 @@ import { callback, NitroModules } from "react-native-nitro-modules";
 setup();
 
 let isSetup = false;
-
-// TODO: in bundle mode i can't move this to an import, as it would try
-// to import the whole file, which tries to use NitroModules., which will
-// crash as nitro modules can't init.
-// Either I have to fix this, _or_, actually create NitroModules on the UI runtime.
-const uiListModuleBoxed = NitroModules.box(uiListModule);
-const capturedOnJS = global.nativeFabricUIManager;
-const uiManagerHelperBoxed = NitroModules.box(uiManagerHelper);
-
-function renderSync() {
-  "worklet";
-  const uiManagerHelperUnboxed = uiManagerHelperBoxed.unbox();
-  uiManagerHelperUnboxed.renderSync(capturedOnJS);
-}
 
 export default function App() {
   const { height, width } = useWindowDimensions();
@@ -134,7 +122,7 @@ export default function App() {
 
               // cause a sync render to create the actual native view
               const start = performance.now();
-              renderSync();
+              renderSyncWorklet();
               global.log("renderSync took ", performance.now() - start, "ms");
 
               return tag;
@@ -204,7 +192,7 @@ export default function App() {
 
                 // Cause a sync render to update the actual native view
                 const start = performance.now();
-                renderSync();
+                renderSyncWorklet();
                 global.log(
                   "Update renderSync took ",
                   performance.now() - start,

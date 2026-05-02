@@ -3,7 +3,7 @@ import { reactSubmoduleResolvePlugin } from './react-submodule-resolve-plugin.ts
 
 console.log('Building ReactFabricMirror worklet...')
 const res = await Bun.build({
-  entrypoints: ['src/ReactFabricMirror.js'],
+  entrypoints: ['src/ReactFabricMirror.ts'],
   outdir: './src',
   naming: 'ReactFabricMirror.bundle.js',
   format: 'cjs',

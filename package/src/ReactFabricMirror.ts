@@ -1,4 +1,9 @@
-function nativeLog(...args) {
+/* eslint-disable @react-native/no-deep-imports, @typescript-eslint/no-unused-vars, no-dupe-keys, prettier/prettier */
+// @ts-nocheck
+
+import type * as ReactModule from 'react'
+
+function nativeLog(...args: unknown[]): void {
   global._log?.(
     '[ReactFabricMirror] ' +
       args
@@ -676,7 +681,10 @@ const HostConfig = {
 const Renderer = Reconciler(HostConfig)
 global.React = require('react')
 
-function reactRender(element, callback) {
+function reactRender(
+  element: ReactModule.ReactElement,
+  callback?: () => void
+): void {
   if (!global.rootContainer) {
     global.rootContainer = Renderer.createContainer(
       global.rootInstance,

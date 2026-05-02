@@ -1537,7 +1537,7 @@ var require_EventBatching = __commonJS((exports2) => {
   }
 });
 
-// src/ReactFabricMirror.js
+// src/ReactFabricMirror.ts
 var exports_ReactFabricMirror = {};
 __export(exports_ReactFabricMirror, {
   reactRender: () => reactRender,

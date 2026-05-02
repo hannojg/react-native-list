@@ -8,6 +8,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { List } from "react-native-list";
+// import "react-native-list/src/privateGlobals"
 
 export default function App() {
   const { height, width } = useWindowDimensions();
@@ -42,7 +43,7 @@ export default function App() {
                 }}
                 onPress={() => {
                   "worklet";
-                  global.log("onPress item with id ", itemInfo?.index);
+                  globalThis.log("onPress item with id ", itemInfo?.index);
                 }}
               >
                 <Text>{itemInfo?.index != null ? `Item #${itemInfo.index}` : ""}</Text>
@@ -52,7 +53,7 @@ export default function App() {
                   }}
                   onLoadEnd={() => {
                     "worklet";
-                    global.log(`Image loaded for item id ${itemInfo?.index}`);
+                    globalThis.log(`Image loaded for item id ${itemInfo?.index}`);
                   }}
                   style={{ width: 50, height: 50 }}
                 />

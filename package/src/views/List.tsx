@@ -31,7 +31,10 @@ export function List({ renderItemWorklet, style }: ListProps) {
         scheduleOnUI(() => {
           'worklet'
 
-          const {nativeLog, reactRender}: typeof import('../ReactFabricMirror.bundle') = require('react-native-list/src/ReactFabricMirror.bundle')
+          const {
+            nativeLog,
+            reactRender,
+          }: typeof import('../ReactFabricMirror') = require('react-native-list/src/ReactFabricMirror.bundle')
 
           nativeLog(
             'Setting makeNativeViewCallback on UiListView on',

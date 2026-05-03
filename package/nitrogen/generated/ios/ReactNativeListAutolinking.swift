@@ -36,6 +36,42 @@ public final class ReactNativeListAutolinking {
     return HybridUiListView.self is any RecyclableView.Type
   }
   
+  public static func createNativeListDataSource() -> bridge.std__shared_ptr_HybridNativeListDataSourceSpec_ {
+    let hybridObject = HybridNativeListDataSource()
+    return { () -> bridge.std__shared_ptr_HybridNativeListDataSourceSpec_ in
+      let __cxxWrapped = hybridObject.getCxxWrapper()
+      return __cxxWrapped.getCxxPart()
+    }()
+  }
+  
+  public static func isNativeListDataSourceRecyclable() -> Bool {
+    return HybridNativeListDataSource.self is any RecyclableView.Type
+  }
+  
+  public static func createNativeListLayout() -> bridge.std__shared_ptr_HybridNativeListLayoutSpec_ {
+    let hybridObject = HybridNativeListLayout()
+    return { () -> bridge.std__shared_ptr_HybridNativeListLayoutSpec_ in
+      let __cxxWrapped = hybridObject.getCxxWrapper()
+      return __cxxWrapped.getCxxPart()
+    }()
+  }
+  
+  public static func isNativeListLayoutRecyclable() -> Bool {
+    return HybridNativeListLayout.self is any RecyclableView.Type
+  }
+  
+  public static func createNativeLinearListLayout() -> bridge.std__shared_ptr_HybridNativeLinearListLayoutSpec_ {
+    let hybridObject = HybridNativeLinearListLayout()
+    return { () -> bridge.std__shared_ptr_HybridNativeLinearListLayoutSpec_ in
+      let __cxxWrapped = hybridObject.getCxxWrapper()
+      return __cxxWrapped.getCxxPart()
+    }()
+  }
+  
+  public static func isNativeLinearListLayoutRecyclable() -> Bool {
+    return HybridNativeLinearListLayout.self is any RecyclableView.Type
+  }
+  
   public static func createUiListModule() -> bridge.std__shared_ptr_HybridUiListModuleSpec_ {
     let hybridObject = HybridUiListModule()
     return { () -> bridge.std__shared_ptr_HybridUiListModuleSpec_ in

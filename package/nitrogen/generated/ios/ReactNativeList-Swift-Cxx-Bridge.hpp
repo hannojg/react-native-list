@@ -10,6 +10,12 @@
 // Forward declarations of C++ defined types
 // Forward declaration of `HybridIOSWorkletsModuleProxyHolderSpec` to properly resolve imports.
 namespace margelo::nitro::reactnativelist { class HybridIOSWorkletsModuleProxyHolderSpec; }
+// Forward declaration of `HybridNativeLinearListLayoutSpec` to properly resolve imports.
+namespace margelo::nitro::reactnativelist { class HybridNativeLinearListLayoutSpec; }
+// Forward declaration of `HybridNativeListDataSourceSpec` to properly resolve imports.
+namespace margelo::nitro::reactnativelist { class HybridNativeListDataSourceSpec; }
+// Forward declaration of `HybridNativeListLayoutSpec` to properly resolve imports.
+namespace margelo::nitro::reactnativelist { class HybridNativeListLayoutSpec; }
 // Forward declaration of `HybridUiListModuleSpec` to properly resolve imports.
 namespace margelo::nitro::reactnativelist { class HybridUiListModuleSpec; }
 // Forward declaration of `HybridUiListViewSpec` to properly resolve imports.
@@ -22,6 +28,12 @@ namespace margelo::nitro::reactnativelist { struct NativeListItem; }
 // Forward declarations of Swift defined types
 // Forward declaration of `HybridIOSWorkletsModuleProxyHolderSpec_cxx` to properly resolve imports.
 namespace ReactNativeList { class HybridIOSWorkletsModuleProxyHolderSpec_cxx; }
+// Forward declaration of `HybridNativeLinearListLayoutSpec_cxx` to properly resolve imports.
+namespace ReactNativeList { class HybridNativeLinearListLayoutSpec_cxx; }
+// Forward declaration of `HybridNativeListDataSourceSpec_cxx` to properly resolve imports.
+namespace ReactNativeList { class HybridNativeListDataSourceSpec_cxx; }
+// Forward declaration of `HybridNativeListLayoutSpec_cxx` to properly resolve imports.
+namespace ReactNativeList { class HybridNativeListLayoutSpec_cxx; }
 // Forward declaration of `HybridUiListModuleSpec_cxx` to properly resolve imports.
 namespace ReactNativeList { class HybridUiListModuleSpec_cxx; }
 // Forward declaration of `HybridUiListViewSpec_cxx` to properly resolve imports.
@@ -31,6 +43,9 @@ namespace ReactNativeList { class HybridViewHolderSpec_cxx; }
 
 // Include C++ defined types
 #include "HybridIOSWorkletsModuleProxyHolderSpec.hpp"
+#include "HybridNativeLinearListLayoutSpec.hpp"
+#include "HybridNativeListDataSourceSpec.hpp"
+#include "HybridNativeListLayoutSpec.hpp"
 #include "HybridUiListModuleSpec.hpp"
 #include "HybridUiListViewSpec.hpp"
 #include "HybridViewHolderSpec.hpp"
@@ -63,6 +78,121 @@ namespace margelo::nitro::reactnativelist::bridge::swift {
   // pragma MARK: std::weak_ptr<HybridIOSWorkletsModuleProxyHolderSpec>
   using std__weak_ptr_HybridIOSWorkletsModuleProxyHolderSpec_ = std::weak_ptr<HybridIOSWorkletsModuleProxyHolderSpec>;
   inline std__weak_ptr_HybridIOSWorkletsModuleProxyHolderSpec_ weakify_std__shared_ptr_HybridIOSWorkletsModuleProxyHolderSpec_(const std::shared_ptr<HybridIOSWorkletsModuleProxyHolderSpec>& strong) noexcept { return strong; }
+  
+  // pragma MARK: std::shared_ptr<HybridNativeListLayoutSpec>
+  /**
+   * Specialized version of `std::shared_ptr<HybridNativeListLayoutSpec>`.
+   */
+  using std__shared_ptr_HybridNativeListLayoutSpec_ = std::shared_ptr<HybridNativeListLayoutSpec>;
+  std::shared_ptr<HybridNativeListLayoutSpec> create_std__shared_ptr_HybridNativeListLayoutSpec_(void* NON_NULL swiftUnsafePointer) noexcept;
+  void* NON_NULL get_std__shared_ptr_HybridNativeListLayoutSpec_(std__shared_ptr_HybridNativeListLayoutSpec_ cppType);
+  
+  // pragma MARK: std::weak_ptr<HybridNativeListLayoutSpec>
+  using std__weak_ptr_HybridNativeListLayoutSpec_ = std::weak_ptr<HybridNativeListLayoutSpec>;
+  inline std__weak_ptr_HybridNativeListLayoutSpec_ weakify_std__shared_ptr_HybridNativeListLayoutSpec_(const std::shared_ptr<HybridNativeListLayoutSpec>& strong) noexcept { return strong; }
+  
+  // pragma MARK: std::shared_ptr<HybridNativeLinearListLayoutSpec>
+  /**
+   * Specialized version of `std::shared_ptr<HybridNativeLinearListLayoutSpec>`.
+   */
+  using std__shared_ptr_HybridNativeLinearListLayoutSpec_ = std::shared_ptr<HybridNativeLinearListLayoutSpec>;
+  std::shared_ptr<HybridNativeLinearListLayoutSpec> create_std__shared_ptr_HybridNativeLinearListLayoutSpec_(void* NON_NULL swiftUnsafePointer) noexcept;
+  void* NON_NULL get_std__shared_ptr_HybridNativeLinearListLayoutSpec_(std__shared_ptr_HybridNativeLinearListLayoutSpec_ cppType);
+  
+  // pragma MARK: std::shared_ptr<HybridNativeListLayoutSpec>
+  inline std::shared_ptr<HybridNativeListLayoutSpec> upcast_NativeLinearListLayout_to_NativeListLayout(std::shared_ptr<HybridNativeLinearListLayoutSpec> child) noexcept { return child; }
+  
+  // pragma MARK: std::weak_ptr<HybridNativeLinearListLayoutSpec>
+  using std__weak_ptr_HybridNativeLinearListLayoutSpec_ = std::weak_ptr<HybridNativeLinearListLayoutSpec>;
+  inline std__weak_ptr_HybridNativeLinearListLayoutSpec_ weakify_std__shared_ptr_HybridNativeLinearListLayoutSpec_(const std::shared_ptr<HybridNativeLinearListLayoutSpec>& strong) noexcept { return strong; }
+  
+  // pragma MARK: Result<void>
+  using Result_void_ = Result<void>;
+  inline Result_void_ create_Result_void_() noexcept {
+    return Result<void>::withValue();
+  }
+  inline Result_void_ create_Result_void_(const std::exception_ptr& error) noexcept {
+    return Result<void>::withError(error);
+  }
+  
+  // pragma MARK: std::optional<double>
+  /**
+   * Specialized version of `std::optional<double>`.
+   */
+  using std__optional_double_ = std::optional<double>;
+  inline std::optional<double> create_std__optional_double_(const double& value) noexcept {
+    return std::optional<double>(value);
+  }
+  inline bool has_value_std__optional_double_(const std::optional<double>& optional) noexcept {
+    return optional.has_value();
+  }
+  inline double get_std__optional_double_(const std::optional<double>& optional) noexcept {
+    return optional.value();
+  }
+  
+  // pragma MARK: std::function<bool(const NativeListItem& /* oldItem */, const NativeListItem& /* newItem */)>
+  /**
+   * Specialized version of `std::function<bool(const NativeListItem&, const NativeListItem&)>`.
+   */
+  using Func_bool_NativeListItem_NativeListItem = std::function<bool(const NativeListItem& /* oldItem */, const NativeListItem& /* newItem */)>;
+  /**
+   * Wrapper class for a `std::function<bool(const NativeListItem& / * oldItem * /, const NativeListItem& / * newItem * /)>`, this can be used from Swift.
+   */
+  class Func_bool_NativeListItem_NativeListItem_Wrapper final {
+  public:
+    explicit Func_bool_NativeListItem_NativeListItem_Wrapper(std::function<bool(const NativeListItem& /* oldItem */, const NativeListItem& /* newItem */)>&& func): _function(std::make_unique<std::function<bool(const NativeListItem& /* oldItem */, const NativeListItem& /* newItem */)>>(std::move(func))) {}
+    inline bool call(NativeListItem oldItem, NativeListItem newItem) const noexcept {
+      auto __result = _function->operator()(oldItem, newItem);
+      return __result;
+    }
+  private:
+    std::unique_ptr<std::function<bool(const NativeListItem& /* oldItem */, const NativeListItem& /* newItem */)>> _function;
+  } SWIFT_NONCOPYABLE;
+  Func_bool_NativeListItem_NativeListItem create_Func_bool_NativeListItem_NativeListItem(void* NON_NULL swiftClosureWrapper) noexcept;
+  inline Func_bool_NativeListItem_NativeListItem_Wrapper wrap_Func_bool_NativeListItem_NativeListItem(Func_bool_NativeListItem_NativeListItem value) noexcept {
+    return Func_bool_NativeListItem_NativeListItem_Wrapper(std::move(value));
+  }
+  
+  // pragma MARK: std::vector<NativeListItem>
+  /**
+   * Specialized version of `std::vector<NativeListItem>`.
+   */
+  using std__vector_NativeListItem_ = std::vector<NativeListItem>;
+  inline std::vector<NativeListItem> create_std__vector_NativeListItem_(size_t size) noexcept {
+    std::vector<NativeListItem> vector;
+    vector.reserve(size);
+    return vector;
+  }
+  
+  // pragma MARK: std::shared_ptr<HybridNativeListDataSourceSpec>
+  /**
+   * Specialized version of `std::shared_ptr<HybridNativeListDataSourceSpec>`.
+   */
+  using std__shared_ptr_HybridNativeListDataSourceSpec_ = std::shared_ptr<HybridNativeListDataSourceSpec>;
+  std::shared_ptr<HybridNativeListDataSourceSpec> create_std__shared_ptr_HybridNativeListDataSourceSpec_(void* NON_NULL swiftUnsafePointer) noexcept;
+  void* NON_NULL get_std__shared_ptr_HybridNativeListDataSourceSpec_(std__shared_ptr_HybridNativeListDataSourceSpec_ cppType);
+  
+  // pragma MARK: std::weak_ptr<HybridNativeListDataSourceSpec>
+  using std__weak_ptr_HybridNativeListDataSourceSpec_ = std::weak_ptr<HybridNativeListDataSourceSpec>;
+  inline std__weak_ptr_HybridNativeListDataSourceSpec_ weakify_std__shared_ptr_HybridNativeListDataSourceSpec_(const std::shared_ptr<HybridNativeListDataSourceSpec>& strong) noexcept { return strong; }
+  
+  // pragma MARK: Result<double>
+  using Result_double_ = Result<double>;
+  inline Result_double_ create_Result_double_(double value) noexcept {
+    return Result<double>::withValue(std::move(value));
+  }
+  inline Result_double_ create_Result_double_(const std::exception_ptr& error) noexcept {
+    return Result<double>::withError(error);
+  }
+  
+  // pragma MARK: Result<NativeListItem>
+  using Result_NativeListItem_ = Result<NativeListItem>;
+  inline Result_NativeListItem_ create_Result_NativeListItem_(const NativeListItem& value) noexcept {
+    return Result<NativeListItem>::withValue(value);
+  }
+  inline Result_NativeListItem_ create_Result_NativeListItem_(const std::exception_ptr& error) noexcept {
+    return Result<NativeListItem>::withError(error);
+  }
   
   // pragma MARK: std::variant<nitro::NullType, std::shared_ptr<HybridIOSWorkletsModuleProxyHolderSpec>>
   /**
@@ -129,15 +259,6 @@ namespace margelo::nitro::reactnativelist::bridge::swift {
     return Result<std::shared_ptr<HybridIOSWorkletsModuleProxyHolderSpec>>::withError(error);
   }
   
-  // pragma MARK: Result<void>
-  using Result_void_ = Result<void>;
-  inline Result_void_ create_Result_void_() noexcept {
-    return Result<void>::withValue();
-  }
-  inline Result_void_ create_Result_void_(const std::exception_ptr& error) noexcept {
-    return Result<void>::withError(error);
-  }
-  
   // pragma MARK: std::function<double(const std::string& /* type */)>
   /**
    * Specialized version of `std::function<double(const std::string&)>`.
@@ -161,21 +282,6 @@ namespace margelo::nitro::reactnativelist::bridge::swift {
     return Func_double_std__string_Wrapper(std::move(value));
   }
   
-  // pragma MARK: std::optional<double>
-  /**
-   * Specialized version of `std::optional<double>`.
-   */
-  using std__optional_double_ = std::optional<double>;
-  inline std::optional<double> create_std__optional_double_(const double& value) noexcept {
-    return std::optional<double>(value);
-  }
-  inline bool has_value_std__optional_double_(const std::optional<double>& optional) noexcept {
-    return optional.has_value();
-  }
-  inline double get_std__optional_double_(const std::optional<double>& optional) noexcept {
-    return optional.value();
-  }
-  
   // pragma MARK: std::function<bool(double /* reactTag */, const NativeListItem& /* item */, double /* index */)>
   /**
    * Specialized version of `std::function<bool(double, const NativeListItem&, double)>`.
@@ -197,40 +303,6 @@ namespace margelo::nitro::reactnativelist::bridge::swift {
   Func_bool_double_NativeListItem_double create_Func_bool_double_NativeListItem_double(void* NON_NULL swiftClosureWrapper) noexcept;
   inline Func_bool_double_NativeListItem_double_Wrapper wrap_Func_bool_double_NativeListItem_double(Func_bool_double_NativeListItem_double value) noexcept {
     return Func_bool_double_NativeListItem_double_Wrapper(std::move(value));
-  }
-  
-  // pragma MARK: std::function<bool(const NativeListItem& /* oldItem */, const NativeListItem& /* newItem */)>
-  /**
-   * Specialized version of `std::function<bool(const NativeListItem&, const NativeListItem&)>`.
-   */
-  using Func_bool_NativeListItem_NativeListItem = std::function<bool(const NativeListItem& /* oldItem */, const NativeListItem& /* newItem */)>;
-  /**
-   * Wrapper class for a `std::function<bool(const NativeListItem& / * oldItem * /, const NativeListItem& / * newItem * /)>`, this can be used from Swift.
-   */
-  class Func_bool_NativeListItem_NativeListItem_Wrapper final {
-  public:
-    explicit Func_bool_NativeListItem_NativeListItem_Wrapper(std::function<bool(const NativeListItem& /* oldItem */, const NativeListItem& /* newItem */)>&& func): _function(std::make_unique<std::function<bool(const NativeListItem& /* oldItem */, const NativeListItem& /* newItem */)>>(std::move(func))) {}
-    inline bool call(NativeListItem oldItem, NativeListItem newItem) const noexcept {
-      auto __result = _function->operator()(oldItem, newItem);
-      return __result;
-    }
-  private:
-    std::unique_ptr<std::function<bool(const NativeListItem& /* oldItem */, const NativeListItem& /* newItem */)>> _function;
-  } SWIFT_NONCOPYABLE;
-  Func_bool_NativeListItem_NativeListItem create_Func_bool_NativeListItem_NativeListItem(void* NON_NULL swiftClosureWrapper) noexcept;
-  inline Func_bool_NativeListItem_NativeListItem_Wrapper wrap_Func_bool_NativeListItem_NativeListItem(Func_bool_NativeListItem_NativeListItem value) noexcept {
-    return Func_bool_NativeListItem_NativeListItem_Wrapper(std::move(value));
-  }
-  
-  // pragma MARK: std::vector<NativeListItem>
-  /**
-   * Specialized version of `std::vector<NativeListItem>`.
-   */
-  using std__vector_NativeListItem_ = std::vector<NativeListItem>;
-  inline std::vector<NativeListItem> create_std__vector_NativeListItem_(size_t size) noexcept {
-    std::vector<NativeListItem> vector;
-    vector.reserve(size);
-    return vector;
   }
   
   // pragma MARK: std::shared_ptr<HybridUiListViewSpec>

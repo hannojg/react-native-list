@@ -22,17 +22,204 @@ typealias UpdateViewCallbackType = (
     item: NativeListItem,
     index: Double
 ) -> Boolean
-typealias IsContentEqualCallbackType = (
-    oldItem: NativeListItem,
-    newItem: NativeListItem
-) -> Boolean
 
-class HybridUiListView(val reactContext: ThemedReactContext) : HybridUiListViewSpec() {
+internal interface NativeListDataSourceObserver {
+    fun dataSourceDidReload(diffResult: DiffUtil.DiffResult?, animated: Boolean)
+    fun dataSourceDidInsert(index: Int)
+    fun dataSourceDidUpdate(index: Int)
+    fun dataSourceDidRemove(index: Int)
+    fun dataSourceDidMove(fromIndex: Int, toIndex: Int)
+}
+
+class HybridNativeListDataSource : HybridNativeListDataSourceSpec() {
+    internal var observer: NativeListDataSourceObserver? = null
+    private var items: List<NativeListItem> = emptyList()
+    private var isContentEqual: (oldItem: NativeListItem, newItem: NativeListItem) -> Boolean =
+        { _, _ -> false }
+
+    override fun setContentEqualCallback(
+        isContentEqual: (oldItem: NativeListItem, newItem: NativeListItem) -> Boolean
+    ) {
+        this.isContentEqual = isContentEqual
+    }
+
+    override fun replaceData(items: Array<NativeListItem>, animated: Boolean) {
+        val nextItems = items.toList()
+        if (!animated) {
+            this.items = nextItems
+            observer?.dataSourceDidReload(null, false)
+            return
+        }
+
+        val previousItems = this.items
+        val callback = NativeDiffCallback(previousItems, nextItems, isContentEqual)
+        val diffResult = DiffUtil.calculateDiff(callback, true)
+        this.items = nextItems
+        observer?.dataSourceDidReload(diffResult, true)
+    }
+
+    override fun insertItem(index: Double, item: NativeListItem) {
+        val itemIndex = validateInsertionIndex(index.toInt())
+        val mutableItems = items.toMutableList()
+        mutableItems.add(itemIndex, item)
+        items = mutableItems
+        observer?.dataSourceDidInsert(itemIndex)
+    }
+
+    override fun updateItem(index: Double, item: NativeListItem) {
+        val itemIndex = validateExistingIndex(index.toInt())
+        val mutableItems = items.toMutableList()
+        mutableItems[itemIndex] = item
+        items = mutableItems
+        observer?.dataSourceDidUpdate(itemIndex)
+    }
+
+    override fun removeItem(index: Double) {
+        val itemIndex = validateExistingIndex(index.toInt())
+        val mutableItems = items.toMutableList()
+        mutableItems.removeAt(itemIndex)
+        items = mutableItems
+        observer?.dataSourceDidRemove(itemIndex)
+    }
+
+    override fun moveItem(fromIndex: Double, toIndex: Double) {
+        val sourceIndex = validateExistingIndex(fromIndex.toInt())
+        val targetIndex = validateExistingIndex(toIndex.toInt())
+        val mutableItems = items.toMutableList()
+        val item = mutableItems.removeAt(sourceIndex)
+        mutableItems.add(targetIndex, item)
+        items = mutableItems
+        observer?.dataSourceDidMove(sourceIndex, targetIndex)
+    }
+
+    override fun getCount(): Double {
+        return items.size.toDouble()
+    }
+
+    override fun getItem(index: Double): NativeListItem {
+        val itemIndex = validateExistingIndex(index.toInt())
+        return getItemAt(itemIndex)
+    }
+
+    internal fun getItemAt(index: Int): NativeListItem {
+        return items[index]
+    }
+
+    internal fun getCountAsInt(): Int {
+        return items.size
+    }
+
+    private fun validateExistingIndex(index: Int): Int {
+        if (index < 0 || index >= items.size) {
+            throw IndexOutOfBoundsException("List index $index is out of bounds.")
+        }
+        return index
+    }
+
+    private fun validateInsertionIndex(index: Int): Int {
+        if (index < 0 || index > items.size) {
+            throw IndexOutOfBoundsException("List index $index is out of bounds.")
+        }
+        return index
+    }
+}
+
+private class NativeDiffCallback(
+    private val oldItems: List<NativeListItem>,
+    private val newItems: List<NativeListItem>,
+    private val isContentEqual: (oldItem: NativeListItem, newItem: NativeListItem) -> Boolean
+) : DiffUtil.Callback() {
+
+    override fun getOldListSize(): Int {
+        return oldItems.size
+    }
+
+    override fun getNewListSize(): Int {
+        return newItems.size
+    }
+
+    override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+        val oldItem = oldItems[oldItemPosition]
+        val newItem = newItems[newItemPosition]
+        return oldItem.key == newItem.key && oldItem.type == newItem.type
+    }
+
+    override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+        val oldItem = oldItems[oldItemPosition]
+        val newItem = newItems[newItemPosition]
+
+        if (oldItem.width != newItem.width) {
+            return false
+        }
+        if (oldItem.height != newItem.height) {
+            return false
+        }
+
+        return isContentEqual(oldItem, newItem)
+    }
+}
+
+open class HybridNativeListLayout : HybridNativeListLayoutSpec()
+
+private interface NativeListLayoutProvider {
+    fun applyTo(recyclerView: RecyclerView, reactContext: ThemedReactContext)
+}
+
+class HybridNativeLinearListLayout :
+    HybridNativeLinearListLayoutSpec(),
+    NativeListLayoutProvider {
+    private var topInset = 16
+    private var bottomInset = 16
+    private var itemSpacing = 12
+
+    override fun setConfig(config: NativeLinearListLayoutConfig) {
+        topInset = config.topInset.roundToInt()
+        bottomInset = config.bottomInset.roundToInt()
+        itemSpacing = config.itemSpacing.roundToInt()
+    }
+
+    override fun applyTo(recyclerView: RecyclerView, reactContext: ThemedReactContext) {
+        recyclerView.layoutManager = LinearLayoutManager(reactContext)
+        recyclerView.clipToPadding = false
+        val density = reactContext.resources.displayMetrics.density
+        val topPadding = (topInset * density).roundToInt()
+        val bottomPadding = (bottomInset * density).roundToInt()
+        val spacing = (itemSpacing * density).roundToInt()
+
+        while (recyclerView.itemDecorationCount > 0) {
+            recyclerView.removeItemDecorationAt(0)
+        }
+
+        recyclerView.setPadding(0, topPadding, 0, bottomPadding)
+        recyclerView.addItemDecoration(LinearSpacingDecoration(spacing))
+    }
+}
+
+private class LinearSpacingDecoration(
+    private val itemSpacing: Int
+) : RecyclerView.ItemDecoration() {
+    override fun getItemOffsets(
+        outRect: android.graphics.Rect,
+        view: View,
+        parent: RecyclerView,
+        state: RecyclerView.State
+    ) {
+        val position = parent.getChildAdapterPosition(view)
+        val itemCount = state.itemCount
+        if (position >= 0 && position < itemCount - 1) {
+            outRect.bottom = itemSpacing
+        }
+    }
+}
+
+class HybridUiListView(val reactContext: ThemedReactContext) :
+    HybridUiListViewSpec(),
+    NativeListDataSourceObserver {
 
     private var createViewCallback: CreateViewCallbackType? = null
     private var updateViewCallback: UpdateViewCallbackType? = null
-    private var isContentEqualCallback: IsContentEqualCallbackType? = null
     private var adapter: NativeListAdapter? = null
+    private var dataSource: HybridNativeListDataSource? = null
 
     override val view: RecyclerView by lazy {
         RecyclerView(reactContext).apply {
@@ -48,50 +235,71 @@ class HybridUiListView(val reactContext: ThemedReactContext) : HybridUiListViewS
     override fun setListCallbacks(
         uiListModule: HybridUiListModuleSpec,
         createView: CreateViewCallbackType,
-        updateView: UpdateViewCallbackType,
-        isContentEqual: IsContentEqualCallbackType
+        updateView: UpdateViewCallbackType
     ) {
         createViewCallback = createView
         updateViewCallback = updateView
-        isContentEqualCallback = isContentEqual
         runOnMain {
             ensureAdapter()
         }
     }
 
-    override fun setData(items: Array<NativeListItem>, animated: Boolean) {
+    override fun setDataSource(dataSource: HybridNativeListDataSourceSpec) {
+        val nativeDataSource = dataSource as? HybridNativeListDataSource
+            ?: throw IllegalStateException("NativeListDataSource must be created by react-native-list.")
+
         runOnMain {
+            this.dataSource?.observer = null
+            this.dataSource = nativeDataSource
+            nativeDataSource.observer = this
             val nativeAdapter = ensureAdapter()
-            val nextItems = items.toList()
-            nativeAdapter.setData(nextItems, animated)
+            nativeAdapter.dataSource = nativeDataSource
+            nativeAdapter.notifyDataSetChanged()
         }
     }
 
-    override fun insertItem(index: Double, item: NativeListItem) {
+    override fun setLayout(layout: HybridNativeListLayoutSpec) {
+        val layoutProvider = layout as? NativeListLayoutProvider
+            ?: throw IllegalStateException("NativeListLayout must provide a platform layout.")
+
         runOnMain {
-            val nativeAdapter = ensureAdapter()
-            nativeAdapter.insertItem(index.toInt(), item)
+            layoutProvider.applyTo(view, reactContext)
         }
     }
 
-    override fun updateItem(index: Double, item: NativeListItem) {
+    override fun dataSourceDidReload(diffResult: DiffUtil.DiffResult?, animated: Boolean) {
         runOnMain {
             val nativeAdapter = ensureAdapter()
-            nativeAdapter.updateItem(index.toInt(), item)
+            if (!animated || diffResult == null) {
+                nativeAdapter.notifyDataSetChanged()
+                return@runOnMain
+            }
+
+            diffResult.dispatchUpdatesTo(nativeAdapter)
         }
     }
 
-    override fun removeItem(index: Double) {
+    override fun dataSourceDidInsert(index: Int) {
         runOnMain {
-            val nativeAdapter = ensureAdapter()
-            nativeAdapter.removeItem(index.toInt())
+            ensureAdapter().notifyItemInserted(index)
         }
     }
 
-    override fun moveItem(fromIndex: Double, toIndex: Double) {
+    override fun dataSourceDidUpdate(index: Int) {
         runOnMain {
-            val nativeAdapter = ensureAdapter()
-            nativeAdapter.moveItem(fromIndex.toInt(), toIndex.toInt())
+            ensureAdapter().notifyItemChanged(index)
+        }
+    }
+
+    override fun dataSourceDidRemove(index: Int) {
+        runOnMain {
+            ensureAdapter().notifyItemRemoved(index)
+        }
+    }
+
+    override fun dataSourceDidMove(fromIndex: Int, toIndex: Int) {
+        runOnMain {
+            ensureAdapter().notifyItemMoved(fromIndex, toIndex)
         }
     }
 
@@ -110,13 +318,9 @@ class HybridUiListView(val reactContext: ThemedReactContext) : HybridUiListViewS
                 val capturedCallback = updateViewCallback
                     ?: throw IllegalStateException("UpdateView callback is not set.")
                 capturedCallback(reactTag, item, index)
-            },
-            isContentEqual = contentEqual@ { oldItem, newItem ->
-                val capturedCallback = isContentEqualCallback
-                    ?: return@contentEqual false
-                capturedCallback(oldItem, newItem)
             }
         )
+        nativeAdapter.dataSource = dataSource
         adapter = nativeAdapter
         view.adapter = nativeAdapter
         return nativeAdapter
@@ -163,15 +367,14 @@ class HybridUiListView(val reactContext: ThemedReactContext) : HybridUiListViewS
     private class NativeListAdapter(
         private val reactContext: ThemedReactContext,
         private val createView: (type: String) -> View,
-        private val updateView: (reactTag: Double, item: NativeListItem, index: Double) -> Boolean,
-        private val isContentEqual: (oldItem: NativeListItem, newItem: NativeListItem) -> Boolean
+        private val updateView: (reactTag: Double, item: NativeListItem, index: Double) -> Boolean
     ) : RecyclerView.Adapter<NativeListAdapter.ViewHolder>() {
 
+        var dataSource: HybridNativeListDataSource? = null
         private val viewTypeByItemType = mutableMapOf<String, Int>()
         private val itemTypeByViewType = mutableMapOf<Int, String>()
         private val measuredContentSizeByType = mutableMapOf<String, PixelSize>()
         private var nextViewType = 1
-        private var items: List<NativeListItem> = emptyList()
 
         class ViewHolder(val container: FrameLayout) : RecyclerView.ViewHolder(container) {
             var boundType: String? = null
@@ -188,56 +391,8 @@ class HybridUiListView(val reactContext: ThemedReactContext) : HybridUiListViewS
             val height: Int
         )
 
-        fun setData(nextItems: List<NativeListItem>, animated: Boolean) {
-            if (!animated) {
-                items = nextItems
-                notifyDataSetChanged()
-                return
-            }
-
-            val previousItems = items
-            val callback = NativeDiffCallback(previousItems, nextItems, isContentEqual)
-            val result = DiffUtil.calculateDiff(callback, true)
-            items = nextItems
-            result.dispatchUpdatesTo(this)
-        }
-
-        fun insertItem(index: Int, item: NativeListItem) {
-            validateInsertionIndex(index)
-            val mutableItems = items.toMutableList()
-            mutableItems.add(index, item)
-            items = mutableItems
-            notifyItemInserted(index)
-        }
-
-        fun updateItem(index: Int, item: NativeListItem) {
-            validateExistingIndex(index)
-            val mutableItems = items.toMutableList()
-            mutableItems[index] = item
-            items = mutableItems
-            notifyItemChanged(index)
-        }
-
-        fun removeItem(index: Int) {
-            validateExistingIndex(index)
-            val mutableItems = items.toMutableList()
-            mutableItems.removeAt(index)
-            items = mutableItems
-            notifyItemRemoved(index)
-        }
-
-        fun moveItem(fromIndex: Int, toIndex: Int) {
-            validateExistingIndex(fromIndex)
-            validateExistingIndex(toIndex)
-            val mutableItems = items.toMutableList()
-            val item = mutableItems.removeAt(fromIndex)
-            mutableItems.add(toIndex, item)
-            items = mutableItems
-            notifyItemMoved(fromIndex, toIndex)
-        }
-
         override fun getItemViewType(position: Int): Int {
-            val item = items[position]
+            val item = requireDataSource().getItemAt(position)
             val existingViewType = viewTypeByItemType[item.type]
             if (existingViewType != null) {
                 return existingViewType
@@ -260,7 +415,7 @@ class HybridUiListView(val reactContext: ThemedReactContext) : HybridUiListViewS
         }
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            val item = items[position]
+            val item = requireDataSource().getItemAt(position)
 
             if (holder.boundType != item.type || holder.container.childCount == 0) {
                 holder.container.removeAllViews()
@@ -287,7 +442,11 @@ class HybridUiListView(val reactContext: ThemedReactContext) : HybridUiListViewS
         }
 
         override fun getItemCount(): Int {
-            return items.size
+            return dataSource?.getCountAsInt() ?: 0
+        }
+
+        private fun requireDataSource(): HybridNativeListDataSource {
+            return dataSource ?: throw IllegalStateException("NativeListDataSource is not set.")
         }
 
         private fun captureMeasuredContentSize(type: String, view: View) {
@@ -359,53 +518,6 @@ class HybridUiListView(val reactContext: ThemedReactContext) : HybridUiListViewS
             val pixels = value * density
             val rounded = pixels.roundToInt()
             return rounded.coerceAtLeast(1)
-        }
-
-        private fun validateExistingIndex(index: Int) {
-            if (index < 0 || index >= items.size) {
-                throw IndexOutOfBoundsException("List index $index is out of bounds.")
-            }
-        }
-
-        private fun validateInsertionIndex(index: Int) {
-            if (index < 0 || index > items.size) {
-                throw IndexOutOfBoundsException("List index $index is out of bounds.")
-            }
-        }
-    }
-
-    private class NativeDiffCallback(
-        private val oldItems: List<NativeListItem>,
-        private val newItems: List<NativeListItem>,
-        private val isContentEqual: (oldItem: NativeListItem, newItem: NativeListItem) -> Boolean
-    ) : DiffUtil.Callback() {
-
-        override fun getOldListSize(): Int {
-            return oldItems.size
-        }
-
-        override fun getNewListSize(): Int {
-            return newItems.size
-        }
-
-        override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-            val oldItem = oldItems[oldItemPosition]
-            val newItem = newItems[newItemPosition]
-            return oldItem.key == newItem.key && oldItem.type == newItem.type
-        }
-
-        override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-            val oldItem = oldItems[oldItemPosition]
-            val newItem = newItems[newItemPosition]
-
-            if (oldItem.width != newItem.width) {
-                return false
-            }
-            if (oldItem.height != newItem.height) {
-                return false
-            }
-
-            return isContentEqual(oldItem, newItem)
         }
     }
 }

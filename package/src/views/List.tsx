@@ -1,35 +1,22 @@
-import React, {
-  forwardRef,
-  useEffect,
-  useImperativeHandle,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
-import { UiListHostComponent } from './UiListHostComponent'
-import { callback } from 'react-native-nitro-modules'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { View, ViewStyle } from 'react-native'
+import { callback, NitroModules } from 'react-native-nitro-modules'
 import type { AnyMap } from 'react-native-nitro-modules'
 import { scheduleOnUI } from 'react-native-worklets'
+import type { ListDataSource } from '../ListDataSource'
+import { getNativeListDataSource } from '../ListDataSource'
+import { createLinearListLayout, ListLayout } from '../ListLayout'
 import {
   renderSyncWorklet,
   uiListModuleBoxed,
 } from '../renderer/fabric/RenderHelper'
-import { View, ViewStyle } from 'react-native'
 import { getReactFabricRenderer } from '../renderer/react/ReactFabricRenderer'
-import type {
-  NativeListItem,
-  UiListViewMethods,
-} from '../specs/UiListView.nitro'
+import type { NativeListItem } from '../specs/NativeListDataSource.nitro'
+import type { UiListViewMethods } from '../specs/UiListView.nitro'
+import { UiListHostComponent } from './UiListHostComponent'
 
 type NativeTaggedRef = {
   __nativeTag: number
-}
-
-export type ListKey = string | number
-
-export type ListItemSize = {
-  width?: number
-  height?: number
 }
 
 export type ListRenderer<T extends AnyMap, TType extends string> = {
@@ -39,171 +26,44 @@ export type ListRenderer<T extends AnyMap, TType extends string> = {
     key?: string
     type: TType
   }) => React.ReactElement<any>
-  isContentEqualWorklet: (oldItem: T, newItem: T) => boolean
 }
 
 export type ListProps<T extends AnyMap, TType extends string> = {
-  data: readonly T[]
-  keyExtractor: (item: T, index: number) => ListKey
-  getItemType: (item: T, index: number) => TType
-  getItemSize?: (item: T, index: number) => ListItemSize
+  dataSource: ListDataSource<T>
+  layout?: ListLayout
   renderers: Record<TType, ListRenderer<T, TType>>
   style?: ViewStyle
 }
 
-type ListDataProps<T extends AnyMap, TType extends string> = Omit<
-  ListProps<T, TType>,
-  'style'
->
-
-export type ListRef<T extends AnyMap> = {
-  replaceData(data: readonly T[], animated?: boolean): void
-  insertItem(index: number, item: T): void
-  updateItem(index: number, item: T): void
-  removeItem(index: number): void
-  moveItem(fromIndex: number, toIndex: number): void
-}
-
-function assertValidSize(size: ListItemSize, index: number) {
-  const width = size.width
-  const height = size.height
-
-  if (width != null && (!Number.isFinite(width) || width <= 0)) {
-    throw new Error(`List item at index ${index} has an invalid width.`)
-  }
-  if (height != null && (!Number.isFinite(height) || height <= 0)) {
-    throw new Error(`List item at index ${index} has an invalid height.`)
-  }
-}
-
-function stringifyKey(key: ListKey, index: number): string {
-  if (typeof key === 'string') {
-    return key
-  }
-  if (typeof key === 'number') {
-    return String(key)
-  }
-  throw new Error(`List item at index ${index} returned an invalid key.`)
-}
-
-function createNativeItem<T extends AnyMap, TType extends string>(
-  item: T,
-  index: number,
-  props: ListDataProps<T, TType>
-): NativeListItem {
-  const rawKey = props.keyExtractor(item, index)
-  const key = stringifyKey(rawKey, index)
-  const type = props.getItemType(item, index)
-  const renderer = props.renderers[type]
-
-  if (renderer == null) {
-    throw new Error(`List item at index ${index} uses unknown type "${type}".`)
-  }
-
-  const size = props.getItemSize?.(item, index) ?? {}
-  assertValidSize(size, index)
-
-  return {
-    key: key,
-    type: type,
-    width: size.width,
-    height: size.height,
-    data: item,
-  }
-}
-
-function createNativeItems<T extends AnyMap, TType extends string>(
-  data: readonly T[],
-  props: ListDataProps<T, TType>
-): NativeListItem[] {
-  const seenIdentities = new Set<string>()
-  const items: NativeListItem[] = []
-
-  for (let index = 0; index < data.length; index++) {
-    const item = data[index]
-    if (item == null) {
-      throw new Error(`List item at index ${index} is undefined.`)
-    }
-
-    const nativeItem = createNativeItem(item, index, props)
-    const identity = nativeItem.type + ':' + nativeItem.key
-
-    if (seenIdentities.has(identity)) {
-      throw new Error(`List contains duplicate item identity "${identity}".`)
-    }
-
-    seenIdentities.add(identity)
-    items.push(nativeItem)
-  }
-
-  return items
-}
-
 function ListInner<T extends AnyMap, TType extends string>(
-  props: ListProps<T, TType>,
-  forwardedRef: React.ForwardedRef<ListRef<T>>
+  props: ListProps<T, TType>
 ) {
-  const { data, getItemSize, getItemType, keyExtractor, renderers, style } =
-    props
+  const { dataSource, layout, renderers, style } = props
   const isSetup = useRef(false)
   const nativeListRef = useRef<UiListViewMethods | null>(null)
   const [isNativeReady, setIsNativeReady] = useState(false)
 
-  const nativeItems = useMemo(() => {
-    const normalizationProps = {
-      data,
-      keyExtractor,
-      getItemType,
-      getItemSize,
-      renderers,
-    }
-    return createNativeItems(data, normalizationProps)
-  }, [data, getItemSize, getItemType, keyExtractor, renderers])
+  const resolvedLayout = useMemo(() => {
+    return layout ?? createLinearListLayout()
+  }, [layout])
 
-  useImperativeHandle(forwardedRef, () => {
-    return {
-      replaceData(nextData: readonly T[], animated = true) {
-        const ref = nativeListRef.current
-        if (ref == null) return
+  const boxedDataSource = useMemo(() => {
+    const nativeDataSource = getNativeListDataSource(dataSource)
+    return NitroModules.box(nativeDataSource)
+  }, [dataSource])
 
-        const nextItems = createNativeItems(nextData, props)
-        ref.setData(nextItems, animated)
-      },
-      insertItem(index: number, item: T) {
-        const ref = nativeListRef.current
-        if (ref == null) return
-
-        const nativeItem = createNativeItem(item, index, props)
-        ref.insertItem(index, nativeItem)
-      },
-      updateItem(index: number, item: T) {
-        const ref = nativeListRef.current
-        if (ref == null) return
-
-        const nativeItem = createNativeItem(item, index, props)
-        ref.updateItem(index, nativeItem)
-      },
-      removeItem(index: number) {
-        const ref = nativeListRef.current
-        if (ref == null) return
-
-        ref.removeItem(index)
-      },
-      moveItem(fromIndex: number, toIndex: number) {
-        const ref = nativeListRef.current
-        if (ref == null) return
-
-        ref.moveItem(fromIndex, toIndex)
-      },
-    }
-  }, [props])
+  const boxedLayout = useMemo(() => {
+    return NitroModules.box(resolvedLayout.__nativeLayout)
+  }, [resolvedLayout])
 
   useEffect(() => {
     const ref = nativeListRef.current
     if (ref == null || !isNativeReady) return
 
-    ref.setData(nativeItems, true)
-  }, [isNativeReady, nativeItems])
+    const nativeDataSource = getNativeListDataSource(dataSource)
+    ref.setDataSource(nativeDataSource)
+    ref.setLayout(resolvedLayout.__nativeLayout)
+  }, [dataSource, isNativeReady, resolvedLayout])
 
   return (
     <UiListHostComponent
@@ -321,35 +181,13 @@ function ListInner<T extends AnyMap, TType extends string>(
               nativeLog('Update renderSync took ', end - start, 'ms')
 
               return true
-            },
-            (oldItem: NativeListItem, newItem: NativeListItem) => {
-              if (oldItem.type !== newItem.type) {
-                return false
-              }
-              if (oldItem.width !== newItem.width) {
-                return false
-              }
-              if (oldItem.height !== newItem.height) {
-                return false
-              }
-
-              const typedType = newItem.type as TType
-              const renderer = renderers[typedType]
-
-              if (renderer == null) {
-                throw new Error(
-                  'No renderer for list item type ' + newItem.type
-                )
-              }
-
-              return renderer.isContentEqualWorklet(
-                oldItem.data as T,
-                newItem.data as T
-              )
             }
           )
 
-          ref.setData(nativeItems, false)
+          const nativeDataSource = boxedDataSource.unbox()
+          const nativeLayout = boxedLayout.unbox()
+          ref.setDataSource(nativeDataSource)
+          ref.setLayout(nativeLayout)
         })
 
         setIsNativeReady(true)
@@ -358,11 +196,6 @@ function ListInner<T extends AnyMap, TType extends string>(
   )
 }
 
-export const List = forwardRef(ListInner) as <
-  T extends AnyMap,
-  TType extends string,
->(
-  props: ListProps<T, TType> & {
-    ref?: React.ForwardedRef<ListRef<T>>
-  }
+export const List = ListInner as <T extends AnyMap, TType extends string>(
+  props: ListProps<T, TType>
 ) => React.ReactElement | null

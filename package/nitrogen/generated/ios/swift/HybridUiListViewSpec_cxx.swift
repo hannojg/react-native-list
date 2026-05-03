@@ -125,7 +125,7 @@ open class HybridUiListViewSpec_cxx {
 
   // Methods
   @inline(__always)
-  public final func setListCallbacks(uiListModule: bridge.std__shared_ptr_HybridUiListModuleSpec_, createView: bridge.Func_double_std__string, updateView: bridge.Func_bool_double_NativeListItem_double, isContentEqual: bridge.Func_bool_NativeListItem_NativeListItem) -> bridge.Result_void_ {
+  public final func setListCallbacks(uiListModule: bridge.std__shared_ptr_HybridUiListModuleSpec_, createView: bridge.Func_double_std__string, updateView: bridge.Func_bool_double_NativeListItem_double) -> bridge.Result_void_ {
     do {
       try self.__implementation.setListCallbacks(uiListModule: { () -> any HybridUiListModuleSpec in
         let __unsafePointer = bridge.get_std__shared_ptr_HybridUiListModuleSpec_(uiListModule)
@@ -143,12 +143,6 @@ open class HybridUiListViewSpec_cxx {
           let __result = __wrappedFunction.call(__reactTag, __item, __index)
           return __result
         }
-      }(), isContentEqual: { () -> (NativeListItem, NativeListItem) -> Bool in
-        let __wrappedFunction = bridge.wrap_Func_bool_NativeListItem_NativeListItem(isContentEqual)
-        return { (__oldItem: NativeListItem, __newItem: NativeListItem) -> Bool in
-          let __result = __wrappedFunction.call(__oldItem, __newItem)
-          return __result
-        }
       }())
       return bridge.create_Result_void_()
     } catch (let __error) {
@@ -158,9 +152,13 @@ open class HybridUiListViewSpec_cxx {
   }
   
   @inline(__always)
-  public final func setData(items: bridge.std__vector_NativeListItem_, animated: Bool) -> bridge.Result_void_ {
+  public final func setDataSource(dataSource: bridge.std__shared_ptr_HybridNativeListDataSourceSpec_) -> bridge.Result_void_ {
     do {
-      try self.__implementation.setData(items: items.map({ __item in __item }), animated: animated)
+      try self.__implementation.setDataSource(dataSource: { () -> any HybridNativeListDataSourceSpec in
+        let __unsafePointer = bridge.get_std__shared_ptr_HybridNativeListDataSourceSpec_(dataSource)
+        let __instance = HybridNativeListDataSourceSpec_cxx.fromUnsafe(__unsafePointer)
+        return __instance.getHybridNativeListDataSourceSpec()
+      }())
       return bridge.create_Result_void_()
     } catch (let __error) {
       let __exceptionPtr = __error.toCpp()
@@ -169,42 +167,13 @@ open class HybridUiListViewSpec_cxx {
   }
   
   @inline(__always)
-  public final func insertItem(index: Double, item: NativeListItem) -> bridge.Result_void_ {
+  public final func setLayout(layout: bridge.std__shared_ptr_HybridNativeListLayoutSpec_) -> bridge.Result_void_ {
     do {
-      try self.__implementation.insertItem(index: index, item: item)
-      return bridge.create_Result_void_()
-    } catch (let __error) {
-      let __exceptionPtr = __error.toCpp()
-      return bridge.create_Result_void_(__exceptionPtr)
-    }
-  }
-  
-  @inline(__always)
-  public final func updateItem(index: Double, item: NativeListItem) -> bridge.Result_void_ {
-    do {
-      try self.__implementation.updateItem(index: index, item: item)
-      return bridge.create_Result_void_()
-    } catch (let __error) {
-      let __exceptionPtr = __error.toCpp()
-      return bridge.create_Result_void_(__exceptionPtr)
-    }
-  }
-  
-  @inline(__always)
-  public final func removeItem(index: Double) -> bridge.Result_void_ {
-    do {
-      try self.__implementation.removeItem(index: index)
-      return bridge.create_Result_void_()
-    } catch (let __error) {
-      let __exceptionPtr = __error.toCpp()
-      return bridge.create_Result_void_(__exceptionPtr)
-    }
-  }
-  
-  @inline(__always)
-  public final func moveItem(fromIndex: Double, toIndex: Double) -> bridge.Result_void_ {
-    do {
-      try self.__implementation.moveItem(fromIndex: fromIndex, toIndex: toIndex)
+      try self.__implementation.setLayout(layout: { () -> any HybridNativeListLayoutSpec in
+        let __unsafePointer = bridge.get_std__shared_ptr_HybridNativeListLayoutSpec_(layout)
+        let __instance = HybridNativeListLayoutSpec_cxx.fromUnsafe(__unsafePointer)
+        return __instance.getHybridNativeListLayoutSpec()
+      }())
       return bridge.create_Result_void_()
     } catch (let __error) {
       let __exceptionPtr = __error.toCpp()

@@ -16,6 +16,10 @@ namespace ReactNativeList { class HybridUiListViewSpec_cxx; }
 namespace margelo::nitro::reactnativelist { class HybridUiListModuleSpec; }
 // Forward declaration of `NativeListItem` to properly resolve imports.
 namespace margelo::nitro::reactnativelist { struct NativeListItem; }
+// Forward declaration of `HybridNativeListDataSourceSpec` to properly resolve imports.
+namespace margelo::nitro::reactnativelist { class HybridNativeListDataSourceSpec; }
+// Forward declaration of `HybridNativeListLayoutSpec` to properly resolve imports.
+namespace margelo::nitro::reactnativelist { class HybridNativeListLayoutSpec; }
 
 #include <memory>
 #include "HybridUiListModuleSpec.hpp"
@@ -24,7 +28,8 @@ namespace margelo::nitro::reactnativelist { struct NativeListItem; }
 #include "NativeListItem.hpp"
 #include <optional>
 #include <NitroModules/AnyMap.hpp>
-#include <vector>
+#include "HybridNativeListDataSourceSpec.hpp"
+#include "HybridNativeListLayoutSpec.hpp"
 
 #include "ReactNativeList-Swift-Cxx-Umbrella.hpp"
 
@@ -76,38 +81,20 @@ namespace margelo::nitro::reactnativelist {
 
   public:
     // Methods
-    inline void setListCallbacks(const std::shared_ptr<HybridUiListModuleSpec>& uiListModule, const std::function<double(const std::string& /* type */)>& createView, const std::function<bool(double /* reactTag */, const NativeListItem& /* item */, double /* index */)>& updateView, const std::function<bool(const NativeListItem& /* oldItem */, const NativeListItem& /* newItem */)>& isContentEqual) override {
-      auto __result = _swiftPart.setListCallbacks(uiListModule, createView, updateView, isContentEqual);
+    inline void setListCallbacks(const std::shared_ptr<HybridUiListModuleSpec>& uiListModule, const std::function<double(const std::string& /* type */)>& createView, const std::function<bool(double /* reactTag */, const NativeListItem& /* item */, double /* index */)>& updateView) override {
+      auto __result = _swiftPart.setListCallbacks(uiListModule, createView, updateView);
       if (__result.hasError()) [[unlikely]] {
         std::rethrow_exception(__result.error());
       }
     }
-    inline void setData(const std::vector<NativeListItem>& items, bool animated) override {
-      auto __result = _swiftPart.setData(items, std::forward<decltype(animated)>(animated));
+    inline void setDataSource(const std::shared_ptr<HybridNativeListDataSourceSpec>& dataSource) override {
+      auto __result = _swiftPart.setDataSource(dataSource);
       if (__result.hasError()) [[unlikely]] {
         std::rethrow_exception(__result.error());
       }
     }
-    inline void insertItem(double index, const NativeListItem& item) override {
-      auto __result = _swiftPart.insertItem(std::forward<decltype(index)>(index), std::forward<decltype(item)>(item));
-      if (__result.hasError()) [[unlikely]] {
-        std::rethrow_exception(__result.error());
-      }
-    }
-    inline void updateItem(double index, const NativeListItem& item) override {
-      auto __result = _swiftPart.updateItem(std::forward<decltype(index)>(index), std::forward<decltype(item)>(item));
-      if (__result.hasError()) [[unlikely]] {
-        std::rethrow_exception(__result.error());
-      }
-    }
-    inline void removeItem(double index) override {
-      auto __result = _swiftPart.removeItem(std::forward<decltype(index)>(index));
-      if (__result.hasError()) [[unlikely]] {
-        std::rethrow_exception(__result.error());
-      }
-    }
-    inline void moveItem(double fromIndex, double toIndex) override {
-      auto __result = _swiftPart.moveItem(std::forward<decltype(fromIndex)>(fromIndex), std::forward<decltype(toIndex)>(toIndex));
+    inline void setLayout(const std::shared_ptr<HybridNativeListLayoutSpec>& layout) override {
+      auto __result = _swiftPart.setLayout(layout);
       if (__result.hasError()) [[unlikely]] {
         std::rethrow_exception(__result.error());
       }

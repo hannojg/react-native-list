@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from 'react'
+import React, { useMemo } from 'react'
 import {
   View,
   Text,
@@ -7,7 +7,12 @@ import {
   Pressable,
   StyleSheet,
 } from 'react-native'
-import { List, ListRef, ListRenderer } from 'react-native-list'
+import {
+  List,
+  ListRenderer,
+  useLinearListLayout,
+  useListDataSource,
+} from 'react-native-list'
 import type { AnyMap } from 'react-native-nitro-modules'
 import 'react-native-list/src/privateGlobals'
 
@@ -57,11 +62,6 @@ const renderers: Record<RowType, ListRenderer<RowItem, RowType>> = {
         </View>
       )
     },
-    isContentEqualWorklet: (oldItem, newItem) => {
-      'worklet'
-
-      return oldItem.title === newItem.title
-    },
   },
   image: {
     renderItemWorklet: ({ item, index }) => {
@@ -89,16 +89,10 @@ const renderers: Record<RowType, ListRenderer<RowItem, RowType>> = {
         </View>
       )
     },
-    isContentEqualWorklet: (oldItem, newItem) => {
-      'worklet'
-
-      return oldItem.title === newItem.title
-    },
   },
 }
 
 export default function App() {
-  const listRef = useRef<ListRef<RowItem>>(null)
   const { height, width } = useWindowDimensions()
 
   const data = useMemo<RowItem[]>(() => {
@@ -114,22 +108,40 @@ export default function App() {
     return items
   }, [])
 
+  const dataSource = useListDataSource<RowItem, RowType>({
+    data,
+    keyExtractor: (item) => {
+      return item.id
+    },
+    getItemType: (item) => {
+      return item.type
+    },
+    getItemSize: () => {
+      return {
+        width: 140,
+      }
+    },
+    isContentEqualByType: {
+      text: (oldItem, newItem) => {
+        'worklet'
+
+        return oldItem.title === newItem.title
+      },
+      image: (oldItem, newItem) => {
+        'worklet'
+
+        return oldItem.title === newItem.title
+      },
+    },
+  })
+
+  const layout = useLinearListLayout()
+
   return (
     <View style={styles.root}>
       <List
-        ref={listRef}
-        data={data}
-        keyExtractor={(item) => {
-          return item.id
-        }}
-        getItemType={(item) => {
-          return item.type
-        }}
-        getItemSize={() => {
-          return {
-            width: 140,
-          }
-        }}
+        dataSource={dataSource}
+        layout={layout}
         renderers={renderers}
         style={{
           flex: 1,

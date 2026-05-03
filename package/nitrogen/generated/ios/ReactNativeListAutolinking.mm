@@ -12,6 +12,9 @@
 
 #include "HybridViewHolderSpecSwift.hpp"
 #include "HybridUiListViewSpecSwift.hpp"
+#include "HybridNativeListDataSourceSpecSwift.hpp"
+#include "HybridNativeListLayoutSpecSwift.hpp"
+#include "HybridNativeLinearListLayoutSpecSwift.hpp"
 #include "HybridUiListModuleSpecSwift.hpp"
 #include "HybridUiManagerHelper.hpp"
 
@@ -35,6 +38,27 @@
     "UiListView",
     []() -> std::shared_ptr<HybridObject> {
       std::shared_ptr<HybridUiListViewSpec> hybridObject = ReactNativeList::ReactNativeListAutolinking::createUiListView();
+      return hybridObject;
+    }
+  );
+  HybridObjectRegistry::registerHybridObjectConstructor(
+    "NativeListDataSource",
+    []() -> std::shared_ptr<HybridObject> {
+      std::shared_ptr<HybridNativeListDataSourceSpec> hybridObject = ReactNativeList::ReactNativeListAutolinking::createNativeListDataSource();
+      return hybridObject;
+    }
+  );
+  HybridObjectRegistry::registerHybridObjectConstructor(
+    "NativeListLayout",
+    []() -> std::shared_ptr<HybridObject> {
+      std::shared_ptr<HybridNativeListLayoutSpec> hybridObject = ReactNativeList::ReactNativeListAutolinking::createNativeListLayout();
+      return hybridObject;
+    }
+  );
+  HybridObjectRegistry::registerHybridObjectConstructor(
+    "NativeLinearListLayout",
+    []() -> std::shared_ptr<HybridObject> {
+      std::shared_ptr<HybridNativeLinearListLayoutSpec> hybridObject = ReactNativeList::ReactNativeListAutolinking::createNativeLinearListLayout();
       return hybridObject;
     }
   );

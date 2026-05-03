@@ -10,20 +10,32 @@
 // Forward declarations of C++ defined types
 // Forward declaration of `HybridIOSWorkletsModuleProxyHolderSpec` to properly resolve imports.
 namespace margelo::nitro::reactnativelist { class HybridIOSWorkletsModuleProxyHolderSpec; }
+// Forward declaration of `HybridNativeLinearListLayoutSpec` to properly resolve imports.
+namespace margelo::nitro::reactnativelist { class HybridNativeLinearListLayoutSpec; }
+// Forward declaration of `HybridNativeListDataSourceSpec` to properly resolve imports.
+namespace margelo::nitro::reactnativelist { class HybridNativeListDataSourceSpec; }
+// Forward declaration of `HybridNativeListLayoutSpec` to properly resolve imports.
+namespace margelo::nitro::reactnativelist { class HybridNativeListLayoutSpec; }
 // Forward declaration of `HybridUiListModuleSpec` to properly resolve imports.
 namespace margelo::nitro::reactnativelist { class HybridUiListModuleSpec; }
 // Forward declaration of `HybridUiListViewSpec` to properly resolve imports.
 namespace margelo::nitro::reactnativelist { class HybridUiListViewSpec; }
 // Forward declaration of `HybridViewHolderSpec` to properly resolve imports.
 namespace margelo::nitro::reactnativelist { class HybridViewHolderSpec; }
+// Forward declaration of `NativeLinearListLayoutConfig` to properly resolve imports.
+namespace margelo::nitro::reactnativelist { struct NativeLinearListLayoutConfig; }
 // Forward declaration of `NativeListItem` to properly resolve imports.
 namespace margelo::nitro::reactnativelist { struct NativeListItem; }
 
 // Include C++ defined types
 #include "HybridIOSWorkletsModuleProxyHolderSpec.hpp"
+#include "HybridNativeLinearListLayoutSpec.hpp"
+#include "HybridNativeListDataSourceSpec.hpp"
+#include "HybridNativeListLayoutSpec.hpp"
 #include "HybridUiListModuleSpec.hpp"
 #include "HybridUiListViewSpec.hpp"
 #include "HybridViewHolderSpec.hpp"
+#include "NativeLinearListLayoutConfig.hpp"
 #include "NativeListItem.hpp"
 #include <NitroModules/AnyMap.hpp>
 #include <NitroModules/Null.hpp>
@@ -48,6 +60,12 @@ namespace margelo::nitro::reactnativelist { struct NativeListItem; }
 // Forward declarations of Swift defined types
 // Forward declaration of `HybridIOSWorkletsModuleProxyHolderSpec_cxx` to properly resolve imports.
 namespace ReactNativeList { class HybridIOSWorkletsModuleProxyHolderSpec_cxx; }
+// Forward declaration of `HybridNativeLinearListLayoutSpec_cxx` to properly resolve imports.
+namespace ReactNativeList { class HybridNativeLinearListLayoutSpec_cxx; }
+// Forward declaration of `HybridNativeListDataSourceSpec_cxx` to properly resolve imports.
+namespace ReactNativeList { class HybridNativeListDataSourceSpec_cxx; }
+// Forward declaration of `HybridNativeListLayoutSpec_cxx` to properly resolve imports.
+namespace ReactNativeList { class HybridNativeListLayoutSpec_cxx; }
 // Forward declaration of `HybridUiListModuleSpec_cxx` to properly resolve imports.
 namespace ReactNativeList { class HybridUiListModuleSpec_cxx; }
 // Forward declaration of `HybridUiListViewSpec_cxx` to properly resolve imports.

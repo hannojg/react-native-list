@@ -7,14 +7,17 @@ import { getReactFabricRenderer } from './renderer/react/ReactFabricRenderer'
 
 export { ViewHolder } from './specs/ViewHolder.nitro'
 export { IOSWorkletsModuleProxyHolder } from './specs/IOSWorkletsModuleProxyHolder.nitro'
-export type { NativeListItem } from './specs/UiListView.nitro'
+export type { NativeListItem } from './specs/NativeListDataSource.nitro'
+export type { ListProps, ListRenderer } from './views/List'
+export { createListDataSource, useListDataSource } from './ListDataSource'
 export type {
+  ListDataSource,
+  ListDataSourceConfig,
   ListItemSize,
   ListKey,
-  ListProps,
-  ListRef,
-  ListRenderer,
-} from './views/List'
+} from './ListDataSource'
+export { createLinearListLayout, useLinearListLayout } from './ListLayout'
+export type { LinearListLayoutConfig, ListLayout } from './ListLayout'
 
 const boxed = uiListModule
 const nativeFabricUIManager = globalThis.nativeFabricUIManager

@@ -169,6 +169,7 @@ class HybridUiListView(val reactContext: ThemedReactContext) : HybridUiListViewS
 
         private val viewTypeByItemType = mutableMapOf<String, Int>()
         private val itemTypeByViewType = mutableMapOf<Int, String>()
+        private val measuredContentSizeByType = mutableMapOf<String, PixelSize>()
         private var nextViewType = 1
         private var items: List<NativeListItem> = emptyList()
 
@@ -176,6 +177,16 @@ class HybridUiListView(val reactContext: ThemedReactContext) : HybridUiListViewS
             var boundType: String? = null
             var reactTag: Int? = null
         }
+
+        private data class PixelSize(
+            val width: Int?,
+            val height: Int?
+        )
+
+        private data class ResolvedPixelSize(
+            val width: Int,
+            val height: Int
+        )
 
         fun setData(nextItems: List<NativeListItem>, animated: Boolean) {
             if (!animated) {
@@ -250,18 +261,23 @@ class HybridUiListView(val reactContext: ThemedReactContext) : HybridUiListViewS
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val item = items[position]
-            bindContainerLayout(holder.container, item)
 
             if (holder.boundType != item.type || holder.container.childCount == 0) {
                 holder.container.removeAllViews()
                 val child = createView(item.type)
-                bindChildLayout(child, item)
+                captureMeasuredContentSize(item.type, child)
+                val contentSize = resolvedContentSize(item)
+                bindContainerLayout(holder.container, contentSize)
+                bindChildLayout(child, contentSize)
                 holder.container.addView(child)
                 holder.boundType = item.type
                 holder.reactTag = child.id
             } else {
                 val child = holder.container.getChildAt(0)
-                bindChildLayout(child, item)
+                captureMeasuredContentSize(item.type, child)
+                val contentSize = resolvedContentSize(item)
+                bindContainerLayout(holder.container, contentSize)
+                bindChildLayout(child, contentSize)
             }
 
             val reactTag = holder.reactTag
@@ -274,28 +290,68 @@ class HybridUiListView(val reactContext: ThemedReactContext) : HybridUiListViewS
             return items.size
         }
 
-        private fun bindContainerLayout(container: FrameLayout, item: NativeListItem) {
-            val width = toLayoutDimension(item.width, ViewGroup.LayoutParams.MATCH_PARENT)
-            val height = toLayoutDimension(item.height, ViewGroup.LayoutParams.WRAP_CONTENT)
+        private fun captureMeasuredContentSize(type: String, view: View) {
+            val existingSize = measuredContentSizeByType[type]
+            val measuredWidth = positiveDimension(view.measuredWidth)
+            val measuredHeight = positiveDimension(view.measuredHeight)
+            val viewWidth = positiveDimension(view.width)
+            val viewHeight = positiveDimension(view.height)
+            val layoutWidth = positiveDimension(view.layoutParams?.width)
+            val layoutHeight = positiveDimension(view.layoutParams?.height)
+            val width = measuredWidth ?: viewWidth ?: layoutWidth
+            val height = measuredHeight ?: viewHeight ?: layoutHeight
+
+            val nextWidth = existingSize?.width ?: width
+            val nextHeight = existingSize?.height ?: height
+            if (nextWidth == null && nextHeight == null) {
+                return
+            }
+
+            measuredContentSizeByType[type] = PixelSize(
+                width = nextWidth,
+                height = nextHeight
+            )
+        }
+
+        private fun resolvedContentSize(item: NativeListItem): ResolvedPixelSize {
+            val measuredSize = measuredContentSizeByType[item.type]
+            val width = item.width?.let { toPixels(it) } ?: measuredSize?.width
+            val height = item.height?.let { toPixels(it) } ?: measuredSize?.height
+
+            if (width == null) {
+                throw IllegalStateException(
+                    "Missing width for item type '${item.type}'. " +
+                        "Provide width from getItemSize or render a measurable shell."
+                )
+            }
+            if (height == null) {
+                throw IllegalStateException(
+                    "Missing height for item type '${item.type}'. " +
+                        "Provide height from getItemSize or render a measurable shell."
+                )
+            }
+
+            return ResolvedPixelSize(width, height)
+        }
+
+        private fun bindContainerLayout(container: FrameLayout, contentSize: ResolvedPixelSize) {
             val layoutParams = container.layoutParams as? RecyclerView.LayoutParams
-                ?: RecyclerView.LayoutParams(width, height)
-            layoutParams.width = width
-            layoutParams.height = height
+                ?: RecyclerView.LayoutParams(contentSize.width, contentSize.height)
+            layoutParams.width = contentSize.width
+            layoutParams.height = contentSize.height
             container.layoutParams = layoutParams
         }
 
-        private fun bindChildLayout(child: View, item: NativeListItem) {
-            val width = toLayoutDimension(item.width, ViewGroup.LayoutParams.MATCH_PARENT)
-            val height = toLayoutDimension(item.height, ViewGroup.LayoutParams.WRAP_CONTENT)
-            val layoutParams = FrameLayout.LayoutParams(width, height)
+        private fun bindChildLayout(child: View, contentSize: ResolvedPixelSize) {
+            val layoutParams = FrameLayout.LayoutParams(contentSize.width, contentSize.height)
             child.layoutParams = layoutParams
         }
 
-        private fun toLayoutDimension(value: Double?, fallback: Int): Int {
-            if (value == null) {
-                return fallback
+        private fun positiveDimension(value: Int?): Int? {
+            if (value == null || value <= 0) {
+                return null
             }
-            return toPixels(value)
+            return value
         }
 
         private fun toPixels(value: Double): Int {

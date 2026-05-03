@@ -2,7 +2,8 @@
 #include "WorkletsUiCallInvoker.hpp"
 #include "HybridUiManagerHelper.hpp"
 
-#include <android/log.h>
+#include <NitroModules/CallInvokerDispatcher.hpp>
+#include <NitroModules/InstallNitro.hpp>
 #include <react/utils/jsi-utils.h>
 #include <react/fabric/FabricUIManagerBinding.h>
 #include <worklets/android/WorkletsModule.h>
@@ -100,12 +101,38 @@ namespace margelo::nitro::reactnativelist
             throw std::runtime_error("Failed to get UIWorkletRuntime from WorkletsModuleProxy");
         }
 
+        std::shared_ptr<react::CallInvoker> uiCallInvoker = getOrInitCallInvoker(workletsModule);
+
+        // React Native checks this global while installing TurboModule bindings.
+        // Worklets creates a separate UI runtime, so we mirror the bridgeless marker there.
         uiWorkletRuntime->runSync([](jsi::Runtime &runtime)
                                   {
                                       if (!runtime.global().hasProperty(runtime, "RN$Bridgeless"))
                                       {
                                           react::defineReadOnlyGlobal(runtime, "RN$Bridgeless", jsi::Value(true));
                                       }
+                                  });
+
+        // Do not call the Android Nitro TurboModule installer from the UI runtime.
+        // That installer reads ReactApplicationContext.javaScriptContextHolder, which always
+        // points at the main RN JS runtime. Install Nitro directly into Worklets' UI runtime
+        // so UI-thread imports can reuse global.NitroModulesProxy instead of reinstalling on RN.
+        uiWorkletRuntime->runSync([uiCallInvoker](jsi::Runtime &runtime)
+                                  {
+                                      if (runtime.global().hasProperty(runtime, "NitroModulesProxy"))
+                                      {
+                                          return;
+                                      }
+
+                                      if (runtime.global().hasProperty(runtime, "__nitroDispatcher"))
+                                      {
+                                          margelo::nitro::install(runtime);
+                                          return;
+                                      }
+
+                                      auto dispatcher =
+                                          std::make_shared<margelo::nitro::CallInvokerDispatcher>(uiCallInvoker);
+                                      margelo::nitro::install(runtime, dispatcher);
                                   });
     }
 

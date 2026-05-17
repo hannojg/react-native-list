@@ -7,13 +7,8 @@ import {
   Pressable,
   StyleSheet,
 } from 'react-native'
-import {
-  List,
-  ListRenderer,
-  useLinearListLayout,
-  useListDataSource,
-} from 'react-native-list'
-import type { AnyMap } from 'react-native-nitro-modules'
+import { List, useLinearListLayout, useListDataSource } from 'react-native-list'
+import type { ListItem, ListRenderers } from 'react-native-list'
 import 'react-native-list/src/privateGlobals'
 
 const styles = StyleSheet.create({
@@ -36,15 +31,17 @@ const styles = StyleSheet.create({
   },
 })
 
-
-type RowType = 'text' | 'image'
-type RowItem = AnyMap & {
-  id: string
-  type: RowType
+type TextRowItem = ListItem<'text', {
   title: string
-}
+}>
 
-const renderers: Record<RowType, ListRenderer<RowItem, RowType>> = {
+type ImageRowItem = ListItem<'image', {
+  title: string
+  imageUri: string
+}> 
+type RowItem = TextRowItem | ImageRowItem
+
+const renderers: ListRenderers<RowItem> = {
   text: {
     renderItemWorklet: ({ item, index }) => {
       'worklet'
@@ -57,7 +54,7 @@ const renderers: Record<RowType, ListRenderer<RowItem, RowType>> = {
               globalThis.log('Pressed text item ', index)
             }}
           >
-            <Text>{item?.title}</Text>
+            <Text>{item?.data.title}</Text>
           </Pressable>
         </View>
       )
@@ -75,13 +72,13 @@ const renderers: Record<RowType, ListRenderer<RowItem, RowType>> = {
               globalThis.log('Pressed image item ', index)
             }}
           >
-            <Text>{item?.title}</Text>
+            <Text>{item?.data.title}</Text>
             <Image
               source={{
-                uri: 'https://reactnative.dev/img/tiny_logo.png',
+                uri: item?.data.imageUri,
               }}
               onLoadEnd={() => {
-                globalThis.log('Image loaded for item ', item?.id)
+                globalThis.log('Image loaded for item ', item?.key)
               }}
               style={styles.image}
             />
@@ -98,41 +95,35 @@ export default function App() {
   const data = useMemo<RowItem[]>(() => {
     const items: RowItem[] = []
     for (let index = 0; index < 1000; index++) {
-      const type: RowType = index % 5 === 0 ? 'image' : 'text'
+      if (index % 5 === 0) {
+        items.push({
+          key: String(index),
+          type: 'image',
+          width: 140,
+          height: 140,
+          data: {
+            title: `Item #${index}`,
+            imageUri: 'https://reactnative.dev/img/tiny_logo.png',
+          },
+        })
+        continue
+      }
+
       items.push({
-        id: String(index),
-        type,
-        title: `Item #${index}`,
+        key: String(index),
+        type: 'text',
+        width: 140,
+        height: 80,
+        data: {
+          title: `Item #${index}`,
+        },
       })
     }
     return items
   }, [])
 
-  const dataSource = useListDataSource<RowItem, RowType>({
+  const dataSource = useListDataSource<RowItem>({
     data,
-    keyExtractor: (item) => {
-      return item.id
-    },
-    getItemType: (item) => {
-      return item.type
-    },
-    getItemSize: () => {
-      return {
-        width: 140,
-      }
-    },
-    isContentEqualByType: {
-      text: (oldItem, newItem) => {
-        'worklet'
-
-        return oldItem.title === newItem.title
-      },
-      image: (oldItem, newItem) => {
-        'worklet'
-
-        return oldItem.title === newItem.title
-      },
-    },
   })
 
   const layout = useLinearListLayout()

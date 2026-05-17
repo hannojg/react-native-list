@@ -1,9 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { View, ViewStyle } from 'react-native'
 import { callback, NitroModules } from 'react-native-nitro-modules'
-import type { AnyMap } from 'react-native-nitro-modules'
 import { scheduleOnUI } from 'react-native-worklets'
-import type { ListDataSource } from '../ListDataSource'
+import type {
+  ListDataSource,
+  ListItem,
+  ListItemForType,
+  ListItemType,
+} from '../ListDataSource'
 import { getNativeListDataSource } from '../ListDataSource'
 import { createLinearListLayout, ListLayout } from '../ListLayout'
 import {
@@ -19,25 +23,27 @@ type NativeTaggedRef = {
   __nativeTag: number
 }
 
-export type ListRenderer<T extends AnyMap, TType extends string> = {
+export type ListRenderer<TItem extends ListItem> = {
   renderItemWorklet: (info: {
-    item?: T
+    item?: TItem
     index?: number
     key?: string
-    type: TType
+    type: ListItemType<TItem>
   }) => React.ReactElement<any>
 }
 
-export type ListProps<T extends AnyMap, TType extends string> = {
-  dataSource: ListDataSource<T>
+export type ListRenderers<TItem extends ListItem> = {
+  [TType in ListItemType<TItem>]: ListRenderer<ListItemForType<TItem, TType>>
+}
+
+export type ListProps<TItem extends ListItem> = {
+  dataSource: ListDataSource<TItem>
   layout?: ListLayout
-  renderers: Record<TType, ListRenderer<T, TType>>
+  renderers: ListRenderers<TItem>
   style?: ViewStyle
 }
 
-function ListInner<T extends AnyMap, TType extends string>(
-  props: ListProps<T, TType>
-) {
+function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
   const { dataSource, layout, renderers, style } = props
   const isSetup = useRef(false)
   const nativeListRef = useRef<UiListViewMethods | null>(null)
@@ -87,11 +93,12 @@ function ListInner<T extends AnyMap, TType extends string>(
 
           ref.setListCallbacks(
             uiListModuleUnboxed,
+            // create view callback:
             (type: string) => {
               const nativeRef = globalThis.React.createRef<NativeTaggedRef>()
               const itemId = nextItemId++
-              const typedType = type as TType
-              const renderer = renderers[typedType]
+              const typedType = type as ListItemType<TItem>
+              const renderer = renderers[typedType] as ListRenderer<TItem>
 
               if (renderer == null) {
                 throw new Error('No renderer for list item type ' + type)
@@ -134,9 +141,10 @@ function ListInner<T extends AnyMap, TType extends string>(
 
               return tag
             },
+            // update view callback:
             (reactTag: number, item: NativeListItem, index: number) => {
-              const typedType = item.type as TType
-              const renderer = renderers[typedType]
+              const typedType: ListItemType<TItem> = item.type
+              const renderer = renderers[typedType] as ListRenderer<TItem>
 
               if (renderer == null) {
                 throw new Error('No renderer for list item type ' + item.type)
@@ -148,7 +156,7 @@ function ListInner<T extends AnyMap, TType extends string>(
               }
 
               const newElement = renderer.renderItemWorklet({
-                item: item.data as T,
+                item: item as unknown as TItem,
                 index,
                 key: item.key,
                 type: typedType,
@@ -196,6 +204,6 @@ function ListInner<T extends AnyMap, TType extends string>(
   )
 }
 
-export const List = ListInner as <T extends AnyMap, TType extends string>(
-  props: ListProps<T, TType>
+export const List = ListInner as <TItem extends ListItem>(
+  props: ListProps<TItem>
 ) => React.ReactElement | null

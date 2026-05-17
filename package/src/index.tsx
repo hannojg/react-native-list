@@ -8,12 +8,16 @@ import { getReactFabricRenderer } from './renderer/react/ReactFabricRenderer'
 export { ViewHolder } from './specs/ViewHolder.nitro'
 export { IOSWorkletsModuleProxyHolder } from './specs/IOSWorkletsModuleProxyHolder.nitro'
 export type { NativeListItem } from './specs/NativeListDataSource.nitro'
-export type { ListProps, ListRenderer } from './views/List'
+export type { ListProps, ListRenderer, ListRenderers } from './views/List'
 export { createListDataSource, useListDataSource } from './ListDataSource'
 export type {
+  ListContentEqualByType,
   ListDataSource,
   ListDataSourceConfig,
+  ListItem,
+  ListItemForType,
   ListItemSize,
+  ListItemType,
   ListKey,
 } from './ListDataSource'
 export { createLinearListLayout, useLinearListLayout } from './ListLayout'

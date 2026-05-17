@@ -606,7 +606,6 @@ extension HybridUiListView: NativeListDataSourceObserver {
             premeasureAllVisibleTypes()
 
             guard animated, let collectionView, let changeset else {
-                collectionView?.collectionViewLayout.invalidateLayout()
                 collectionView?.reloadData()
                 return
             }
@@ -624,8 +623,9 @@ extension HybridUiListView: NativeListDataSourceObserver {
             let item = dataSource.item(at: index)
             ensureReuseRegistered(for: item.type)
             premeasureItemTypeIfNeeded(for: item)
-            collectionView?.collectionViewLayout.invalidateLayout()
-            collectionView?.insertItems(at: [IndexPath(item: index, section: 0)])
+            let indexPath = IndexPath(item: index, section: 0)
+            let indexPaths = [indexPath]
+            collectionView?.insertItems(at: indexPaths)
         }
     }
 
@@ -635,23 +635,24 @@ extension HybridUiListView: NativeListDataSourceObserver {
             let item = dataSource.item(at: index)
             ensureReuseRegistered(for: item.type)
             premeasureItemTypeIfNeeded(for: item)
-            collectionView?.collectionViewLayout.invalidateLayout()
-            collectionView?.reloadItems(at: [IndexPath(item: index, section: 0)])
+            let indexPath = IndexPath(item: index, section: 0)
+            let indexPaths = [indexPath]
+            collectionView?.reloadItems(at: indexPaths)
         }
     }
 
     func dataSourceDidRemove(_ dataSource: HybridNativeListDataSource, index: Int) {
         runOnMain { [weak self] in
             guard let self else { return }
-            collectionView?.collectionViewLayout.invalidateLayout()
-            collectionView?.deleteItems(at: [IndexPath(item: index, section: 0)])
+            let indexPath = IndexPath(item: index, section: 0)
+            let indexPaths = [indexPath]
+            collectionView?.deleteItems(at: indexPaths)
         }
     }
 
     func dataSourceDidMove(_ dataSource: HybridNativeListDataSource, fromIndex: Int, toIndex: Int) {
         runOnMain { [weak self] in
             guard let self else { return }
-            collectionView?.collectionViewLayout.invalidateLayout()
             let sourceIndexPath = IndexPath(item: fromIndex, section: 0)
             let targetIndexPath = IndexPath(item: toIndex, section: 0)
             collectionView?.moveItem(at: sourceIndexPath, to: targetIndexPath)

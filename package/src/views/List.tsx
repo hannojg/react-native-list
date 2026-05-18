@@ -83,113 +83,197 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
         scheduleOnUI(() => {
           'worklet'
 
-          const { nativeLog, reactRender } = getReactFabricRenderer()
+          const { reactRender } = getReactFabricRenderer()
+          type RenderedElementRecord = {
+            element: React.ReactElement
+            itemId: number
+            itemKey: string | null
+            tag: number
+          }
+
           const tagToArrayPosition: Record<number, number> = {}
           const tagToItemId: Record<number, number> = {}
+          const tagToItemKey: Record<number, string> = {}
           let nextItemId = 0
-          const elementsRendered: React.ReactElement[] = []
+          const elementRecords: RenderedElementRecord[] = []
+
+          function renderListElements() {
+            'worklet'
+
+            return elementRecords.map((record) => {
+              const wrapperStyle = {
+                position: 'absolute' as const,
+                left: 0,
+                top: 0,
+              }
+              const wrapperProps = {
+                key: 'mirror-item-' + record.itemId,
+                style: wrapperStyle,
+                collapsable: false,
+              }
+              return <View {...wrapperProps}>{record.element}</View>
+            })
+          }
+
+          function rebuildTagPositions() {
+            'worklet'
+
+            for (const key of Object.keys(tagToArrayPosition)) {
+              delete tagToArrayPosition[Number(key)]
+            }
+
+            elementRecords.forEach((record, index) => {
+              if (record.tag < 0) {
+                return
+              }
+
+              tagToArrayPosition[record.tag] = index
+            })
+          }
+
+          function renderContentInReact() {
+            'worklet'
+
+            const elements = renderListElements()
+            const parentContainer = <View>{elements}</View>
+            reactRender(parentContainer, () => {})
+            rebuildTagPositions()
+          }
+
+          function syncActiveItemKeys(activeKeys: string[]) {
+            'worklet'
+
+            const activeKeySet: Record<string, boolean> = {}
+            activeKeys.forEach((activeKey) => {
+              activeKeySet[activeKey] = true
+            })
+
+            elementRecords.forEach((record) => {
+              if (record.itemKey == null) {
+                return
+              }
+              if (activeKeySet[record.itemKey] === true) {
+                return
+              }
+
+              record.itemKey = null
+              delete tagToItemKey[record.tag]
+            })
+            return true
+          }
 
           const uiListModuleUnboxed = uiListModuleBoxed.unbox()
 
+          function createViewCallback(type: string) {
+            const nativeRef = globalThis.React.createRef<NativeTaggedRef>()
+            const itemId = nextItemId++
+            const typedType = type as ListItemType<TItem>
+            const renderer = renderers[typedType] as ListRenderer<TItem>
+
+            if (renderer == null) {
+              throw new Error('No renderer for list item type ' + type)
+            }
+
+            const newElement = renderer.renderItemWorklet({
+              type: typedType,
+            })
+
+            const newProps = {
+              key: 'itemid-' + itemId,
+              ref: nativeRef,
+              collapsable: false,
+            }
+            const newElementWithKey = globalThis.React.cloneElement(
+              newElement,
+              newProps
+            )
+
+            const newRecord: RenderedElementRecord = {
+              element: newElementWithKey,
+              itemId,
+              itemKey: null,
+              tag: -1,
+            }
+            const newLength = elementRecords.push(newRecord)
+            const currentIndex = newLength - 1
+
+            // Why for rendering one item we have to render the whole content?!
+            // Thats because react/react-native would issue remove transitions if we'd only render the item we need, and then swap it for another item.
+            // When rendering all content react-reconciler will only update the diff on the native side, which is just this one item, so performance wise this seems to be okay.
+            renderContentInReact()
+
+            if (nativeRef.current == null) {
+              throw new Error('Ref is null after render')
+            }
+
+            const tag = nativeRef.current.__nativeTag
+            newRecord.tag = tag
+            tagToArrayPosition[tag] = currentIndex
+            tagToItemId[tag] = itemId
+
+            renderSyncWorklet()
+
+            return tag
+          }
+
+          function updateViewCallback(
+            reactTag: number,
+            item: NativeListItem,
+            index: number
+          ) {
+            const typedType: ListItemType<TItem> = item.type
+            const renderer = renderers[typedType] as ListRenderer<TItem>
+
+            if (renderer == null) {
+              throw new Error('No renderer for list item type ' + item.type)
+            }
+
+            const itemId = tagToItemId[reactTag]
+            if (itemId == null) {
+              throw new Error('No itemId for tag ' + reactTag)
+            }
+
+            const newElement = renderer.renderItemWorklet({
+              item: item as unknown as TItem,
+              index,
+              key: item.key,
+              type: typedType,
+            })
+            const newProps = {
+              key: 'itemid-' + itemId,
+              collapsable: false,
+            }
+            const newElementWithKey = globalThis.React.cloneElement(
+              newElement,
+              newProps
+            )
+
+            const position = tagToArrayPosition[reactTag]
+            if (position == null) {
+              throw new Error('No position for tag ' + reactTag)
+            }
+
+            tagToItemKey[reactTag] = item.key
+
+            const record = elementRecords[position]
+            if (record == null) {
+              throw new Error('No record for tag ' + reactTag)
+            }
+
+            record.element = newElementWithKey
+            record.itemKey = item.key
+
+            renderContentInReact()
+            renderSyncWorklet()
+
+            return true
+          }
+
           ref.setListCallbacks(
             uiListModuleUnboxed,
-            // create view callback:
-            (type: string) => {
-              const nativeRef = globalThis.React.createRef<NativeTaggedRef>()
-              const itemId = nextItemId++
-              const typedType = type as ListItemType<TItem>
-              const renderer = renderers[typedType] as ListRenderer<TItem>
-
-              if (renderer == null) {
-                throw new Error('No renderer for list item type ' + type)
-              }
-
-              const newElement = renderer.renderItemWorklet({
-                type: typedType,
-              })
-
-              const newProps = {
-                key: 'itemid-' + itemId,
-                ref: nativeRef,
-                collapsable: false,
-              }
-              const newElementWithKey = globalThis.React.cloneElement(
-                newElement,
-                newProps
-              )
-
-              const newLength = elementsRendered.push(newElementWithKey)
-              const currentIndex = newLength - 1
-              const parentContainer = <View>{elementsRendered}</View>
-
-              reactRender(parentContainer, () => {
-                nativeLog('Render complete')
-              })
-
-              if (nativeRef.current == null) {
-                throw new Error('Ref is null after render')
-              }
-
-              const tag = nativeRef.current.__nativeTag
-              tagToArrayPosition[tag] = currentIndex
-              tagToItemId[tag] = itemId
-
-              const start = globalThis.performance.now()
-              renderSyncWorklet()
-              const end = globalThis.performance.now()
-              nativeLog('renderSync took ', end - start, 'ms')
-
-              return tag
-            },
-            // update view callback:
-            (reactTag: number, item: NativeListItem, index: number) => {
-              const typedType: ListItemType<TItem> = item.type
-              const renderer = renderers[typedType] as ListRenderer<TItem>
-
-              if (renderer == null) {
-                throw new Error('No renderer for list item type ' + item.type)
-              }
-
-              const itemId = tagToItemId[reactTag]
-              if (itemId == null) {
-                throw new Error('No itemId for tag ' + reactTag)
-              }
-
-              const newElement = renderer.renderItemWorklet({
-                item: item as unknown as TItem,
-                index,
-                key: item.key,
-                type: typedType,
-              })
-              const newProps = {
-                key: 'itemid-' + itemId,
-                collapsable: false,
-              }
-              const newElementWithKey = globalThis.React.cloneElement(
-                newElement,
-                newProps
-              )
-
-              const position = tagToArrayPosition[reactTag]
-              if (position == null) {
-                throw new Error('No position for tag ' + reactTag)
-              }
-
-              elementsRendered[position] = newElementWithKey
-
-              const parentContainer = <View>{elementsRendered}</View>
-
-              reactRender(parentContainer, () => {
-                nativeLog('Update Render complete')
-              })
-
-              const start = globalThis.performance.now()
-              renderSyncWorklet()
-              const end = globalThis.performance.now()
-              nativeLog('Update renderSync took ', end - start, 'ms')
-
-              return true
-            }
+            createViewCallback,
+            updateViewCallback,
+            syncActiveItemKeys
           )
 
           const nativeDataSource = boxedDataSource.unbox()

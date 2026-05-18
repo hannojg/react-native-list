@@ -28,6 +28,7 @@ namespace margelo::nitro::reactnativelist { class HybridNativeListLayoutSpec; }
 #include "NativeListItem.hpp"
 #include <optional>
 #include <NitroModules/AnyMap.hpp>
+#include <vector>
 #include "HybridNativeListDataSourceSpec.hpp"
 #include "HybridNativeListLayoutSpec.hpp"
 
@@ -81,8 +82,8 @@ namespace margelo::nitro::reactnativelist {
 
   public:
     // Methods
-    inline void setListCallbacks(const std::shared_ptr<HybridUiListModuleSpec>& uiListModule, const std::function<double(const std::string& /* type */)>& createView, const std::function<bool(double /* reactTag */, const NativeListItem& /* item */, double /* index */)>& updateView) override {
-      auto __result = _swiftPart.setListCallbacks(uiListModule, createView, updateView);
+    inline void setListCallbacks(const std::shared_ptr<HybridUiListModuleSpec>& uiListModule, const std::function<double(const std::string& /* type */)>& createView, const std::function<bool(double /* reactTag */, const NativeListItem& /* item */, double /* index */)>& updateView, const std::function<bool(const std::vector<std::string>& /* activeKeys */)>& syncActiveItemKeys) override {
+      auto __result = _swiftPart.setListCallbacks(uiListModule, createView, updateView, syncActiveItemKeys);
       if (__result.hasError()) [[unlikely]] {
         std::rethrow_exception(__result.error());
       }

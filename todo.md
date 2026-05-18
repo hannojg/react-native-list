@@ -6,9 +6,12 @@
 [x] - Checkout how iOS works so i can get started designing a stable API
 [ ] - Create a "SyncRenderer" and a "SyncView", this will also help with debugging (to render just one view instead of a whole list!)
 [ ] - Do I want to use the ReactFiberConfig? (what do i mean by that?)
-[ ] - Implement the main list API lol
+[x] - Implement the main list API lol
 [ ] - I think fast refresh is crashing the app right now?
 [ ] - There was some react tag collision as we are reusing the same fabric ui manager … thats why i just started the tags from 1mil. Idk, seems dirty, and is potentially something we'd like to address in the future by running our own instance?
+[ ] - Right now we need to pass a fixed size to the list (with height/width), lets get rid of that
+[ ] - Changing item height back and forth breaks layout on iOS
+[ ] - Data source API add animated:boolean option for all operations, or also think about how we could give the developer here a proper animation API
 
 ## Base functionality (what users expect to just work)
 

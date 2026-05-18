@@ -24,6 +24,7 @@
 #include "JHybridUiListViewSpec.hpp"
 #include "JFunc_double_std__string.hpp"
 #include "JFunc_bool_double_NativeListItem_double.hpp"
+#include "JFunc_bool_std__vector_std__string_.hpp"
 #include "views/JHybridUiListViewStateUpdater.hpp"
 #include "JHybridViewHolderSpec.hpp"
 #include "views/JHybridViewHolderStateUpdater.hpp"
@@ -101,6 +102,7 @@ void registerAllNatives() {
   margelo::nitro::reactnativelist::JHybridUiListViewSpec::CxxPart::registerNatives();
   margelo::nitro::reactnativelist::JFunc_double_std__string_cxx::registerNatives();
   margelo::nitro::reactnativelist::JFunc_bool_double_NativeListItem_double_cxx::registerNatives();
+  margelo::nitro::reactnativelist::JFunc_bool_std__vector_std__string__cxx::registerNatives();
   margelo::nitro::reactnativelist::views::JHybridUiListViewStateUpdater::registerNatives();
   margelo::nitro::reactnativelist::JHybridViewHolderSpec::CxxPart::registerNatives();
   margelo::nitro::reactnativelist::views::JHybridViewHolderStateUpdater::registerNatives();

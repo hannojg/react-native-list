@@ -2,7 +2,6 @@ package com.margelo.nitro.reactnativelist
 
 import android.graphics.Color
 import android.os.Looper
-import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -21,6 +20,9 @@ typealias UpdateViewCallbackType = (
     reactTag: Double,
     item: NativeListItem,
     index: Double
+) -> Boolean
+typealias SyncActiveItemKeysCallbackType = (
+    activeKeys: Array<String>
 ) -> Boolean
 
 internal interface NativeListDataSourceObserver {
@@ -218,6 +220,7 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
 
     private var createViewCallback: CreateViewCallbackType? = null
     private var updateViewCallback: UpdateViewCallbackType? = null
+    private var syncActiveItemKeysCallback: SyncActiveItemKeysCallbackType? = null
     private var adapter: NativeListAdapter? = null
     private var dataSource: HybridNativeListDataSource? = null
 
@@ -235,10 +238,12 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
     override fun setListCallbacks(
         uiListModule: HybridUiListModuleSpec,
         createView: CreateViewCallbackType,
-        updateView: UpdateViewCallbackType
+        updateView: UpdateViewCallbackType,
+        syncActiveItemKeys: SyncActiveItemKeysCallbackType
     ) {
         createViewCallback = createView
         updateViewCallback = updateView
+        syncActiveItemKeysCallback = syncActiveItemKeys
         runOnMain {
             ensureAdapter()
         }
@@ -254,6 +259,7 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
             nativeDataSource.observer = this
             val nativeAdapter = ensureAdapter()
             nativeAdapter.dataSource = nativeDataSource
+            syncActiveItemKeys()
             nativeAdapter.notifyDataSetChanged()
         }
     }
@@ -270,6 +276,7 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
     override fun dataSourceDidReload(diffResult: DiffUtil.DiffResult?, animated: Boolean) {
         runOnMain {
             val nativeAdapter = ensureAdapter()
+            syncActiveItemKeys()
             if (!animated || diffResult == null) {
                 nativeAdapter.notifyDataSetChanged()
                 return@runOnMain
@@ -281,6 +288,7 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
 
     override fun dataSourceDidInsert(index: Int) {
         runOnMain {
+            syncActiveItemKeys()
             ensureAdapter().notifyItemInserted(index)
         }
     }
@@ -293,14 +301,32 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
 
     override fun dataSourceDidRemove(index: Int) {
         runOnMain {
+            syncActiveItemKeys()
             ensureAdapter().notifyItemRemoved(index)
         }
     }
 
     override fun dataSourceDidMove(fromIndex: Int, toIndex: Int) {
         runOnMain {
+            syncActiveItemKeys()
             ensureAdapter().notifyItemMoved(fromIndex, toIndex)
         }
+    }
+
+    private fun syncActiveItemKeys() {
+        val nativeDataSource = dataSource ?: return
+        val capturedCallback = syncActiveItemKeysCallback ?: return
+
+        val activeKeys = mutableListOf<String>()
+        val itemCount = nativeDataSource.getCountAsInt()
+        for (index in 0 until itemCount) {
+            val item = nativeDataSource.getItemAt(index)
+            activeKeys.add(item.key)
+        }
+
+        val activeKeySet = activeKeys.toSet()
+        adapter?.retainHostedContent(activeKeySet)
+        capturedCallback(activeKeys.toTypedArray())
     }
 
     private fun ensureAdapter(): NativeListAdapter {
@@ -348,10 +374,6 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
 
         parent.addView(View(reactContext), childIndex)
 
-        Log.d(
-            "HybridUiListView",
-            "Resolved view with tag $viewTag, size ${resolvedView.measuredWidth}x${resolvedView.measuredHeight}"
-        )
         return resolvedView
     }
 
@@ -378,8 +400,15 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
 
         class ViewHolder(val container: FrameLayout) : RecyclerView.ViewHolder(container) {
             var boundType: String? = null
+            var boundKey: String? = null
             var reactTag: Int? = null
         }
+
+        private data class HostedContent(
+            val view: View,
+            val reactTag: Int,
+            val type: String
+        )
 
         private data class PixelSize(
             val width: Int?,
@@ -390,6 +419,8 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
             val width: Int,
             val height: Int
         )
+
+        private val hostedContentByItemKey = mutableMapOf<String, HostedContent>()
 
         override fun getItemViewType(position: Int): Int {
             val item = requireDataSource().getItemAt(position)
@@ -416,24 +447,11 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
 
         override fun onBindViewHolder(holder: ViewHolder, position: Int) {
             val item = requireDataSource().getItemAt(position)
-
-            if (holder.boundType != item.type || holder.container.childCount == 0) {
-                holder.container.removeAllViews()
-                val child = createView(item.type)
-                captureMeasuredContentSize(item.type, child)
-                val contentSize = resolvedContentSize(item)
-                bindContainerLayout(holder.container, contentSize)
-                bindChildLayout(child, contentSize)
-                holder.container.addView(child)
-                holder.boundType = item.type
-                holder.reactTag = child.id
-            } else {
-                val child = holder.container.getChildAt(0)
-                captureMeasuredContentSize(item.type, child)
-                val contentSize = resolvedContentSize(item)
-                bindContainerLayout(holder.container, contentSize)
-                bindChildLayout(child, contentSize)
-            }
+            val child = installHostedContent(holder, item)
+            captureMeasuredContentSize(item.type, child)
+            val contentSize = resolvedContentSize(item)
+            bindContainerLayout(holder.container, contentSize)
+            bindChildLayout(child, contentSize)
 
             val reactTag = holder.reactTag
             if (reactTag != null) {
@@ -445,8 +463,65 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
             return dataSource?.getCountAsInt() ?: 0
         }
 
+        fun retainHostedContent(activeKeys: Set<String>) {
+            val iterator = hostedContentByItemKey.keys.iterator()
+            while (iterator.hasNext()) {
+                val itemKey = iterator.next()
+                if (activeKeys.contains(itemKey)) {
+                    continue
+                }
+                iterator.remove()
+            }
+        }
+
         private fun requireDataSource(): HybridNativeListDataSource {
             return dataSource ?: throw IllegalStateException("NativeListDataSource is not set.")
+        }
+
+        private fun installHostedContent(holder: ViewHolder, item: NativeListItem): View {
+            val currentChild = firstHostedChild(holder)
+            if (
+                currentChild != null &&
+                holder.boundKey == item.key &&
+                holder.boundType == item.type
+            ) {
+                return currentChild
+            }
+
+            holder.container.removeAllViews()
+
+            val existingHostedContent = hostedContentByItemKey[item.key]
+            val hostedContent = if (
+                existingHostedContent != null &&
+                existingHostedContent.type == item.type
+            ) {
+                existingHostedContent
+            } else {
+                val child = createView(item.type)
+                val nextHostedContent = HostedContent(
+                    view = child,
+                    reactTag = child.id,
+                    type = item.type
+                )
+                hostedContentByItemKey[item.key] = nextHostedContent
+                nextHostedContent
+            }
+
+            val parent = hostedContent.view.parent as? ViewGroup
+            parent?.removeView(hostedContent.view)
+
+            holder.container.addView(hostedContent.view)
+            holder.boundType = item.type
+            holder.boundKey = item.key
+            holder.reactTag = hostedContent.reactTag
+            return hostedContent.view
+        }
+
+        private fun firstHostedChild(holder: ViewHolder): View? {
+            if (holder.container.childCount == 0) {
+                return null
+            }
+            return holder.container.getChildAt(0)
         }
 
         private fun captureMeasuredContentSize(type: String, view: View) {

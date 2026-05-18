@@ -20,13 +20,25 @@ final class HostCell: UICollectionViewCell {
     private var heightConstraint: NSLayoutConstraint?
 
     var reactTag: Int?
+    var itemKey: String?
     var hasHostedView: Bool {
         return hostedView != nil
     }
 
-    func install(view: UIView, contentSize: CGSize) {
-        hostedView?.removeFromSuperview()
+    func install(view: UIView, contentSize: CGSize, itemKey: String) {
+        if let currentHostedView = hostedView {
+            let isCurrentViewOwnedByCell = currentHostedView.superview === contentView
+            if isCurrentViewOwnedByCell {
+                deactivateInstalledConstraints(for: currentHostedView)
+                currentHostedView.removeFromSuperview()
+            }
+        }
+
+        deactivateInstalledConstraints(for: view)
+        view.removeFromSuperview()
+
         hostedView = view
+        self.itemKey = itemKey
 
         view.translatesAutoresizingMaskIntoConstraints = false
         contentView.addSubview(view)
@@ -49,11 +61,65 @@ final class HostCell: UICollectionViewCell {
         heightConstraint?.constant = contentSize.height
     }
 
+    func detachHostedView() {
+        if let hostedView {
+            let isHostedViewOwnedByCell = hostedView.superview === contentView
+            if isHostedViewOwnedByCell {
+                deactivateInstalledConstraints(for: hostedView)
+                hostedView.removeFromSuperview()
+            }
+        }
+
+        hostedView = nil
+        reactTag = nil
+        itemKey = nil
+        widthConstraint = nil
+        heightConstraint = nil
+    }
+
     override func prepareForReuse() {
         super.prepareForReuse()
         if let hostedView {
             contentView.bringSubviewToFront(hostedView)
         }
+    }
+
+    func isHosting(_ view: UIView) -> Bool {
+        return hostedView === view
+    }
+
+    func releaseHostedViewReferenceIfNeeded(for view: UIView) {
+        guard hostedView === view else { return }
+
+        hostedView = nil
+        reactTag = nil
+        itemKey = nil
+        widthConstraint = nil
+        heightConstraint = nil
+    }
+
+    private func deactivateInstalledConstraints(for view: UIView) {
+        let localConstraints = view.constraints.filter { constraint in
+            let isWidthConstraint = constraint.firstAttribute == .width
+            let isHeightConstraint = constraint.firstAttribute == .height
+            let isSizeConstraint = isWidthConstraint || isHeightConstraint
+            let firstView = constraint.firstItem as? UIView
+            let isOwnedByView = firstView === view
+            let isLocalConstraint = constraint.secondItem == nil
+            return isSizeConstraint && isOwnedByView && isLocalConstraint
+        }
+        NSLayoutConstraint.deactivate(localConstraints)
+
+        guard let superview = view.superview else { return }
+
+        let parentConstraints = superview.constraints.filter { constraint in
+            let firstView = constraint.firstItem as? UIView
+            let secondView = constraint.secondItem as? UIView
+            let usesFirstView = firstView === view
+            let usesSecondView = secondView === view
+            return usesFirstView || usesSecondView
+        }
+        NSLayoutConstraint.deactivate(parentConstraints)
     }
 }
 
@@ -313,6 +379,7 @@ final class LinearCollectionViewLayout: UICollectionViewLayout {
             let itemAttributes = UICollectionViewLayoutAttributes(forCellWith: indexPath)
             itemAttributes.frame = frame
             attributes.append(itemAttributes)
+
             yOffset = linearLayout.yOffsetAfterItem(currentOffset: yOffset, itemHeight: itemSize.height)
         }
 
@@ -356,9 +423,11 @@ class HybridUiListView : HybridUiListViewSpec {
     private var registeredReuseIdentifiers = Set<String>()
     private var measuredContentSizeByType: [String: CGSize] = [:]
     private var premeasuredViewByType: [String: (view: UIView, tag: ReactTag)] = [:]
+    private var hostedContentByItemKey: [String: (view: UIView, tag: ReactTag)] = [:]
 
     private var createViewCallback: ((_ type: String) -> Double)?
     private var updateViewCallback: ((_ reactTag: Double, _ item: NativeListItem, _ index: Double) -> Bool)?
+    private var syncActiveItemKeysCallback: ((_ activeKeys: [String]) -> Bool)?
 
     override init() {
         view = UIView(frame: .zero)
@@ -368,10 +437,12 @@ class HybridUiListView : HybridUiListViewSpec {
     func setListCallbacks(
         uiListModule: any HybridUiListModuleSpec,
         createView: @escaping (String) -> Double,
-        updateView: @escaping (Double, NativeListItem, Double) -> Bool
+        updateView: @escaping (Double, NativeListItem, Double) -> Bool,
+        syncActiveItemKeys: @escaping ([String]) -> Bool
     ) throws {
         createViewCallback = createView
         updateViewCallback = updateView
+        syncActiveItemKeysCallback = syncActiveItemKeys
         runOnMain { [weak self] in
             self?.configureCollectionViewIfNeeded()
         }
@@ -389,6 +460,7 @@ class HybridUiListView : HybridUiListViewSpec {
             concreteDataSource.observer = self
             self.configureCollectionViewIfNeeded()
             self.premeasureAllVisibleTypes()
+            self.syncActiveItemKeys(with: concreteDataSource)
             self.collectionView?.collectionViewLayout.invalidateLayout()
             self.collectionView?.reloadData()
         }
@@ -462,7 +534,8 @@ class HybridUiListView : HybridUiListViewSpec {
 
         let items = dataSource.itemsForPremeasurement()
         for item in items {
-            ensureReuseRegistered(for: item.type)
+            let reuseIdentifier = reuseIdentifier(for: item)
+            ensureReuseRegistered(for: reuseIdentifier)
             premeasureItemTypeIfNeeded(for: item)
         }
     }
@@ -524,6 +597,75 @@ class HybridUiListView : HybridUiListViewSpec {
         registeredReuseIdentifiers.insert(type)
     }
 
+    private func reuseIdentifier(for item: NativeListItem) -> String {
+        return item.type
+    }
+
+    private func installHostedContent(
+        in cell: HostCell,
+        item: NativeListItem,
+        contentSize: CGSize
+    ) throws {
+        if cell.itemKey != item.key {
+            cell.detachHostedView()
+        }
+
+        if let hostedContent = hostedContentByItemKey[item.key] {
+            releaseExistingHostedViewOwner(
+                view: hostedContent.view,
+                targetCell: cell
+            )
+            cell.install(view: hostedContent.view, contentSize: contentSize, itemKey: item.key)
+            cell.reactTag = hostedContent.tag
+            return
+        }
+
+        if let result = takePremeasuredView(for: item.type) {
+            cell.install(view: result.0, contentSize: contentSize, itemKey: item.key)
+            cell.reactTag = result.1
+            hostedContentByItemKey[item.key] = (view: result.0, tag: result.1)
+            return
+        }
+
+        let result = try makeView(type: item.type)
+        cell.install(view: result.0, contentSize: contentSize, itemKey: item.key)
+        cell.reactTag = result.1
+        hostedContentByItemKey[item.key] = (view: result.0, tag: result.1)
+    }
+
+    private func releaseExistingHostedViewOwner(
+        view: UIView,
+        targetCell: HostCell
+    ) {
+        guard let collectionView else { return }
+
+        for visibleCell in collectionView.visibleCells {
+            guard let hostCell = visibleCell as? HostCell else {
+                continue
+            }
+            guard hostCell !== targetCell else {
+                continue
+            }
+            guard hostCell.isHosting(view) else {
+                continue
+            }
+
+            hostCell.releaseHostedViewReferenceIfNeeded(for: view)
+        }
+    }
+
+    private func syncActiveItemKeys(with dataSource: HybridNativeListDataSource) {
+        let activeKeys = dataSource.itemsForPremeasurement().map { item in
+            item.key
+        }
+        let activeKeySet = Set(activeKeys)
+        hostedContentByItemKey = hostedContentByItemKey.filter { entry in
+            return activeKeySet.contains(entry.key)
+        }
+
+        _ = syncActiveItemKeysCallback?(activeKeys)
+    }
+
     private func runOnMain(_ block: @escaping () -> Void) {
         if Thread.isMainThread {
             block()
@@ -560,30 +702,21 @@ class HybridUiListView : HybridUiListViewSpec {
         }
 
         let item = dataSource.item(at: indexPath.item)
-        ensureReuseRegistered(for: item.type)
+        let reuseIdentifier = reuseIdentifier(for: item)
+        ensureReuseRegistered(for: reuseIdentifier)
 
         let cell = collectionView.dequeueReusableCell(
-            withReuseIdentifier: item.type,
+            withReuseIdentifier: reuseIdentifier,
             for: indexPath
         ) as! HostCell
 
         let contentSize = resolvedContentSize(for: item)
 
-        if !cell.hasHostedView {
-            do {
-                if let result = takePremeasuredView(for: item.type) {
-                    cell.install(view: result.0, contentSize: contentSize)
-                    cell.reactTag = result.1
-                } else {
-                    let result = try makeView(type: item.type)
-                    cell.install(view: result.0, contentSize: contentSize)
-                    cell.reactTag = result.1
-                }
-            } catch {
-                print("Failed to create list item view: \(error)")
-            }
-        } else {
+        do {
+            try installHostedContent(in: cell, item: item, contentSize: contentSize)
             cell.updateContentSize(contentSize)
+        } catch {
+            print("Failed to create list item view: \(error)")
         }
 
         if let reactTag = cell.reactTag {
@@ -604,6 +737,7 @@ extension HybridUiListView: NativeListDataSourceObserver {
             guard let self else { return }
             configureCollectionViewIfNeeded()
             premeasureAllVisibleTypes()
+            syncActiveItemKeys(with: dataSource)
 
             guard animated, let collectionView, let changeset else {
                 collectionView?.reloadData()
@@ -621,8 +755,10 @@ extension HybridUiListView: NativeListDataSourceObserver {
         runOnMain { [weak self] in
             guard let self else { return }
             let item = dataSource.item(at: index)
-            ensureReuseRegistered(for: item.type)
+            let reuseIdentifier = reuseIdentifier(for: item)
+            ensureReuseRegistered(for: reuseIdentifier)
             premeasureItemTypeIfNeeded(for: item)
+            syncActiveItemKeys(with: dataSource)
             let indexPath = IndexPath(item: index, section: 0)
             let indexPaths = [indexPath]
             collectionView?.insertItems(at: indexPaths)
@@ -633,7 +769,8 @@ extension HybridUiListView: NativeListDataSourceObserver {
         runOnMain { [weak self] in
             guard let self else { return }
             let item = dataSource.item(at: index)
-            ensureReuseRegistered(for: item.type)
+            let reuseIdentifier = reuseIdentifier(for: item)
+            ensureReuseRegistered(for: reuseIdentifier)
             premeasureItemTypeIfNeeded(for: item)
             let indexPath = IndexPath(item: index, section: 0)
             let indexPaths = [indexPath]
@@ -644,6 +781,7 @@ extension HybridUiListView: NativeListDataSourceObserver {
     func dataSourceDidRemove(_ dataSource: HybridNativeListDataSource, index: Int) {
         runOnMain { [weak self] in
             guard let self else { return }
+            syncActiveItemKeys(with: dataSource)
             let indexPath = IndexPath(item: index, section: 0)
             let indexPaths = [indexPath]
             collectionView?.deleteItems(at: indexPaths)
@@ -653,6 +791,7 @@ extension HybridUiListView: NativeListDataSourceObserver {
     func dataSourceDidMove(_ dataSource: HybridNativeListDataSource, fromIndex: Int, toIndex: Int) {
         runOnMain { [weak self] in
             guard let self else { return }
+            syncActiveItemKeys(with: dataSource)
             let sourceIndexPath = IndexPath(item: fromIndex, section: 0)
             let targetIndexPath = IndexPath(item: toIndex, section: 0)
             collectionView?.moveItem(at: sourceIndexPath, to: targetIndexPath)

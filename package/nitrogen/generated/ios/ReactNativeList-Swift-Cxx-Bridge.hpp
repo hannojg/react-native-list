@@ -305,40 +305,6 @@ namespace margelo::nitro::reactnativelist::bridge::swift {
     return Func_bool_double_NativeListItem_double_Wrapper(std::move(value));
   }
 
-  // pragma MARK: std::vector<std::string>
-  /**
-   * Specialized version of `std::vector<std::string>`.
-   */
-  using std__vector_std__string_ = std::vector<std::string>;
-  inline std::vector<std::string> create_std__vector_std__string_(size_t size) noexcept {
-    std::vector<std::string> vector;
-    vector.reserve(size);
-    return vector;
-  }
-
-  // pragma MARK: std::function<bool(const std::vector<std::string>& /* activeKeys */)>
-  /**
-   * Specialized version of `std::function<bool(const std::vector<std::string>&)>`.
-   */
-  using Func_bool_std__vector_std__string_ = std::function<bool(const std::vector<std::string>& /* activeKeys */)>;
-  /**
-   * Wrapper class for a `std::function<bool(const std::vector<std::string>& / * activeKeys * /)>`, this can be used from Swift.
-   */
-  class Func_bool_std__vector_std__string__Wrapper final {
-  public:
-    explicit Func_bool_std__vector_std__string__Wrapper(std::function<bool(const std::vector<std::string>& /* activeKeys */)>&& func): _function(std::make_unique<std::function<bool(const std::vector<std::string>& /* activeKeys */)>>(std::move(func))) {}
-    inline bool call(std::vector<std::string> activeKeys) const noexcept {
-      auto __result = _function->operator()(activeKeys);
-      return __result;
-    }
-  private:
-    std::unique_ptr<std::function<bool(const std::vector<std::string>& /* activeKeys */)>> _function;
-  } SWIFT_NONCOPYABLE;
-  Func_bool_std__vector_std__string_ create_Func_bool_std__vector_std__string_(void* NON_NULL swiftClosureWrapper) noexcept;
-  inline Func_bool_std__vector_std__string__Wrapper wrap_Func_bool_std__vector_std__string_(Func_bool_std__vector_std__string_ value) noexcept {
-    return Func_bool_std__vector_std__string__Wrapper(std::move(value));
-  }
-
   // pragma MARK: std::shared_ptr<HybridUiListViewSpec>
   /**
    * Specialized version of `std::shared_ptr<HybridUiListViewSpec>`.

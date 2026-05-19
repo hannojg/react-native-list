@@ -125,7 +125,7 @@ open class HybridUiListViewSpec_cxx {
 
   // Methods
   @inline(__always)
-  public final func setListCallbacks(uiListModule: bridge.std__shared_ptr_HybridUiListModuleSpec_, createView: bridge.Func_double_std__string, updateView: bridge.Func_bool_double_NativeListItem_double, syncActiveItemKeys: bridge.Func_bool_std__vector_std__string_) -> bridge.Result_void_ {
+  public final func setListCallbacks(uiListModule: bridge.std__shared_ptr_HybridUiListModuleSpec_, createView: bridge.Func_double_std__string, updateView: bridge.Func_bool_double_NativeListItem_double) -> bridge.Result_void_ {
     do {
       try self.__implementation.setListCallbacks(uiListModule: { () -> any HybridUiListModuleSpec in
         let __unsafePointer = bridge.get_std__shared_ptr_HybridUiListModuleSpec_(uiListModule)
@@ -141,18 +141,6 @@ open class HybridUiListViewSpec_cxx {
         let __wrappedFunction = bridge.wrap_Func_bool_double_NativeListItem_double(updateView)
         return { (__reactTag: Double, __item: NativeListItem, __index: Double) -> Bool in
           let __result = __wrappedFunction.call(__reactTag, __item, __index)
-          return __result
-        }
-      }(), syncActiveItemKeys: { () -> ([String]) -> Bool in
-        let __wrappedFunction = bridge.wrap_Func_bool_std__vector_std__string_(syncActiveItemKeys)
-        return { (__activeKeys: [String]) -> Bool in
-          let __result = __wrappedFunction.call({ () -> bridge.std__vector_std__string_ in
-            var __vector = bridge.create_std__vector_std__string_(__activeKeys.count)
-            for __item in __activeKeys {
-              __vector.push_back(std.string(__item))
-            }
-            return __vector
-          }())
           return __result
         }
       }())

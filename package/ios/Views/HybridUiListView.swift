@@ -162,8 +162,16 @@ protocol NativeListDataSourceObserver: AnyObject {
         changeset: StagedChangeset<[DiffableListItem]>?
     )
     func dataSourceDidInsert(_ dataSource: HybridNativeListDataSource, index: Int)
-    func dataSourceDidUpdate(_ dataSource: HybridNativeListDataSource, index: Int)
-    func dataSourceDidRemove(_ dataSource: HybridNativeListDataSource, index: Int)
+    func dataSourceDidUpdate(
+        _ dataSource: HybridNativeListDataSource,
+        index: Int,
+        previousItem: NativeListItem
+    )
+    func dataSourceDidRemove(
+        _ dataSource: HybridNativeListDataSource,
+        index: Int,
+        removedItem: NativeListItem
+    )
     func dataSourceDidMove(_ dataSource: HybridNativeListDataSource, fromIndex: Int, toIndex: Int)
 }
 
@@ -202,15 +210,16 @@ class HybridNativeListDataSource: HybridNativeListDataSourceSpec {
 
     func updateItem(index: Double, item: NativeListItem) throws {
         let itemIndex = validExistingIndex(index)
+        let previousItem = items[itemIndex].nativeItem
         let wrappedItem = wrap(item)
         items[itemIndex] = wrappedItem
-        observer?.dataSourceDidUpdate(self, index: itemIndex)
+        observer?.dataSourceDidUpdate(self, index: itemIndex, previousItem: previousItem)
     }
 
     func removeItem(index: Double) throws {
         let itemIndex = validExistingIndex(index)
-        items.remove(at: itemIndex)
-        observer?.dataSourceDidRemove(self, index: itemIndex)
+        let removedItem = items.remove(at: itemIndex).nativeItem
+        observer?.dataSourceDidRemove(self, index: itemIndex, removedItem: removedItem)
     }
 
     func moveItem(fromIndex: Double, toIndex: Double) throws {
@@ -427,7 +436,6 @@ class HybridUiListView : HybridUiListViewSpec {
 
     private var createViewCallback: ((_ type: String) -> Double)?
     private var updateViewCallback: ((_ reactTag: Double, _ item: NativeListItem, _ index: Double) -> Bool)?
-    private var syncActiveItemKeysCallback: ((_ activeKeys: [String]) -> Bool)?
 
     override init() {
         view = UIView(frame: .zero)
@@ -437,12 +445,10 @@ class HybridUiListView : HybridUiListViewSpec {
     func setListCallbacks(
         uiListModule: any HybridUiListModuleSpec,
         createView: @escaping (String) -> Double,
-        updateView: @escaping (Double, NativeListItem, Double) -> Bool,
-        syncActiveItemKeys: @escaping ([String]) -> Bool
+        updateView: @escaping (Double, NativeListItem, Double) -> Bool
     ) throws {
         createViewCallback = createView
         updateViewCallback = updateView
-        syncActiveItemKeysCallback = syncActiveItemKeys
         runOnMain { [weak self] in
             self?.configureCollectionViewIfNeeded()
         }
@@ -460,7 +466,7 @@ class HybridUiListView : HybridUiListViewSpec {
             concreteDataSource.observer = self
             self.configureCollectionViewIfNeeded()
             self.premeasureAllVisibleTypes()
-            self.syncActiveItemKeys(with: concreteDataSource)
+            self.retainHostedContent(in: concreteDataSource)
             self.collectionView?.collectionViewLayout.invalidateLayout()
             self.collectionView?.reloadData()
         }
@@ -606,7 +612,8 @@ class HybridUiListView : HybridUiListViewSpec {
         item: NativeListItem,
         contentSize: CGSize
     ) throws {
-        if cell.itemKey != item.key {
+        if let currentItemKey = cell.itemKey, currentItemKey != item.key {
+            hostedContentByItemKey[currentItemKey] = nil
             cell.detachHostedView()
         }
 
@@ -654,7 +661,7 @@ class HybridUiListView : HybridUiListViewSpec {
         }
     }
 
-    private func syncActiveItemKeys(with dataSource: HybridNativeListDataSource) {
+    private func retainHostedContent(in dataSource: HybridNativeListDataSource) {
         let activeKeys = dataSource.itemsForPremeasurement().map { item in
             item.key
         }
@@ -662,8 +669,6 @@ class HybridUiListView : HybridUiListViewSpec {
         hostedContentByItemKey = hostedContentByItemKey.filter { entry in
             return activeKeySet.contains(entry.key)
         }
-
-        _ = syncActiveItemKeysCallback?(activeKeys)
     }
 
     private func runOnMain(_ block: @escaping () -> Void) {
@@ -737,7 +742,7 @@ extension HybridUiListView: NativeListDataSourceObserver {
             guard let self else { return }
             configureCollectionViewIfNeeded()
             premeasureAllVisibleTypes()
-            syncActiveItemKeys(with: dataSource)
+            retainHostedContent(in: dataSource)
 
             guard animated, let collectionView, let changeset else {
                 collectionView?.reloadData()
@@ -758,17 +763,24 @@ extension HybridUiListView: NativeListDataSourceObserver {
             let reuseIdentifier = reuseIdentifier(for: item)
             ensureReuseRegistered(for: reuseIdentifier)
             premeasureItemTypeIfNeeded(for: item)
-            syncActiveItemKeys(with: dataSource)
             let indexPath = IndexPath(item: index, section: 0)
             let indexPaths = [indexPath]
             collectionView?.insertItems(at: indexPaths)
         }
     }
 
-    func dataSourceDidUpdate(_ dataSource: HybridNativeListDataSource, index: Int) {
+    func dataSourceDidUpdate(
+        _ dataSource: HybridNativeListDataSource,
+        index: Int,
+        previousItem: NativeListItem
+    ) {
         runOnMain { [weak self] in
             guard let self else { return }
             let item = dataSource.item(at: index)
+            if previousItem.key != item.key {
+                hostedContentByItemKey[previousItem.key] = nil
+            }
+
             let reuseIdentifier = reuseIdentifier(for: item)
             ensureReuseRegistered(for: reuseIdentifier)
             premeasureItemTypeIfNeeded(for: item)
@@ -778,10 +790,14 @@ extension HybridUiListView: NativeListDataSourceObserver {
         }
     }
 
-    func dataSourceDidRemove(_ dataSource: HybridNativeListDataSource, index: Int) {
+    func dataSourceDidRemove(
+        _ dataSource: HybridNativeListDataSource,
+        index: Int,
+        removedItem: NativeListItem
+    ) {
         runOnMain { [weak self] in
             guard let self else { return }
-            syncActiveItemKeys(with: dataSource)
+            hostedContentByItemKey[removedItem.key] = nil
             let indexPath = IndexPath(item: index, section: 0)
             let indexPaths = [indexPath]
             collectionView?.deleteItems(at: indexPaths)
@@ -791,7 +807,6 @@ extension HybridUiListView: NativeListDataSourceObserver {
     func dataSourceDidMove(_ dataSource: HybridNativeListDataSource, fromIndex: Int, toIndex: Int) {
         runOnMain { [weak self] in
             guard let self else { return }
-            syncActiveItemKeys(with: dataSource)
             let sourceIndexPath = IndexPath(item: fromIndex, section: 0)
             let targetIndexPath = IndexPath(item: toIndex, section: 0)
             collectionView?.moveItem(at: sourceIndexPath, to: targetIndexPath)

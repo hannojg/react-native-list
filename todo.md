@@ -12,6 +12,7 @@
 [ ] - Right now we need to pass a fixed size to the list (with height/width), lets get rid of that
 [ ] - Changing item height back and forth breaks layout on iOS
 [ ] - Data source API add animated:boolean option for all operations, or also think about how we could give the developer here a proper animation API
+[ ] - Android: you always have to interact with the UI once to render out the changes lol
 
 ## Base functionality (what users expect to just work)
 

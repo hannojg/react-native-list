@@ -127,15 +127,6 @@ namespace margelo::nitro::reactnativelist::bridge::swift {
     };
   }
 
-  // pragma MARK: std::function<bool(const std::vector<std::string>& /* activeKeys */)>
-  Func_bool_std__vector_std__string_ create_Func_bool_std__vector_std__string_(void* NON_NULL swiftClosureWrapper) noexcept {
-    auto swiftClosure = ReactNativeList::Func_bool_std__vector_std__string_::fromUnsafe(swiftClosureWrapper);
-    return [swiftClosure = std::move(swiftClosure)](const std::vector<std::string>& activeKeys) mutable -> bool {
-      auto __result = swiftClosure.call(activeKeys);
-      return __result;
-    };
-  }
-
   // pragma MARK: std::shared_ptr<HybridUiListViewSpec>
   std::shared_ptr<HybridUiListViewSpec> create_std__shared_ptr_HybridUiListViewSpec_(void* NON_NULL swiftUnsafePointer) noexcept {
     ReactNativeList::HybridUiListViewSpec_cxx swiftPart = ReactNativeList::HybridUiListViewSpec_cxx::fromUnsafe(swiftUnsafePointer);

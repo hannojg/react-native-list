@@ -2,6 +2,7 @@ import { NitroModules } from 'react-native-nitro-modules'
 import type { AnyMap } from 'react-native-nitro-modules'
 import type { NativeListDataSource } from './specs/NativeListDataSource.nitro'
 import { useEffect, useRef } from 'react'
+import { scheduleOnUI } from 'react-native-worklets'
 
 export type ListKey = string
 
@@ -48,10 +49,28 @@ export type ListDataSource<TItem extends ListItem> = {
   moveItem(fromIndex: number, toIndex: number): void
 }
 
+export type ListDataSourceMutation =
+  | {
+      type: 'replaceData'
+    }
+  | {
+      type: 'removeItem'
+      itemKey: string
+    }
+  | {
+      type: 'updateItem'
+      previousItemKey: string
+    }
+
+type ListDataSourceMutationListener = (
+  mutation: ListDataSourceMutation
+) => void
+
 type NativeListDataSourceBacked<TItem extends ListItem> =
   ListDataSource<TItem> & {
     __nativeDataSource: NativeListDataSource
     __setConfig(config: unknown): void
+    __addMutationListener(listener: ListDataSourceMutationListener): () => void
   }
 
 function setContentEqualCallback<TItem extends ListItem>(
@@ -90,8 +109,16 @@ export function createListDataSource<TItem extends ListItem>(
       'NativeListDataSource'
     )
   let currentConfig = config
+  let currentItems: TItem[] = []
+  const mutationListeners = new Set<ListDataSourceMutationListener>()
 
   setContentEqualCallback(nativeDataSource, currentConfig)
+
+  function notifyMutationListeners(mutation: ListDataSourceMutation) {
+    mutationListeners.forEach((listener) => {
+      scheduleOnUI(listener, mutation)
+    })
+  }
 
   const dataSource: NativeListDataSourceBacked<TItem> = {
     __nativeDataSource: nativeDataSource,
@@ -99,12 +126,60 @@ export function createListDataSource<TItem extends ListItem>(
       currentConfig = nextConfig as unknown as ListDataSourceConfig<TItem>
       setContentEqualCallback(nativeDataSource, currentConfig)
     },
-    // @ts-expect-error - TODO: make typescript happy here one day
-    replaceData: nativeDataSource.replaceData.bind(nativeDataSource),
-    insertItem: nativeDataSource.insertItem.bind(nativeDataSource),
-    updateItem: nativeDataSource.updateItem.bind(nativeDataSource),
-    removeItem: nativeDataSource.removeItem.bind(nativeDataSource),
-    moveItem: nativeDataSource.moveItem.bind(nativeDataSource),
+    __addMutationListener(listener: ListDataSourceMutationListener) {
+      mutationListeners.add(listener)
+      return () => {
+        mutationListeners.delete(listener)
+      }
+    },
+    replaceData(data: readonly TItem[], animated: boolean = false) {
+      const nextItems = [...data]
+      currentItems = nextItems
+      notifyMutationListeners({
+        type: 'replaceData',
+      })
+      nativeDataSource.replaceData(nextItems, animated)
+    },
+    insertItem(index: number, item: TItem) {
+      currentItems.splice(index, 0, item)
+      nativeDataSource.insertItem(index, item)
+    },
+    updateItem(index: number, item: TItem) {
+      const previousItem = currentItems[index]
+      if (previousItem != null && previousItem.key !== item.key) {
+        currentItems[index] = item
+        notifyMutationListeners({
+          type: 'updateItem',
+          previousItemKey: previousItem.key,
+        })
+        nativeDataSource.updateItem(index, item)
+        return
+      }
+
+      currentItems[index] = item
+      nativeDataSource.updateItem(index, item)
+    },
+    removeItem(index: number) {
+      const removedItems = currentItems.slice(index, index + 1)
+      const removedItem = removedItems[0]
+      currentItems.splice(index, 1)
+      if (removedItem != null) {
+        notifyMutationListeners({
+          type: 'removeItem',
+          itemKey: removedItem.key,
+        })
+      }
+      nativeDataSource.removeItem(index)
+    },
+    moveItem(fromIndex: number, toIndex: number) {
+      const removedItems = currentItems.slice(fromIndex, fromIndex + 1)
+      const movedItem = removedItems[0]
+      if (movedItem != null) {
+        currentItems.splice(fromIndex, 1)
+        currentItems.splice(toIndex, 0, movedItem)
+      }
+      nativeDataSource.moveItem(fromIndex, toIndex)
+    },
   }
   return dataSource
 }
@@ -114,6 +189,14 @@ export function getNativeListDataSource<TItem extends ListItem>(
 ): NativeListDataSource {
   const nativeBackedDataSource = dataSource as NativeListDataSourceBacked<TItem>
   return nativeBackedDataSource.__nativeDataSource
+}
+
+export function addListDataSourceMutationListener<TItem extends ListItem>(
+  dataSource: ListDataSource<TItem>,
+  listener: ListDataSourceMutationListener
+) {
+  const nativeBackedDataSource = dataSource as NativeListDataSourceBacked<TItem>
+  return nativeBackedDataSource.__addMutationListener(listener)
 }
 
 export function useListDataSource<TItem extends ListItem>(

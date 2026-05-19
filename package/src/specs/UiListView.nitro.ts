@@ -19,8 +19,7 @@ export interface UiListViewMethods extends HybridViewMethods {
     createView: Sync<(type: string) => number>,
     updateView: Sync<
       (reactTag: number, item: NativeListItem, index: number) => boolean
-    >,
-    syncActiveItemKeys: Sync<(activeKeys: string[]) => boolean>
+    >
   ): void
 
   setDataSource(dataSource: NativeListDataSource): void

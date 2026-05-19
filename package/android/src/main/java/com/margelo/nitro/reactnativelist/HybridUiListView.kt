@@ -21,15 +21,12 @@ typealias UpdateViewCallbackType = (
     item: NativeListItem,
     index: Double
 ) -> Boolean
-typealias SyncActiveItemKeysCallbackType = (
-    activeKeys: Array<String>
-) -> Boolean
 
 internal interface NativeListDataSourceObserver {
     fun dataSourceDidReload(diffResult: DiffUtil.DiffResult?, animated: Boolean)
     fun dataSourceDidInsert(index: Int)
-    fun dataSourceDidUpdate(index: Int)
-    fun dataSourceDidRemove(index: Int)
+    fun dataSourceDidUpdate(index: Int, previousItem: NativeListItem)
+    fun dataSourceDidRemove(index: Int, removedItem: NativeListItem)
     fun dataSourceDidMove(fromIndex: Int, toIndex: Int)
 }
 
@@ -71,17 +68,18 @@ class HybridNativeListDataSource : HybridNativeListDataSourceSpec() {
     override fun updateItem(index: Double, item: NativeListItem) {
         val itemIndex = validateExistingIndex(index.toInt())
         val mutableItems = items.toMutableList()
+        val previousItem = mutableItems[itemIndex]
         mutableItems[itemIndex] = item
         items = mutableItems
-        observer?.dataSourceDidUpdate(itemIndex)
+        observer?.dataSourceDidUpdate(itemIndex, previousItem)
     }
 
     override fun removeItem(index: Double) {
         val itemIndex = validateExistingIndex(index.toInt())
         val mutableItems = items.toMutableList()
-        mutableItems.removeAt(itemIndex)
+        val removedItem = mutableItems.removeAt(itemIndex)
         items = mutableItems
-        observer?.dataSourceDidRemove(itemIndex)
+        observer?.dataSourceDidRemove(itemIndex, removedItem)
     }
 
     override fun moveItem(fromIndex: Double, toIndex: Double) {
@@ -220,7 +218,6 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
 
     private var createViewCallback: CreateViewCallbackType? = null
     private var updateViewCallback: UpdateViewCallbackType? = null
-    private var syncActiveItemKeysCallback: SyncActiveItemKeysCallbackType? = null
     private var adapter: NativeListAdapter? = null
     private var dataSource: HybridNativeListDataSource? = null
 
@@ -238,12 +235,10 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
     override fun setListCallbacks(
         uiListModule: HybridUiListModuleSpec,
         createView: CreateViewCallbackType,
-        updateView: UpdateViewCallbackType,
-        syncActiveItemKeys: SyncActiveItemKeysCallbackType
+        updateView: UpdateViewCallbackType
     ) {
         createViewCallback = createView
         updateViewCallback = updateView
-        syncActiveItemKeysCallback = syncActiveItemKeys
         runOnMain {
             ensureAdapter()
         }
@@ -259,7 +254,7 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
             nativeDataSource.observer = this
             val nativeAdapter = ensureAdapter()
             nativeAdapter.dataSource = nativeDataSource
-            syncActiveItemKeys()
+            nativeAdapter.retainHostedContent(nativeDataSource)
             nativeAdapter.notifyDataSetChanged()
         }
     }
@@ -276,7 +271,11 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
     override fun dataSourceDidReload(diffResult: DiffUtil.DiffResult?, animated: Boolean) {
         runOnMain {
             val nativeAdapter = ensureAdapter()
-            syncActiveItemKeys()
+            val nativeDataSource = dataSource
+            if (nativeDataSource != null) {
+                nativeAdapter.retainHostedContent(nativeDataSource)
+            }
+
             if (!animated || diffResult == null) {
                 nativeAdapter.notifyDataSetChanged()
                 return@runOnMain
@@ -288,45 +287,34 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
 
     override fun dataSourceDidInsert(index: Int) {
         runOnMain {
-            syncActiveItemKeys()
             ensureAdapter().notifyItemInserted(index)
         }
     }
 
-    override fun dataSourceDidUpdate(index: Int) {
+    override fun dataSourceDidUpdate(index: Int, previousItem: NativeListItem) {
         runOnMain {
-            ensureAdapter().notifyItemChanged(index)
+            val nativeAdapter = ensureAdapter()
+            val nativeDataSource = dataSource
+            val nextItem = nativeDataSource?.getItemAt(index)
+            if (nextItem == null || previousItem.key != nextItem.key) {
+                nativeAdapter.releaseHostedContent(previousItem.key)
+            }
+            nativeAdapter.notifyItemChanged(index)
         }
     }
 
-    override fun dataSourceDidRemove(index: Int) {
+    override fun dataSourceDidRemove(index: Int, removedItem: NativeListItem) {
         runOnMain {
-            syncActiveItemKeys()
-            ensureAdapter().notifyItemRemoved(index)
+            val nativeAdapter = ensureAdapter()
+            nativeAdapter.releaseHostedContent(removedItem.key)
+            nativeAdapter.notifyItemRemoved(index)
         }
     }
 
     override fun dataSourceDidMove(fromIndex: Int, toIndex: Int) {
         runOnMain {
-            syncActiveItemKeys()
             ensureAdapter().notifyItemMoved(fromIndex, toIndex)
         }
-    }
-
-    private fun syncActiveItemKeys() {
-        val nativeDataSource = dataSource ?: return
-        val capturedCallback = syncActiveItemKeysCallback ?: return
-
-        val activeKeys = mutableListOf<String>()
-        val itemCount = nativeDataSource.getCountAsInt()
-        for (index in 0 until itemCount) {
-            val item = nativeDataSource.getItemAt(index)
-            activeKeys.add(item.key)
-        }
-
-        val activeKeySet = activeKeys.toSet()
-        adapter?.retainHostedContent(activeKeySet)
-        capturedCallback(activeKeys.toTypedArray())
     }
 
     private fun ensureAdapter(): NativeListAdapter {
@@ -463,7 +451,18 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
             return dataSource?.getCountAsInt() ?: 0
         }
 
-        fun retainHostedContent(activeKeys: Set<String>) {
+        fun releaseHostedContent(itemKey: String) {
+            hostedContentByItemKey.remove(itemKey)
+        }
+
+        fun retainHostedContent(dataSource: HybridNativeListDataSource) {
+            val activeKeys = mutableSetOf<String>()
+            val itemCount = dataSource.getCountAsInt()
+            for (index in 0 until itemCount) {
+                val item = dataSource.getItemAt(index)
+                activeKeys.add(item.key)
+            }
+
             val iterator = hostedContentByItemKey.keys.iterator()
             while (iterator.hasNext()) {
                 val itemKey = iterator.next()
@@ -489,6 +488,10 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
             }
 
             holder.container.removeAllViews()
+            val previousKey = holder.boundKey
+            if (previousKey != null && previousKey != item.key) {
+                releaseHostedContent(previousKey)
+            }
 
             val existingHostedContent = hostedContentByItemKey[item.key]
             val hostedContent = if (

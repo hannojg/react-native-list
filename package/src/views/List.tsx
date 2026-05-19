@@ -1,14 +1,22 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { View, ViewStyle } from 'react-native'
 import { callback, NitroModules } from 'react-native-nitro-modules'
-import { scheduleOnUI } from 'react-native-worklets'
+import {
+  createShareable,
+  scheduleOnUI,
+  UIRuntimeId,
+} from 'react-native-worklets'
 import type {
   ListDataSource,
+  ListDataSourceMutation,
   ListItem,
   ListItemForType,
   ListItemType,
 } from '../ListDataSource'
-import { getNativeListDataSource } from '../ListDataSource'
+import {
+  addListDataSourceMutationListener,
+  getNativeListDataSource,
+} from '../ListDataSource'
 import { createLinearListLayout, ListLayout } from '../ListLayout'
 import {
   renderSyncWorklet,
@@ -21,6 +29,21 @@ import { UiListHostComponent } from './UiListHostComponent'
 
 type NativeTaggedRef = {
   __nativeTag: number
+}
+
+type RenderedElementRecord = {
+  element: React.ReactElement
+  itemId: number
+  itemKey: string | null
+  tag: number
+}
+
+type ListState = {
+  elementRecords: RenderedElementRecord[]
+  tagToArrayPosition: Record<number, number>
+  tagToItemId: Record<number, number>
+  tagToItemKey: Record<number, string>
+  nextItemId: number
 }
 
 export type ListRenderer<TItem extends ListItem> = {
@@ -49,6 +72,26 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
   const nativeListRef = useRef<UiListViewMethods | null>(null)
   const [isNativeReady, setIsNativeReady] = useState(false)
 
+  const listState = useMemo(() => {
+    return createShareable<ListState>(UIRuntimeId, {
+      elementRecords: [],
+      tagToArrayPosition: {},
+      tagToItemId: {},
+      tagToItemKey: {},
+      nextItemId: 0,
+    })
+  }, [])
+
+  const getListState = useCallback(() => {
+    'worklet'
+    if (listState.isHost === false) {
+      throw new Error(
+        'Expected listState to be only accessed on the UI Runtime!'
+      )
+    }
+    return listState.value
+  }, [listState])
+
   const resolvedLayout = useMemo(() => {
     return layout ?? createLinearListLayout()
   }, [layout])
@@ -62,14 +105,66 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
     return NitroModules.box(resolvedLayout.__nativeLayout)
   }, [resolvedLayout])
 
+  const clearListItemKeys = useMemo(() => {
+    return () => {
+      'worklet'
+
+      const state = getListState()
+      state.elementRecords.forEach((record) => {
+        record.itemKey = null
+      })
+
+      for (const tagKey of Object.keys(state.tagToItemKey)) {
+        delete state.tagToItemKey[Number(tagKey)]
+      }
+    }
+  }, [getListState])
+
+  const handleDataSourceMutation = useMemo(() => {
+    return (mutation: ListDataSourceMutation) => {
+      'worklet'
+
+      if (mutation.type === 'replaceData') {
+        clearListItemKeys()
+        return
+      }
+
+      let itemKey: string
+      if (mutation.type === 'removeItem') {
+        itemKey = mutation.itemKey
+      } else {
+        itemKey = mutation.previousItemKey
+      }
+
+      const state = getListState()
+      state.elementRecords.forEach((record) => {
+        if (record.itemKey !== itemKey) {
+          return
+        }
+
+        record.itemKey = null
+        delete state.tagToItemKey[record.tag]
+      })
+    }
+  }, [clearListItemKeys, getListState])
+
+  useEffect(() => {
+    return addListDataSourceMutationListener(
+      dataSource,
+      handleDataSourceMutation
+    )
+  }, [dataSource, handleDataSourceMutation])
+
   useEffect(() => {
     const ref = nativeListRef.current
     if (ref == null || !isNativeReady) return
 
+    scheduleOnUI(clearListItemKeys)
+
     const nativeDataSource = getNativeListDataSource(dataSource)
     ref.setDataSource(nativeDataSource)
     ref.setLayout(resolvedLayout.__nativeLayout)
-  }, [dataSource, isNativeReady, resolvedLayout])
+  }, [clearListItemKeys, dataSource, isNativeReady, resolvedLayout])
 
   return (
     <UiListHostComponent
@@ -84,50 +179,44 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
           'worklet'
 
           const { reactRender } = getReactFabricRenderer()
-          type RenderedElementRecord = {
-            element: React.ReactElement
-            itemId: number
-            itemKey: string | null
-            tag: number
-          }
-
-          const tagToArrayPosition: Record<number, number> = {}
-          const tagToItemId: Record<number, number> = {}
-          const tagToItemKey: Record<number, string> = {}
-          let nextItemId = 0
-          const elementRecords: RenderedElementRecord[] = []
+          const state = getListState()
 
           function renderListElements() {
             'worklet'
 
-            return elementRecords.map((record) => {
+            return state.elementRecords.map((record) => {
               const wrapperStyle = {
+                // Why are we rendering position absolute?
+                // This will layout all items at (0x0).This is important because the native lists will relayout the views.
+                // In one iteration I was rendering all items just regularly. When then the items position in the elements changed or items were added before,
+                // fabric was thinking it had to update the layout position of those items, breaking the layout in the list.
+                // If fabric thinks all items are always at (0x0) it won't get the idea to relocate them!
                 position: 'absolute' as const,
                 left: 0,
                 top: 0,
               }
-              const wrapperProps = {
-                key: 'mirror-item-' + record.itemId,
-                style: wrapperStyle,
-                collapsable: false,
-              }
-              return <View {...wrapperProps}>{record.element}</View>
+              const wrapperKey = 'mirror-item-' + record.itemId
+              return (
+                <View key={wrapperKey} style={wrapperStyle} collapsable={false}>
+                  {record.element}
+                </View>
+              )
             })
           }
 
           function rebuildTagPositions() {
             'worklet'
 
-            for (const key of Object.keys(tagToArrayPosition)) {
-              delete tagToArrayPosition[Number(key)]
+            for (const key of Object.keys(state.tagToArrayPosition)) {
+              delete state.tagToArrayPosition[Number(key)]
             }
 
-            elementRecords.forEach((record, index) => {
+            state.elementRecords.forEach((record, index) => {
               if (record.tag < 0) {
                 return
               }
 
-              tagToArrayPosition[record.tag] = index
+              state.tagToArrayPosition[record.tag] = index
             })
           }
 
@@ -140,33 +229,18 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
             rebuildTagPositions()
           }
 
-          function syncActiveItemKeys(activeKeys: string[]) {
+          function setNativeListDataSource() {
             'worklet'
 
-            const activeKeySet: Record<string, boolean> = {}
-            activeKeys.forEach((activeKey) => {
-              activeKeySet[activeKey] = true
-            })
-
-            elementRecords.forEach((record) => {
-              if (record.itemKey == null) {
-                return
-              }
-              if (activeKeySet[record.itemKey] === true) {
-                return
-              }
-
-              record.itemKey = null
-              delete tagToItemKey[record.tag]
-            })
-            return true
+            const nativeDataSource = boxedDataSource.unbox()
+            const nativeLayout = boxedLayout.unbox()
+            ref.setDataSource(nativeDataSource)
+            ref.setLayout(nativeLayout)
           }
-
-          const uiListModuleUnboxed = uiListModuleBoxed.unbox()
 
           function createViewCallback(type: string) {
             const nativeRef = globalThis.React.createRef<NativeTaggedRef>()
-            const itemId = nextItemId++
+            const itemId = state.nextItemId++
             const typedType = type as ListItemType<TItem>
             const renderer = renderers[typedType] as ListRenderer<TItem>
 
@@ -194,7 +268,7 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
               itemKey: null,
               tag: -1,
             }
-            const newLength = elementRecords.push(newRecord)
+            const newLength = state.elementRecords.push(newRecord)
             const currentIndex = newLength - 1
 
             // Why for rendering one item we have to render the whole content?!
@@ -208,8 +282,8 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
 
             const tag = nativeRef.current.__nativeTag
             newRecord.tag = tag
-            tagToArrayPosition[tag] = currentIndex
-            tagToItemId[tag] = itemId
+            state.tagToArrayPosition[tag] = currentIndex
+            state.tagToItemId[tag] = itemId
 
             renderSyncWorklet()
 
@@ -228,7 +302,7 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
               throw new Error('No renderer for list item type ' + item.type)
             }
 
-            const itemId = tagToItemId[reactTag]
+            const itemId = state.tagToItemId[reactTag]
             if (itemId == null) {
               throw new Error('No itemId for tag ' + reactTag)
             }
@@ -248,14 +322,14 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
               newProps
             )
 
-            const position = tagToArrayPosition[reactTag]
+            const position = state.tagToArrayPosition[reactTag]
             if (position == null) {
               throw new Error('No position for tag ' + reactTag)
             }
 
-            tagToItemKey[reactTag] = item.key
+            state.tagToItemKey[reactTag] = item.key
 
-            const record = elementRecords[position]
+            const record = state.elementRecords[position]
             if (record == null) {
               throw new Error('No record for tag ' + reactTag)
             }
@@ -269,17 +343,13 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
             return true
           }
 
+          const uiListModuleUnboxed = uiListModuleBoxed.unbox()
           ref.setListCallbacks(
             uiListModuleUnboxed,
             createViewCallback,
-            updateViewCallback,
-            syncActiveItemKeys
+            updateViewCallback
           )
-
-          const nativeDataSource = boxedDataSource.unbox()
-          const nativeLayout = boxedLayout.unbox()
-          ref.setDataSource(nativeDataSource)
-          ref.setLayout(nativeLayout)
+          setNativeListDataSource()
         })
 
         setIsNativeReady(true)

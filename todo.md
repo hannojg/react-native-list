@@ -10,7 +10,7 @@
 [ ] - I think fast refresh is crashing the app right now?
 [ ] - There was some react tag collision as we are reusing the same fabric ui manager … thats why i just started the tags from 1mil. Idk, seems dirty, and is potentially something we'd like to address in the future by running our own instance?
 [ ] - Right now we need to pass a fixed size to the list (with height/width), lets get rid of that
-[ ] - Changing item height back and forth breaks layout on iOS
+[x] - Changing item height back and forth breaks layout on iOS
 [ ] - Data source API add animated:boolean option for all operations, or also think about how we could give the developer here a proper animation API
 [ ] - Android: you always have to interact with the UI once to render out the changes lol
 

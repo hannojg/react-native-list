@@ -62,9 +62,7 @@ export type ListDataSourceMutation =
       previousItemKey: string
     }
 
-type ListDataSourceMutationListener = (
-  mutation: ListDataSourceMutation
-) => void
+type ListDataSourceMutationListener = (mutation: ListDataSourceMutation) => void
 
 type NativeListDataSourceBacked<TItem extends ListItem> =
   ListDataSource<TItem> & {

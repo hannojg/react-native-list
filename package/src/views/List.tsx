@@ -33,17 +33,29 @@ type NativeTaggedRef = {
 
 type RenderedElementRecord = {
   element: React.ReactElement
-  itemId: number
-  itemKey: string | null
-  tag: number
+  /**
+   * Stable React element key for a rendered slot in our tree.
+   */
+  reactKey: number
+  /**
+   * Datasource item identity.
+   * The user provided key for an item with data.
+   */
+  dataKey: string | null
+  /**
+   * Native React tag binding this React instance to a React Native view.
+   * A React tag can exist without a dataKey while the view is not currently
+   * bound to a datasource item.
+   */
+  reactTag: number
 }
 
 type ListState = {
   elementRecords: RenderedElementRecord[]
-  tagToArrayPosition: Record<number, number>
-  tagToItemId: Record<number, number>
-  tagToItemKey: Record<number, string>
-  nextItemId: number
+  reactTagToRecordIndex: Record<number, number>
+  reactTagToReactKey: Record<number, number>
+  reactTagToDataKey: Record<number, string>
+  nextReactKey: number
 }
 
 export type ListRenderer<TItem extends ListItem> = {
@@ -75,10 +87,10 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
   const listState = useMemo(() => {
     return createShareable<ListState>(UIRuntimeId, {
       elementRecords: [],
-      tagToArrayPosition: {},
-      tagToItemId: {},
-      tagToItemKey: {},
-      nextItemId: 0,
+      reactTagToRecordIndex: {},
+      reactTagToReactKey: {},
+      reactTagToDataKey: {},
+      nextReactKey: 0,
     })
   }, [])
 
@@ -111,11 +123,11 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
 
       const state = getListState()
       state.elementRecords.forEach((record) => {
-        record.itemKey = null
+        record.dataKey = null
       })
 
-      for (const tagKey of Object.keys(state.tagToItemKey)) {
-        delete state.tagToItemKey[Number(tagKey)]
+      for (const tagKey of Object.keys(state.reactTagToDataKey)) {
+        delete state.reactTagToDataKey[Number(tagKey)]
       }
     }
   }, [getListState])
@@ -129,21 +141,21 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
         return
       }
 
-      let itemKey: string
+      let dataKey: string
       if (mutation.type === 'removeItem') {
-        itemKey = mutation.itemKey
+        dataKey = mutation.itemKey
       } else {
-        itemKey = mutation.previousItemKey
+        dataKey = mutation.previousItemKey
       }
 
       const state = getListState()
       state.elementRecords.forEach((record) => {
-        if (record.itemKey !== itemKey) {
+        if (record.dataKey !== dataKey) {
           return
         }
 
-        record.itemKey = null
-        delete state.tagToItemKey[record.tag]
+        record.dataKey = null
+        delete state.reactTagToDataKey[record.reactTag]
       })
     }
   }, [clearListItemKeys, getListState])
@@ -195,7 +207,7 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
                 left: 0,
                 top: 0,
               }
-              const wrapperKey = 'mirror-item-' + record.itemId
+              const wrapperKey = 'reactkey-wrapper-' + record.reactKey
               return (
                 <View key={wrapperKey} style={wrapperStyle} collapsable={false}>
                   {record.element}
@@ -207,16 +219,16 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
           function rebuildTagPositions() {
             'worklet'
 
-            for (const key of Object.keys(state.tagToArrayPosition)) {
-              delete state.tagToArrayPosition[Number(key)]
+            for (const key of Object.keys(state.reactTagToRecordIndex)) {
+              delete state.reactTagToRecordIndex[Number(key)]
             }
 
             state.elementRecords.forEach((record, index) => {
-              if (record.tag < 0) {
+              if (record.reactTag < 0) {
                 return
               }
 
-              state.tagToArrayPosition[record.tag] = index
+              state.reactTagToRecordIndex[record.reactTag] = index
             })
           }
 
@@ -240,7 +252,7 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
 
           function createViewCallback(type: string) {
             const nativeRef = globalThis.React.createRef<NativeTaggedRef>()
-            const itemId = state.nextItemId++
+            const reactKey = state.nextReactKey++
             const typedType = type as ListItemType<TItem>
             const renderer = renderers[typedType] as ListRenderer<TItem>
 
@@ -253,7 +265,7 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
             })
 
             const newProps = {
-              key: 'itemid-' + itemId,
+              key: 'reactkey-' + reactKey,
               ref: nativeRef,
               collapsable: false,
             }
@@ -264,9 +276,9 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
 
             const newRecord: RenderedElementRecord = {
               element: newElementWithKey,
-              itemId,
-              itemKey: null,
-              tag: -1,
+              reactKey,
+              dataKey: null,
+              reactTag: -1,
             }
             const newLength = state.elementRecords.push(newRecord)
             const currentIndex = newLength - 1
@@ -280,14 +292,14 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
               throw new Error('Ref is null after render')
             }
 
-            const tag = nativeRef.current.__nativeTag
-            newRecord.tag = tag
-            state.tagToArrayPosition[tag] = currentIndex
-            state.tagToItemId[tag] = itemId
+            const reactTag = nativeRef.current.__nativeTag
+            newRecord.reactTag = reactTag
+            state.reactTagToRecordIndex[reactTag] = currentIndex
+            state.reactTagToReactKey[reactTag] = reactKey
 
             renderSyncWorklet()
 
-            return tag
+            return reactTag
           }
 
           function updateViewCallback(
@@ -302,9 +314,9 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
               throw new Error('No renderer for list item type ' + item.type)
             }
 
-            const itemId = state.tagToItemId[reactTag]
-            if (itemId == null) {
-              throw new Error('No itemId for tag ' + reactTag)
+            const reactKey = state.reactTagToReactKey[reactTag]
+            if (reactKey == null) {
+              throw new Error('No reactKey for reactTag ' + reactTag)
             }
 
             const newElement = renderer.renderItemWorklet({
@@ -314,7 +326,7 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
               type: typedType,
             })
             const newProps = {
-              key: 'itemid-' + itemId,
+              key: 'reactkey-' + reactKey,
               collapsable: false,
             }
             const newElementWithKey = globalThis.React.cloneElement(
@@ -322,20 +334,20 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
               newProps
             )
 
-            const position = state.tagToArrayPosition[reactTag]
+            const position = state.reactTagToRecordIndex[reactTag]
             if (position == null) {
-              throw new Error('No position for tag ' + reactTag)
+              throw new Error('No position for reactTag ' + reactTag)
             }
 
-            state.tagToItemKey[reactTag] = item.key
+            state.reactTagToDataKey[reactTag] = item.key
 
             const record = state.elementRecords[position]
             if (record == null) {
-              throw new Error('No record for tag ' + reactTag)
+              throw new Error('No record for reactTag ' + reactTag)
             }
 
             record.element = newElementWithKey
-            record.itemKey = item.key
+            record.dataKey = item.key
 
             renderContentInReact()
             renderSyncWorklet()

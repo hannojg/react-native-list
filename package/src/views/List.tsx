@@ -55,6 +55,7 @@ type ListState = {
   reactTagToRecordIndex: Record<number, number>
   reactTagToReactKey: Record<number, number>
   reactTagToDataKey: Record<number, string>
+  dataKeyToReactTag: Record<string, number>
   nextReactKey: number
 }
 
@@ -87,10 +88,15 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
   const listState = useMemo(() => {
     return createShareable<ListState>(UIRuntimeId, {
       elementRecords: [],
+      nextReactKey: 0,
       reactTagToRecordIndex: {},
       reactTagToReactKey: {},
+      // Maintain two reverse lookups that are one-to-one
+      // Used for O(1) operations in element updates and removals,
+      // where we only get the reactTag from native, and need to find the record,
+      // or need to find the reactTag for a dataKey
       reactTagToDataKey: {},
-      nextReactKey: 0,
+      dataKeyToReactTag: {},
     })
   }, [])
 
@@ -129,6 +135,10 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
       for (const tagKey of Object.keys(state.reactTagToDataKey)) {
         delete state.reactTagToDataKey[Number(tagKey)]
       }
+
+      for (const dataKey of Object.keys(state.dataKeyToReactTag)) {
+        delete state.dataKeyToReactTag[dataKey]
+      }
     }
   }, [getListState])
 
@@ -149,14 +159,33 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
       }
 
       const state = getListState()
-      state.elementRecords.forEach((record) => {
-        if (record.dataKey !== dataKey) {
-          return
-        }
+      const reactTag = state.dataKeyToReactTag[dataKey]
+      if (reactTag == null) {
+        return
+      }
 
-        record.dataKey = null
-        delete state.reactTagToDataKey[record.reactTag]
-      })
+      const position = state.reactTagToRecordIndex[reactTag]
+      if (position == null) {
+        delete state.dataKeyToReactTag[dataKey]
+        delete state.reactTagToDataKey[reactTag]
+        return
+      }
+
+      const record = state.elementRecords[position]
+      if (record == null) {
+        delete state.dataKeyToReactTag[dataKey]
+        delete state.reactTagToDataKey[reactTag]
+        return
+      }
+
+      if (record.dataKey !== dataKey) {
+        delete state.dataKeyToReactTag[dataKey]
+        return
+      }
+
+      record.dataKey = null
+      delete state.dataKeyToReactTag[dataKey]
+      delete state.reactTagToDataKey[reactTag]
     }
   }, [clearListItemKeys, getListState])
 
@@ -230,6 +259,35 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
 
               state.reactTagToRecordIndex[record.reactTag] = index
             })
+          }
+
+          function bindDataKeyToReactTag(dataKey: string, reactTag: number) {
+            'worklet'
+
+            const previousDataKey = state.reactTagToDataKey[reactTag]
+            if (previousDataKey != null && previousDataKey !== dataKey) {
+              // This same reactTag used to represent another dataKey.
+              // If it is now being assigned to dataKey, remove the old reverse lookup
+              delete state.dataKeyToReactTag[previousDataKey]
+            }
+
+            const previousReactTag = state.dataKeyToReactTag[dataKey]
+            if (previousReactTag != null && previousReactTag !== reactTag) {
+              // This dataKey used to point at another reactTag.
+              // If it is now being assigned to this reactTag, clear the old tag's binding
+              const previousPosition =
+                state.reactTagToRecordIndex[previousReactTag]
+              if (previousPosition != null) {
+                const previousRecord = state.elementRecords[previousPosition]
+                if (previousRecord != null) {
+                  previousRecord.dataKey = null
+                }
+              }
+              delete state.reactTagToDataKey[previousReactTag]
+            }
+
+            state.reactTagToDataKey[reactTag] = dataKey
+            state.dataKeyToReactTag[dataKey] = reactTag
           }
 
           function renderContentInReact() {
@@ -339,13 +397,12 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
               throw new Error('No position for reactTag ' + reactTag)
             }
 
-            state.reactTagToDataKey[reactTag] = item.key
-
             const record = state.elementRecords[position]
             if (record == null) {
               throw new Error('No record for reactTag ' + reactTag)
             }
 
+            bindDataKeyToReactTag(item.key, reactTag)
             record.element = newElementWithKey
             record.dataKey = item.key
 

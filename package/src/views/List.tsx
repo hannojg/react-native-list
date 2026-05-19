@@ -83,6 +83,7 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
   const { dataSource, layout, renderers, style } = props
   const isSetup = useRef(false)
   const nativeListRef = useRef<UiListViewMethods | null>(null)
+  // TODO: can we get rid of this state?!
   const [isNativeReady, setIsNativeReady] = useState(false)
 
   const listState = useMemo(() => {

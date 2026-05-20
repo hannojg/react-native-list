@@ -16,6 +16,8 @@ public protocol HybridUiListViewSpec_protocol: HybridObject, HybridView {
   func setListCallbacks(uiListModule: (any HybridUiListModuleSpec), createView: @escaping (_ type: String) -> Double, updateView: @escaping (_ reactTag: Double, _ item: NativeListItem, _ index: Double) -> Bool) throws -> Void
   func setDataSource(dataSource: (any HybridNativeListDataSourceSpec)) throws -> Void
   func setLayout(layout: (any HybridNativeListLayoutSpec)) throws -> Void
+  func getSurfaceId() throws -> Double
+  func disposeRendererSurface() throws -> Void
 }
 
 public extension HybridUiListViewSpec_protocol {

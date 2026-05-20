@@ -79,8 +79,8 @@ namespace margelo::nitro::reactnativelist {
       auto __value = std::move(__result.value());
       return __value;
     }
-    inline void setupExternalSurface(const std::optional<std::variant<nitro::NullType, std::shared_ptr<HybridIOSWorkletsModuleProxyHolderSpec>>>& workletsModuleHolder) override {
-      auto __result = _swiftPart.setupExternalSurface(workletsModuleHolder);
+    inline void setupRuntime(const std::optional<std::variant<nitro::NullType, std::shared_ptr<HybridIOSWorkletsModuleProxyHolderSpec>>>& workletsModuleHolder) override {
+      auto __result = _swiftPart.setupRuntime(workletsModuleHolder);
       if (__result.hasError()) [[unlikely]] {
         std::rethrow_exception(__result.error());
       }

@@ -9,9 +9,16 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.facebook.react.ReactActivity
+import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.interfaces.fabric.ReactSurface
+import com.facebook.react.runtime.ReactSurfaceView
 import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.UIManagerHelper
 import com.facebook.react.uimanager.common.UIManagerType
+import com.margelo.nitro.NitroModules
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.atomic.AtomicReference
 
 typealias CreateViewCallbackType = (
     type: String
@@ -30,6 +37,9 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
     private var adapter: NativeListAdapter? = null
     private var dataSource: HybridNativeListDataSource? = null
     private var isRecyclerViewLayoutScheduled = false
+    private var rendererSurface: ReactSurface? = null
+    private var rendererSurfaceId: Int? = null
+    private var isDisposed = false
 
     override val view: RecyclerView by lazy {
         ClippedRecyclerView(reactContext).apply {
@@ -47,11 +57,50 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
         createView: CreateViewCallbackType,
         updateView: UpdateViewCallbackType
     ) {
+        isDisposed = false
         createViewCallback = createView
         updateViewCallback = updateView
         runOnMain {
             ensureAdapter()
         }
+    }
+
+    override fun getSurfaceId(): Double {
+        val surfaceId = runOnMainSync {
+            ensureRendererSurface()
+        }
+        return surfaceId.toDouble()
+    }
+
+    override fun disposeRendererSurface() {
+        runOnMainSync {
+            isDisposed = true
+            createViewCallback = null
+            updateViewCallback = null
+            dataSource?.observer = null
+            dataSource = null
+            adapter?.dataSource = null
+            adapter = null
+            view.adapter = null
+            isRecyclerViewLayoutScheduled = false
+
+            val surface = rendererSurface
+            rendererSurface = null
+            rendererSurfaceId = null
+
+            if (surface == null) {
+                return@runOnMainSync
+            }
+
+            surface.stop()
+            surface.clear()
+            surface.detach()
+        }
+    }
+
+    override fun onDropView() {
+        disposeRendererSurface()
+        super.onDropView()
     }
 
     override fun setDataSource(dataSource: HybridNativeListDataSourceSpec) {
@@ -138,6 +187,10 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
     }
 
     private fun ensureAdapter(): NativeListAdapter {
+        if (isDisposed) {
+            throw IllegalStateException("Cannot create adapter after list was disposed.")
+        }
+
         val existingAdapter = adapter
         if (existingAdapter != null) {
             return existingAdapter
@@ -160,7 +213,38 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
         return nativeAdapter
     }
 
+    private fun ensureRendererSurface(): Int {
+        val existingSurfaceId = rendererSurfaceId
+        if (existingSurfaceId != null) {
+            return existingSurfaceId
+        }
+
+        val context: ReactApplicationContext = NitroModules.applicationContext
+            ?: throw IllegalStateException("ReactApplicationContext is null! Is Nitro installed?")
+        val reactActivity = context.currentActivity as? ReactActivity
+            ?: throw IllegalStateException("Current activity is not a ReactActivity!")
+        val reactHost = reactActivity.reactActivityDelegate.reactHost
+            ?: throw IllegalStateException("ReactNativeHost is null!")
+
+        val surface = reactHost.createSurface(reactContext, "", null)
+        val surfaceView = surface.view as? ReactSurfaceView
+            ?: throw IllegalStateException("Surface view is not a ReactSurfaceView!")
+        val surfaceId = surfaceView.getRootViewTag()
+
+        rendererSurface = surface
+        rendererSurfaceId = surfaceId
+        isDisposed = false
+
+        surface.start()
+
+        return surfaceId
+    }
+
     private fun createNativeView(type: String): View {
+        if (isDisposed) {
+            throw IllegalStateException("Cannot create view after list was disposed.")
+        }
+
         val capturedCallback = createViewCallback
             ?: throw IllegalStateException("CreateView callback is not set.")
 
@@ -220,6 +304,30 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
         } else {
             view.post(block)
         }
+    }
+
+    private fun <T> runOnMainSync(block: () -> T): T {
+        val isMainThread = Looper.myLooper() == Looper.getMainLooper()
+        if (isMainThread) {
+            return block()
+        }
+
+        val result = AtomicReference<Result<T>>()
+        val latch = CountDownLatch(1)
+        view.post {
+            try {
+                val value = block()
+                result.set(Result.success(value))
+            } catch (throwable: Throwable) {
+                result.set(Result.failure(throwable))
+            } finally {
+                latch.countDown()
+            }
+        }
+        latch.await()
+        val capturedResult = result.get()
+            ?: throw IllegalStateException("UI thread did not return a result.")
+        return capturedResult.getOrThrow()
     }
 
     private class ClippedRecyclerView(context: ThemedReactContext) : RecyclerView(context) {

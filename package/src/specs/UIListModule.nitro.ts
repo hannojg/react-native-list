@@ -8,8 +8,6 @@ export interface UiListModule extends HybridObject<{
 }> {
   // TODO: on iOS getting the worklets proxy has JS thread asserts, so we have to get it from JS and pass it to the UI thread. Maybe we can change that in nitro at some point?
   iosGetWorkletsModule(): IOSWorkletsModuleProxyHolder
-  setupExternalSurface(
-    workletsModuleHolder: IOSWorkletsModuleProxyHolder | null
-  ): void
+  setupRuntime(workletsModuleHolder: IOSWorkletsModuleProxyHolder | null): void
   //   renderAndGetView(tag: number): ViewHolder
 }

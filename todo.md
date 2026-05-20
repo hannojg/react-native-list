@@ -16,6 +16,7 @@
 [x] - Android: content overflowing
 [x] - iOS: first content broken layout
 [ ] - Upgrade nitro to latest
+[ ] - I have hardcoded surface 3 basically everywhere thats not good
 
 ## Base functionality (what users expect to just work)
 

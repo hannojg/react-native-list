@@ -79,5 +79,14 @@ namespace margelo::nitro::reactnativelist {
     static const auto method = _javaPart->javaClassStatic()->getMethod<void(jni::alias_ref<JHybridNativeListLayoutSpec::JavaPart> /* layout */)>("setLayout");
     method(_javaPart, std::dynamic_pointer_cast<JHybridNativeListLayoutSpec>(layout)->getJavaPart());
   }
+  double JHybridUiListViewSpec::getSurfaceId() {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<double()>("getSurfaceId");
+    auto __result = method(_javaPart);
+    return __result;
+  }
+  void JHybridUiListViewSpec::disposeRendererSurface() {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<void()>("disposeRendererSurface");
+    method(_javaPart);
+  }
 
 } // namespace margelo::nitro::reactnativelist

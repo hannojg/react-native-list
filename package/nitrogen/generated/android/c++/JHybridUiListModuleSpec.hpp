@@ -55,7 +55,7 @@ namespace margelo::nitro::reactnativelist {
   public:
     // Methods
     std::shared_ptr<HybridIOSWorkletsModuleProxyHolderSpec> iosGetWorkletsModule() override;
-    void setupExternalSurface(const std::optional<std::variant<nitro::NullType, std::shared_ptr<HybridIOSWorkletsModuleProxyHolderSpec>>>& workletsModuleHolder) override;
+    void setupRuntime(const std::optional<std::variant<nitro::NullType, std::shared_ptr<HybridIOSWorkletsModuleProxyHolderSpec>>>& workletsModuleHolder) override;
 
   private:
     jni::global_ref<JHybridUiListModuleSpec::JavaPart> _javaPart;

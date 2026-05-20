@@ -38,7 +38,7 @@ function setup() {
   scheduleOnUI(() => {
     'worklet'
     globalThis.nativeFabricUIManager = nativeFabricUIManager
-    boxed.setupExternalSurface(iosWorkletsModuleHolder)
+    boxed.setupRuntime(iosWorkletsModuleHolder)
 
     // This will setup the react instance on the UI runtime:
     getReactFabricRenderer()

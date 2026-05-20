@@ -11,9 +11,13 @@ namespace margelo::nitro::reactnativelist
     using namespace facebook;
 
     static std::shared_ptr<react::EventListener> eventInterceptor_ = nullptr;
+    std::mutex HybridUiManagerHelper::managedSurfaceIdsMutex_;
+    std::unordered_set<react::SurfaceId> HybridUiManagerHelper::managedSurfaceIds_;
 
     void
-    HybridUiManagerHelper::renderSync(std::shared_ptr<facebook::react::UIManagerBinding> binding)
+    HybridUiManagerHelper::renderSync(
+        std::shared_ptr<facebook::react::UIManagerBinding> binding,
+        double surfaceId)
     {
         if (!binding)
         {
@@ -21,12 +25,30 @@ namespace margelo::nitro::reactnativelist
                 "HybridUiManagerHelper::renderSync: UIManagerBinding is not installed in the runtime.");
         }
         react::UIManager &uiManager = binding->getUIManager();
-        static react::SurfaceId surfaceId = 3;
-        uiManager.getShadowTreeRegistry().visit(surfaceId, [](const react::ShadowTree &shadowTree)
+        react::SurfaceId targetSurfaceId = static_cast<react::SurfaceId>(surfaceId);
+        uiManager.getShadowTreeRegistry().visit(targetSurfaceId, [targetSurfaceId](const react::ShadowTree &shadowTree)
                                                 {
             // This will immediately cause all queued mounting transactions to be processed
-            Logger::log(LogLevel::Debug, "HybridUiManagerHelper", "Notifying delegates of updates for surfaceId %d", surfaceId);
+            Logger::log(LogLevel::Debug, "HybridUiManagerHelper", "Notifying delegates of updates for surfaceId %d", targetSurfaceId);
             shadowTree.notifyDelegatesOfUpdates(); });
+    }
+
+    void HybridUiManagerHelper::registerManagedSurface(double surfaceId)
+    {
+        std::lock_guard<std::mutex> lock(managedSurfaceIdsMutex_);
+        managedSurfaceIds_.insert(static_cast<react::SurfaceId>(surfaceId));
+    }
+
+    void HybridUiManagerHelper::unregisterManagedSurface(double surfaceId)
+    {
+        std::lock_guard<std::mutex> lock(managedSurfaceIdsMutex_);
+        managedSurfaceIds_.erase(static_cast<react::SurfaceId>(surfaceId));
+    }
+
+    bool HybridUiManagerHelper::isManagedSurface(react::SurfaceId surfaceId)
+    {
+        std::lock_guard<std::mutex> lock(managedSurfaceIdsMutex_);
+        return managedSurfaceIds_.find(surfaceId) != managedSurfaceIds_.end();
     }
 
     std::shared_ptr<react::EventListener> HybridUiManagerHelper::createEventInterceptor(
@@ -49,10 +71,10 @@ namespace margelo::nitro::reactnativelist
 
                 // Intercept all events and trigger a transaction to ensure the UI thread is processing updates.
                 auto eventSurfaceId = event.eventTarget->getSurfaceId();
-                if (eventSurfaceId == 3)
+                if (isManagedSurface(eventSurfaceId))
                 {
                     // This is an event from a view we manage, special handling needed
-                    Logger::log(LogLevel::Debug, "HybridUiManagerHelper", "[HannoDebug] Intercepted event of type %s from surface 3!", event.type.c_str());
+                    Logger::log(LogLevel::Debug, "HybridUiManagerHelper", "[HannoDebug] Intercepted event of type %s from managed surface %d!", event.type.c_str(), eventSurfaceId);
                     // Expect function handler to be installed on global
                     uiCallInvoker->invokeAsync([event_ = event](jsi::Runtime &runtime)
                                                {

@@ -140,9 +140,9 @@ open class HybridUiListModuleSpec_cxx {
   }
   
   @inline(__always)
-  public final func setupExternalSurface(workletsModuleHolder: bridge.std__optional_std__variant_nitro__NullType__std__shared_ptr_HybridIOSWorkletsModuleProxyHolderSpec___) -> bridge.Result_void_ {
+  public final func setupRuntime(workletsModuleHolder: bridge.std__optional_std__variant_nitro__NullType__std__shared_ptr_HybridIOSWorkletsModuleProxyHolderSpec___) -> bridge.Result_void_ {
     do {
-      try self.__implementation.setupExternalSurface(workletsModuleHolder: { () -> Variant_NullType__any_HybridIOSWorkletsModuleProxyHolderSpec_? in
+      try self.__implementation.setupRuntime(workletsModuleHolder: { () -> Variant_NullType__any_HybridIOSWorkletsModuleProxyHolderSpec_? in
         if bridge.has_value_std__optional_std__variant_nitro__NullType__std__shared_ptr_HybridIOSWorkletsModuleProxyHolderSpec___(workletsModuleHolder) {
           let __unwrapped = bridge.get_std__optional_std__variant_nitro__NullType__std__shared_ptr_HybridIOSWorkletsModuleProxyHolderSpec___(workletsModuleHolder)
           return { () -> Variant_NullType__any_HybridIOSWorkletsModuleProxyHolderSpec_ in

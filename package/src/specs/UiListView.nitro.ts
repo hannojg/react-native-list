@@ -24,6 +24,8 @@ export interface UiListViewMethods extends HybridViewMethods {
 
   setDataSource(dataSource: NativeListDataSource): void
   setLayout(layout: NativeListLayout): void
+  getSurfaceId(): number
+  disposeRendererSurface(): void
 }
 
 export type UiListView = HybridView<UiListViewProps, UiListViewMethods>

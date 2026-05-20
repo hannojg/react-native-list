@@ -35,7 +35,7 @@ abstract class HybridUiListModuleSpec: HybridObject() {
   
   @DoNotStrip
   @Keep
-  abstract fun setupExternalSurface(workletsModuleHolder: Variant_NullType_HybridIOSWorkletsModuleProxyHolderSpec?): Unit
+  abstract fun setupRuntime(workletsModuleHolder: Variant_NullType_HybridIOSWorkletsModuleProxyHolderSpec?): Unit
 
   // Default implementation of `HybridObject.toString()`
   override fun toString(): String {

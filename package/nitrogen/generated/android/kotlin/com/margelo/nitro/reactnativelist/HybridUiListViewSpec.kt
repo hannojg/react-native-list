@@ -45,6 +45,14 @@ abstract class HybridUiListViewSpec: HybridView() {
   @DoNotStrip
   @Keep
   abstract fun setLayout(layout: HybridNativeListLayoutSpec): Unit
+  
+  @DoNotStrip
+  @Keep
+  abstract fun getSurfaceId(): Double
+  
+  @DoNotStrip
+  @Keep
+  abstract fun disposeRendererSurface(): Unit
 
   // Default implementation of `HybridObject.toString()`
   override fun toString(): String {

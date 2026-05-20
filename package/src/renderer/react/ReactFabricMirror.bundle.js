@@ -1541,7 +1541,8 @@ var require_EventBatching = __commonJS((exports2) => {
 var exports_ReactFabricMirror = {};
 __export(exports_ReactFabricMirror, {
   reactRender: () => reactRender,
-  nativeLog: () => nativeLog
+  nativeLog: () => nativeLog,
+  disposeReactRoot: () => disposeReactRoot
 });
 module.exports = __toCommonJS(exports_ReactFabricMirror);
 function nativeLog(...args) {
@@ -1574,10 +1575,7 @@ var {
   IdleEventPriority
 } = require("react-reconciler/constants");
 global.currentUpdatePriority = NoEventPriority;
-global.rootInstance = {
-  containerTag: 3,
-  publicInstance: null
-};
+global.rootContainersBySurfaceId = global.rootContainersBySurfaceId ?? {};
 var {
   getPublicInstance
 } = require_react_fiber_config_fabric();
@@ -1942,18 +1940,41 @@ var HostConfig = {
 };
 var Renderer = Reconciler(HostConfig);
 global.React = require("react");
-function reactRender(element, callback) {
-  if (!global.rootContainer) {
-    global.rootContainer = Renderer.createContainer(global.rootInstance, 0, null, false, null, "ui-renderer", function onUncaughtError(error, info) {
-      nativeLog("[Error][ReactFabricMirror] Uncaught error in React renderer: ", error, info);
-    }, function onCaughtError(error, info) {
-      nativeLog("[Error][ReactFabricMirror] Caught error in React renderer: ", error, info);
-    }, function onRecoverableError(error, info) {
-      nativeLog("[Error][ReactFabricMirror] Recoverable error in React renderer: ", error, info);
-    }, function nativeOnDefaultTransitionIndicator() {});
+function createRootContainer(surfaceId) {
+  const rootInstance = {
+    containerTag: surfaceId,
+    publicInstance: null
+  };
+  return Renderer.createContainer(rootInstance, 0, null, false, null, "ui-renderer-" + surfaceId, function onUncaughtError(error, info) {
+    nativeLog("[Error][ReactFabricMirror] Uncaught error in React renderer: ", error, info);
+  }, function onCaughtError(error, info) {
+    nativeLog("[Error][ReactFabricMirror] Caught error in React renderer: ", error, info);
+  }, function onRecoverableError(error, info) {
+    nativeLog("[Error][ReactFabricMirror] Recoverable error in React renderer: ", error, info);
+  }, function nativeOnDefaultTransitionIndicator() {});
+}
+function getRootContainer(surfaceId) {
+  let rootContainer = global.rootContainersBySurfaceId[surfaceId];
+  if (rootContainer == null) {
+    rootContainer = createRootContainer(surfaceId);
+    global.rootContainersBySurfaceId[surfaceId] = rootContainer;
   }
-  Renderer.updateContainerSync(element, global.rootContainer, null, callback);
+  return rootContainer;
+}
+function reactRender(surfaceId, element, callback) {
+  const rootContainer = getRootContainer(surfaceId);
+  Renderer.updateContainerSync(element, rootContainer, null, callback);
   Renderer.flushSyncWork();
   nativeLog("[ReactFabricMirror] updateContainer finished");
+}
+function disposeReactRoot(surfaceId) {
+  const rootContainer = global.rootContainersBySurfaceId[surfaceId];
+  if (rootContainer == null) {
+    return;
+  }
+  Renderer.updateContainerSync(null, rootContainer, null, null);
+  Renderer.flushSyncWork();
+  delete global.rootContainersBySurfaceId[surfaceId];
+  nativeLog("[ReactFabricMirror] disposed root", surfaceId);
 }
 nativeLog("[ReactFabricMirror] ReactFabricMirror initialized");

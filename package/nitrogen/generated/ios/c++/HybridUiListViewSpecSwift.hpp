@@ -99,6 +99,20 @@ namespace margelo::nitro::reactnativelist {
         std::rethrow_exception(__result.error());
       }
     }
+    inline double getSurfaceId() override {
+      auto __result = _swiftPart.getSurfaceId();
+      if (__result.hasError()) [[unlikely]] {
+        std::rethrow_exception(__result.error());
+      }
+      auto __value = std::move(__result.value());
+      return __value;
+    }
+    inline void disposeRendererSurface() override {
+      auto __result = _swiftPart.disposeRendererSurface();
+      if (__result.hasError()) [[unlikely]] {
+        std::rethrow_exception(__result.error());
+      }
+    }
 
   private:
     ReactNativeList::HybridUiListViewSpec_cxx _swiftPart;

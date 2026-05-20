@@ -80,11 +80,11 @@ namespace margelo::nitro::reactnativelist::bridge::swift {
   using std__shared_ptr_HybridIOSWorkletsModuleProxyHolderSpec_ = std::shared_ptr<HybridIOSWorkletsModuleProxyHolderSpec>;
   std::shared_ptr<HybridIOSWorkletsModuleProxyHolderSpec> create_std__shared_ptr_HybridIOSWorkletsModuleProxyHolderSpec_(void* NON_NULL swiftUnsafePointer) noexcept;
   void* NON_NULL get_std__shared_ptr_HybridIOSWorkletsModuleProxyHolderSpec_(std__shared_ptr_HybridIOSWorkletsModuleProxyHolderSpec_ cppType);
-
+  
   // pragma MARK: std::weak_ptr<HybridIOSWorkletsModuleProxyHolderSpec>
   using std__weak_ptr_HybridIOSWorkletsModuleProxyHolderSpec_ = std::weak_ptr<HybridIOSWorkletsModuleProxyHolderSpec>;
   inline std__weak_ptr_HybridIOSWorkletsModuleProxyHolderSpec_ weakify_std__shared_ptr_HybridIOSWorkletsModuleProxyHolderSpec_(const std::shared_ptr<HybridIOSWorkletsModuleProxyHolderSpec>& strong) noexcept { return strong; }
-
+  
   // pragma MARK: std::optional<double>
   /**
    * Specialized version of `std::optional<double>`.
@@ -99,7 +99,7 @@ namespace margelo::nitro::reactnativelist::bridge::swift {
   inline double get_std__optional_double_(const std::optional<double>& optional) noexcept {
     return optional.value();
   }
-
+  
   // pragma MARK: std::optional<NativeItemSizeEstimate>
   /**
    * Specialized version of `std::optional<NativeItemSizeEstimate>`.
@@ -114,7 +114,7 @@ namespace margelo::nitro::reactnativelist::bridge::swift {
   inline NativeItemSizeEstimate get_std__optional_NativeItemSizeEstimate_(const std::optional<NativeItemSizeEstimate>& optional) noexcept {
     return optional.value();
   }
-
+  
   // pragma MARK: std::optional<NativeLinearListLayoutIOSConfig>
   /**
    * Specialized version of `std::optional<NativeLinearListLayoutIOSConfig>`.
@@ -129,7 +129,7 @@ namespace margelo::nitro::reactnativelist::bridge::swift {
   inline NativeLinearListLayoutIOSConfig get_std__optional_NativeLinearListLayoutIOSConfig_(const std::optional<NativeLinearListLayoutIOSConfig>& optional) noexcept {
     return optional.value();
   }
-
+  
   // pragma MARK: std::shared_ptr<HybridNativeListLayoutSpec>
   /**
    * Specialized version of `std::shared_ptr<HybridNativeListLayoutSpec>`.
@@ -137,11 +137,11 @@ namespace margelo::nitro::reactnativelist::bridge::swift {
   using std__shared_ptr_HybridNativeListLayoutSpec_ = std::shared_ptr<HybridNativeListLayoutSpec>;
   std::shared_ptr<HybridNativeListLayoutSpec> create_std__shared_ptr_HybridNativeListLayoutSpec_(void* NON_NULL swiftUnsafePointer) noexcept;
   void* NON_NULL get_std__shared_ptr_HybridNativeListLayoutSpec_(std__shared_ptr_HybridNativeListLayoutSpec_ cppType);
-
+  
   // pragma MARK: std::weak_ptr<HybridNativeListLayoutSpec>
   using std__weak_ptr_HybridNativeListLayoutSpec_ = std::weak_ptr<HybridNativeListLayoutSpec>;
   inline std__weak_ptr_HybridNativeListLayoutSpec_ weakify_std__shared_ptr_HybridNativeListLayoutSpec_(const std::shared_ptr<HybridNativeListLayoutSpec>& strong) noexcept { return strong; }
-
+  
   // pragma MARK: std::shared_ptr<HybridNativeLinearListLayoutSpec>
   /**
    * Specialized version of `std::shared_ptr<HybridNativeLinearListLayoutSpec>`.
@@ -149,14 +149,14 @@ namespace margelo::nitro::reactnativelist::bridge::swift {
   using std__shared_ptr_HybridNativeLinearListLayoutSpec_ = std::shared_ptr<HybridNativeLinearListLayoutSpec>;
   std::shared_ptr<HybridNativeLinearListLayoutSpec> create_std__shared_ptr_HybridNativeLinearListLayoutSpec_(void* NON_NULL swiftUnsafePointer) noexcept;
   void* NON_NULL get_std__shared_ptr_HybridNativeLinearListLayoutSpec_(std__shared_ptr_HybridNativeLinearListLayoutSpec_ cppType);
-
+  
   // pragma MARK: std::shared_ptr<HybridNativeListLayoutSpec>
   inline std::shared_ptr<HybridNativeListLayoutSpec> upcast_NativeLinearListLayout_to_NativeListLayout(std::shared_ptr<HybridNativeLinearListLayoutSpec> child) noexcept { return child; }
-
+  
   // pragma MARK: std::weak_ptr<HybridNativeLinearListLayoutSpec>
   using std__weak_ptr_HybridNativeLinearListLayoutSpec_ = std::weak_ptr<HybridNativeLinearListLayoutSpec>;
   inline std__weak_ptr_HybridNativeLinearListLayoutSpec_ weakify_std__shared_ptr_HybridNativeLinearListLayoutSpec_(const std::shared_ptr<HybridNativeLinearListLayoutSpec>& strong) noexcept { return strong; }
-
+  
   // pragma MARK: Result<void>
   using Result_void_ = Result<void>;
   inline Result_void_ create_Result_void_() noexcept {
@@ -165,7 +165,7 @@ namespace margelo::nitro::reactnativelist::bridge::swift {
   inline Result_void_ create_Result_void_(const std::exception_ptr& error) noexcept {
     return Result<void>::withError(error);
   }
-
+  
   // pragma MARK: std::function<bool(const NativeListItem& /* oldItem */, const NativeListItem& /* newItem */)>
   /**
    * Specialized version of `std::function<bool(const NativeListItem&, const NativeListItem&)>`.
@@ -188,7 +188,7 @@ namespace margelo::nitro::reactnativelist::bridge::swift {
   inline Func_bool_NativeListItem_NativeListItem_Wrapper wrap_Func_bool_NativeListItem_NativeListItem(Func_bool_NativeListItem_NativeListItem value) noexcept {
     return Func_bool_NativeListItem_NativeListItem_Wrapper(std::move(value));
   }
-
+  
   // pragma MARK: std::vector<NativeListItem>
   /**
    * Specialized version of `std::vector<NativeListItem>`.
@@ -199,7 +199,7 @@ namespace margelo::nitro::reactnativelist::bridge::swift {
     vector.reserve(size);
     return vector;
   }
-
+  
   // pragma MARK: std::shared_ptr<HybridNativeListDataSourceSpec>
   /**
    * Specialized version of `std::shared_ptr<HybridNativeListDataSourceSpec>`.
@@ -207,11 +207,11 @@ namespace margelo::nitro::reactnativelist::bridge::swift {
   using std__shared_ptr_HybridNativeListDataSourceSpec_ = std::shared_ptr<HybridNativeListDataSourceSpec>;
   std::shared_ptr<HybridNativeListDataSourceSpec> create_std__shared_ptr_HybridNativeListDataSourceSpec_(void* NON_NULL swiftUnsafePointer) noexcept;
   void* NON_NULL get_std__shared_ptr_HybridNativeListDataSourceSpec_(std__shared_ptr_HybridNativeListDataSourceSpec_ cppType);
-
+  
   // pragma MARK: std::weak_ptr<HybridNativeListDataSourceSpec>
   using std__weak_ptr_HybridNativeListDataSourceSpec_ = std::weak_ptr<HybridNativeListDataSourceSpec>;
   inline std__weak_ptr_HybridNativeListDataSourceSpec_ weakify_std__shared_ptr_HybridNativeListDataSourceSpec_(const std::shared_ptr<HybridNativeListDataSourceSpec>& strong) noexcept { return strong; }
-
+  
   // pragma MARK: Result<double>
   using Result_double_ = Result<double>;
   inline Result_double_ create_Result_double_(double value) noexcept {
@@ -220,7 +220,7 @@ namespace margelo::nitro::reactnativelist::bridge::swift {
   inline Result_double_ create_Result_double_(const std::exception_ptr& error) noexcept {
     return Result<double>::withError(error);
   }
-
+  
   // pragma MARK: Result<NativeListItem>
   using Result_NativeListItem_ = Result<NativeListItem>;
   inline Result_NativeListItem_ create_Result_NativeListItem_(const NativeListItem& value) noexcept {
@@ -229,7 +229,7 @@ namespace margelo::nitro::reactnativelist::bridge::swift {
   inline Result_NativeListItem_ create_Result_NativeListItem_(const std::exception_ptr& error) noexcept {
     return Result<NativeListItem>::withError(error);
   }
-
+  
   // pragma MARK: std::variant<nitro::NullType, std::shared_ptr<HybridIOSWorkletsModuleProxyHolderSpec>>
   /**
    * Wrapper struct for `std::variant<nitro::NullType, std::shared_ptr<HybridIOSWorkletsModuleProxyHolderSpec>>`.
@@ -258,7 +258,7 @@ namespace margelo::nitro::reactnativelist::bridge::swift {
   inline std__variant_nitro__NullType__std__shared_ptr_HybridIOSWorkletsModuleProxyHolderSpec__ create_std__variant_nitro__NullType__std__shared_ptr_HybridIOSWorkletsModuleProxyHolderSpec__(const std::shared_ptr<HybridIOSWorkletsModuleProxyHolderSpec>& value) noexcept {
     return std__variant_nitro__NullType__std__shared_ptr_HybridIOSWorkletsModuleProxyHolderSpec__(value);
   }
-
+  
   // pragma MARK: std::optional<std::variant<nitro::NullType, std::shared_ptr<HybridIOSWorkletsModuleProxyHolderSpec>>>
   /**
    * Specialized version of `std::optional<std::variant<nitro::NullType, std::shared_ptr<HybridIOSWorkletsModuleProxyHolderSpec>>>`.
@@ -273,7 +273,7 @@ namespace margelo::nitro::reactnativelist::bridge::swift {
   inline std::variant<nitro::NullType, std::shared_ptr<HybridIOSWorkletsModuleProxyHolderSpec>> get_std__optional_std__variant_nitro__NullType__std__shared_ptr_HybridIOSWorkletsModuleProxyHolderSpec___(const std::optional<std::variant<nitro::NullType, std::shared_ptr<HybridIOSWorkletsModuleProxyHolderSpec>>>& optional) noexcept {
     return optional.value();
   }
-
+  
   // pragma MARK: std::shared_ptr<HybridUiListModuleSpec>
   /**
    * Specialized version of `std::shared_ptr<HybridUiListModuleSpec>`.
@@ -281,11 +281,11 @@ namespace margelo::nitro::reactnativelist::bridge::swift {
   using std__shared_ptr_HybridUiListModuleSpec_ = std::shared_ptr<HybridUiListModuleSpec>;
   std::shared_ptr<HybridUiListModuleSpec> create_std__shared_ptr_HybridUiListModuleSpec_(void* NON_NULL swiftUnsafePointer) noexcept;
   void* NON_NULL get_std__shared_ptr_HybridUiListModuleSpec_(std__shared_ptr_HybridUiListModuleSpec_ cppType);
-
+  
   // pragma MARK: std::weak_ptr<HybridUiListModuleSpec>
   using std__weak_ptr_HybridUiListModuleSpec_ = std::weak_ptr<HybridUiListModuleSpec>;
   inline std__weak_ptr_HybridUiListModuleSpec_ weakify_std__shared_ptr_HybridUiListModuleSpec_(const std::shared_ptr<HybridUiListModuleSpec>& strong) noexcept { return strong; }
-
+  
   // pragma MARK: Result<std::shared_ptr<HybridIOSWorkletsModuleProxyHolderSpec>>
   using Result_std__shared_ptr_HybridIOSWorkletsModuleProxyHolderSpec__ = Result<std::shared_ptr<HybridIOSWorkletsModuleProxyHolderSpec>>;
   inline Result_std__shared_ptr_HybridIOSWorkletsModuleProxyHolderSpec__ create_Result_std__shared_ptr_HybridIOSWorkletsModuleProxyHolderSpec__(const std::shared_ptr<HybridIOSWorkletsModuleProxyHolderSpec>& value) noexcept {
@@ -294,7 +294,7 @@ namespace margelo::nitro::reactnativelist::bridge::swift {
   inline Result_std__shared_ptr_HybridIOSWorkletsModuleProxyHolderSpec__ create_Result_std__shared_ptr_HybridIOSWorkletsModuleProxyHolderSpec__(const std::exception_ptr& error) noexcept {
     return Result<std::shared_ptr<HybridIOSWorkletsModuleProxyHolderSpec>>::withError(error);
   }
-
+  
   // pragma MARK: std::function<double(const std::string& /* type */)>
   /**
    * Specialized version of `std::function<double(const std::string&)>`.
@@ -317,7 +317,7 @@ namespace margelo::nitro::reactnativelist::bridge::swift {
   inline Func_double_std__string_Wrapper wrap_Func_double_std__string(Func_double_std__string value) noexcept {
     return Func_double_std__string_Wrapper(std::move(value));
   }
-
+  
   // pragma MARK: std::function<bool(double /* reactTag */, const NativeListItem& /* item */, double /* index */)>
   /**
    * Specialized version of `std::function<bool(double, const NativeListItem&, double)>`.
@@ -340,7 +340,7 @@ namespace margelo::nitro::reactnativelist::bridge::swift {
   inline Func_bool_double_NativeListItem_double_Wrapper wrap_Func_bool_double_NativeListItem_double(Func_bool_double_NativeListItem_double value) noexcept {
     return Func_bool_double_NativeListItem_double_Wrapper(std::move(value));
   }
-
+  
   // pragma MARK: std::shared_ptr<HybridUiListViewSpec>
   /**
    * Specialized version of `std::shared_ptr<HybridUiListViewSpec>`.
@@ -348,11 +348,11 @@ namespace margelo::nitro::reactnativelist::bridge::swift {
   using std__shared_ptr_HybridUiListViewSpec_ = std::shared_ptr<HybridUiListViewSpec>;
   std::shared_ptr<HybridUiListViewSpec> create_std__shared_ptr_HybridUiListViewSpec_(void* NON_NULL swiftUnsafePointer) noexcept;
   void* NON_NULL get_std__shared_ptr_HybridUiListViewSpec_(std__shared_ptr_HybridUiListViewSpec_ cppType);
-
+  
   // pragma MARK: std::weak_ptr<HybridUiListViewSpec>
   using std__weak_ptr_HybridUiListViewSpec_ = std::weak_ptr<HybridUiListViewSpec>;
   inline std__weak_ptr_HybridUiListViewSpec_ weakify_std__shared_ptr_HybridUiListViewSpec_(const std::shared_ptr<HybridUiListViewSpec>& strong) noexcept { return strong; }
-
+  
   // pragma MARK: std::shared_ptr<HybridViewHolderSpec>
   /**
    * Specialized version of `std::shared_ptr<HybridViewHolderSpec>`.
@@ -360,7 +360,7 @@ namespace margelo::nitro::reactnativelist::bridge::swift {
   using std__shared_ptr_HybridViewHolderSpec_ = std::shared_ptr<HybridViewHolderSpec>;
   std::shared_ptr<HybridViewHolderSpec> create_std__shared_ptr_HybridViewHolderSpec_(void* NON_NULL swiftUnsafePointer) noexcept;
   void* NON_NULL get_std__shared_ptr_HybridViewHolderSpec_(std__shared_ptr_HybridViewHolderSpec_ cppType);
-
+  
   // pragma MARK: std::weak_ptr<HybridViewHolderSpec>
   using std__weak_ptr_HybridViewHolderSpec_ = std::weak_ptr<HybridViewHolderSpec>;
   inline std__weak_ptr_HybridViewHolderSpec_ weakify_std__shared_ptr_HybridViewHolderSpec_(const std::shared_ptr<HybridViewHolderSpec>& strong) noexcept { return strong; }

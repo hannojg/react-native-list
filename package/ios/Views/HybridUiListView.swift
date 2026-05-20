@@ -76,6 +76,7 @@ class HybridUiListView : HybridUiListViewSpec {
     private var measuredContentSizeByItemKey: [String: CGSize] = [:]
     private var hasScheduledLayoutInvalidation = false
     private let measuredSizeTolerance: CGFloat = 0.5
+    private var rendererSurfaceId: ReactTag?
 
     private var createViewCallback: ((_ type: String) -> Double)?
     private var updateViewCallback: ((_ reactTag: Double, _ item: NativeListItem, _ index: Double) -> Bool)?
@@ -83,6 +84,94 @@ class HybridUiListView : HybridUiListViewSpec {
     override init() {
         view = UIView(frame: .zero)
         super.init()
+    }
+
+    func getSurfaceId() throws -> Double {
+        if let rendererSurfaceId {
+            return Double(rendererSurfaceId)
+        }
+
+        var createdSurfaceId: ReactTag?
+        var capturedError: Error?
+
+        let createSurface = {
+            do {
+                let surfaceId = try SurfaceHelper.createExternalSurface()
+                createdSurfaceId = ReactTag(truncating: surfaceId)
+            } catch {
+                capturedError = error
+            }
+        }
+
+        if Thread.isMainThread {
+            createSurface()
+        } else {
+            DispatchQueue.main.sync(execute: createSurface)
+        }
+
+        if let capturedError {
+            let message = String(describing: capturedError)
+            throw RuntimeError.error(withMessage: message)
+        }
+
+        guard let createdSurfaceId else {
+            throw RuntimeError.error(withMessage: "Could not create renderer surface.")
+        }
+
+        rendererSurfaceId = createdSurfaceId
+        return Double(createdSurfaceId)
+    }
+
+    func disposeRendererSurface() throws {
+        let surfaceId = rendererSurfaceId
+        rendererSurfaceId = nil
+        createViewCallback = nil
+        updateViewCallback = nil
+
+        var capturedError: Error?
+
+        let disposeSurface = {
+            self.dataSource?.observer = nil
+            self.dataSource = nil
+            self.collectionView?.dataSource = nil
+            self.collectionView?.delegate = nil
+            self.collectionView?.removeFromSuperview()
+            self.collectionView = nil
+            self.collectionDataSourceProxy = nil
+            self.collectionDelegateProxy = nil
+            self.registeredReuseIdentifiers.removeAll()
+            self.measuredContentSizeByItemKey.removeAll()
+            self.hasScheduledLayoutInvalidation = false
+
+            guard let surfaceId else {
+                return
+            }
+
+            do {
+                _ = try SurfaceHelper.releaseExternalSurface(surfaceId)
+            } catch {
+                capturedError = error
+            }
+        }
+
+        if Thread.isMainThread {
+            disposeSurface()
+        } else {
+            DispatchQueue.main.sync(execute: disposeSurface)
+        }
+
+        if let capturedError {
+            let message = String(describing: capturedError)
+            throw RuntimeError.error(withMessage: message)
+        }
+    }
+
+    func onDropView() {
+        do {
+            try disposeRendererSurface()
+        } catch {
+            print("Failed to dispose list renderer surface: \(error)")
+        }
     }
 
     func setListCallbacks(

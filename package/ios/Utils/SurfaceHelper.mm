@@ -24,9 +24,15 @@ using namespace facebook;
 using namespace facebook::react;
 
 namespace {
-    static id<RCTSurfaceProtocol> sExternalSurface = nil;
-    static NSInteger sExternalSurfaceRootTag = 0;
-    static const NSInteger kExternalSurfaceId = 3;
+    static NSMutableDictionary<NSNumber *, id<RCTSurfaceProtocol>> *externalSurfaces()
+    {
+      static NSMutableDictionary<NSNumber *, id<RCTSurfaceProtocol>> *surfaces = nil;
+      static dispatch_once_t onceToken;
+      dispatch_once(&onceToken, ^{
+        surfaces = [NSMutableDictionary new];
+      });
+      return surfaces;
+    }
 
     inline RCTSurfacePresenter* _Nullable resolveSurfacePresenter(RCTBridge *bridge)
     {
@@ -50,25 +56,19 @@ namespace {
       return nil;
     }
 
-    if (sExternalSurface != nil) {
-      return @(sExternalSurfaceRootTag);
-    }
-
     RCTBridge *bridge = [RCTBridge currentBridge];
     if (bridge == nil) {
       assignError(error, @"Could not access RCTBridge.currentBridge.");
       return nil;
     }
 
-    id<RCTSurfacePresenterStub> surfacePresenter = resolveSurfacePresenter(bridge);
+    RCTSurfacePresenter *surfacePresenter = resolveSurfacePresenter(bridge);
     if (surfacePresenter == nil) {
       assignError(error, @"Could not access an active RCTSurfacePresenter.");
       return nil;
     }
 
-    id<RCTSurfaceProtocol> surface = [surfacePresenter createFabricSurfaceForModuleName:@"" initialProperties:@{
-        @"surfaceId": @(kExternalSurfaceId)
-    }];
+    id<RCTSurfaceProtocol> surface = [surfacePresenter createFabricSurfaceForModuleName:@"" initialProperties:@{}];
     if (surface == nil) {
       assignError(error, @"Failed to create Fabric surface.");
       return nil;
@@ -79,30 +79,42 @@ namespace {
       return nil;
     }
 
-    RCTFabricSurface *fabricSurface = (RCTFabricSurface *)surface;
-    const auto &surfaceHandler = [fabricSurface surfaceHandler];
-    surfaceHandler.setSurfaceId((facebook::react::SurfaceId)kExternalSurfaceId);
-
     [surface start];
-    sExternalSurfaceRootTag = surface.rootTag;
-    if (sExternalSurfaceRootTag != kExternalSurfaceId) {
-      [surface stop];
-      assignError(error, [NSString stringWithFormat:@"Unexpected surface rootTag: %ld", (long)sExternalSurfaceRootTag]);
-      return nil;
-    }
-
-    NSLog(@"Created external surface!");
-    sExternalSurface = surface;
-    return @(sExternalSurfaceRootTag);
+    NSNumber *surfaceId = @(surface.rootTag);
+    externalSurfaces()[surfaceId] = surface;
+    NSLog(@"Created external surface %@", surfaceId);
+    return surfaceId;
   } @catch (NSException *exception) {
     assignError(error, [NSString stringWithFormat:@"Surface creation failed with NSException: %@", exception.reason]);
     return nil;
   }
 }
 
++ (BOOL)releaseExternalSurface:(ReactTag)surfaceId error:(NSError * _Nullable __autoreleasing * _Nullable)error {
+    @try {
+        if (![NSThread isMainThread]) {
+          assignError(error, @"releaseExternalSurface() must run on the main thread.");
+          return NO;
+        }
+
+        NSNumber *surfaceKey = @(surfaceId);
+        id<RCTSurfaceProtocol> surface = externalSurfaces()[surfaceKey];
+        if (surface == nil) {
+            return YES;
+        }
+
+        [surface stop];
+        [externalSurfaces() removeObjectForKey:surfaceKey];
+        return YES;
+    } @catch (NSException *exception) {
+        assignError(error, [NSString stringWithFormat:@"Surface release failed with NSException: %@", exception.reason]);
+        return NO;
+    }
+}
+
 + (nullable UIView *)getViewByTag:(ReactTag)tag error:(NSError * _Nullable __autoreleasing * _Nullable)error {
     if (![NSThread isMainThread]) {
-      assignError(error, @"createExternalSurface() must run on the main thread.");
+      assignError(error, @"getViewByTag() must run on the main thread.");
       return nil;
     }
 

@@ -57,6 +57,8 @@ namespace margelo::nitro::reactnativelist {
     void setListCallbacks(const std::shared_ptr<HybridUiListModuleSpec>& uiListModule, const std::function<double(const std::string& /* type */)>& createView, const std::function<bool(double /* reactTag */, const NativeListItem& /* item */, double /* index */)>& updateView) override;
     void setDataSource(const std::shared_ptr<HybridNativeListDataSourceSpec>& dataSource) override;
     void setLayout(const std::shared_ptr<HybridNativeListLayoutSpec>& layout) override;
+    double getSurfaceId() override;
+    void disposeRendererSurface() override;
 
   private:
     jni::global_ref<JHybridUiListViewSpec::JavaPart> _javaPart;

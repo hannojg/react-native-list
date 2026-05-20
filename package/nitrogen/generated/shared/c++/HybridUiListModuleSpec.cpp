@@ -15,7 +15,7 @@ namespace margelo::nitro::reactnativelist {
     // load custom methods/properties
     registerHybrids(this, [](Prototype& prototype) {
       prototype.registerHybridMethod("iosGetWorkletsModule", &HybridUiListModuleSpec::iosGetWorkletsModule);
-      prototype.registerHybridMethod("setupExternalSurface", &HybridUiListModuleSpec::setupExternalSurface);
+      prototype.registerHybridMethod("setupRuntime", &HybridUiListModuleSpec::setupRuntime);
     });
   }
 

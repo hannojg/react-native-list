@@ -15,6 +15,8 @@ namespace margelo::nitro::reactnativelist {
     // load custom methods/properties
     registerHybrids(this, [](Prototype& prototype) {
       prototype.registerHybridMethod("renderSync", &HybridUiManagerHelperSpec::renderSync);
+      prototype.registerHybridMethod("registerManagedSurface", &HybridUiManagerHelperSpec::registerManagedSurface);
+      prototype.registerHybridMethod("unregisterManagedSurface", &HybridUiManagerHelperSpec::unregisterManagedSurface);
     });
   }
 

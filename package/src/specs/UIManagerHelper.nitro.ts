@@ -11,5 +11,7 @@ export type UiManagerBinding = CustomType<
 >
 
 export interface UiManagerHelper extends HybridObject<{ android: 'c++' }> {
-  renderSync(nativeFabricUIManager: UiManagerBinding): void
+  renderSync(nativeFabricUIManager: UiManagerBinding, surfaceId: number): void
+  registerManagedSurface(surfaceId: number): void
+  unregisterManagedSurface(surfaceId: number): void
 }

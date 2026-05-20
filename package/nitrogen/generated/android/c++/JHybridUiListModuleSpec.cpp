@@ -57,8 +57,8 @@ namespace margelo::nitro::reactnativelist {
     auto __result = method(_javaPart);
     return __result->getJHybridIOSWorkletsModuleProxyHolderSpec();
   }
-  void JHybridUiListModuleSpec::setupExternalSurface(const std::optional<std::variant<nitro::NullType, std::shared_ptr<HybridIOSWorkletsModuleProxyHolderSpec>>>& workletsModuleHolder) {
-    static const auto method = _javaPart->javaClassStatic()->getMethod<void(jni::alias_ref<JVariant_NullType_HybridIOSWorkletsModuleProxyHolderSpec> /* workletsModuleHolder */)>("setupExternalSurface");
+  void JHybridUiListModuleSpec::setupRuntime(const std::optional<std::variant<nitro::NullType, std::shared_ptr<HybridIOSWorkletsModuleProxyHolderSpec>>>& workletsModuleHolder) {
+    static const auto method = _javaPart->javaClassStatic()->getMethod<void(jni::alias_ref<JVariant_NullType_HybridIOSWorkletsModuleProxyHolderSpec> /* workletsModuleHolder */)>("setupRuntime");
     method(_javaPart, workletsModuleHolder.has_value() ? JVariant_NullType_HybridIOSWorkletsModuleProxyHolderSpec::fromCpp(workletsModuleHolder.value()) : nullptr);
   }
 

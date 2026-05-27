@@ -1,5 +1,5 @@
 import React from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Button, Pressable, ScrollView, Text, View } from "react-native";
 import { styles } from "./styles";
 import type { ExampleCase, ExampleId } from "./types";
 
@@ -26,6 +26,16 @@ export function ExamplePicker(props: {
       <ScrollView contentContainerStyle={styles.homeContent}>
         <Text style={styles.title}>Examples</Text>
         <Text style={styles.subtitle}>Choose a list scenario to run.</Text>
+        <Button
+          title="Hermes gc()"
+          onPress={() => {
+            const gc = globalThis?.gc;
+            if (!gc) {
+              return;
+            }
+            gc();
+          }}
+        />
         <View style={styles.exampleList}>
           {exampleCases.map((exampleCase) => {
             return (

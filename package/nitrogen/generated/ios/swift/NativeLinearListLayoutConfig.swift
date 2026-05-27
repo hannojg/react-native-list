@@ -32,17 +32,17 @@ public extension NativeLinearListLayoutConfig {
   var topInset: Double {
     return self.__topInset
   }
-
+  
   @inline(__always)
   var bottomInset: Double {
     return self.__bottomInset
   }
-
+  
   @inline(__always)
   var itemSpacing: Double {
     return self.__itemSpacing
   }
-
+  
   @inline(__always)
   var iosConfig: NativeLinearListLayoutIOSConfig? {
     return self.__iosConfig.value

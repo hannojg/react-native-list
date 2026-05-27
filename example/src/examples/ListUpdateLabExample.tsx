@@ -214,6 +214,12 @@ export function ListUpdateLabExample(props: { onBack: () => void }) {
     replaceDataSourceData(dataSource, rows, false);
   }, [dataSource, rows]);
 
+  useEffect(() => {
+    return () => {
+      dataSource.release();
+    };
+  }, [dataSource]);
+
   function commitRows(nextRows: DebugRowItem[], mutateDataSource: () => void) {
     mutateDataSource();
     setRows(nextRows);

@@ -16,6 +16,12 @@ class HybridNativeListDataSource : HybridNativeListDataSourceSpec() {
     private var isContentEqual: (oldItem: NativeListItem, newItem: NativeListItem) -> Boolean =
         { _, _ -> false }
 
+    override fun dispose() {
+        observer = null
+        items = emptyList()
+        isContentEqual = { _, _ -> false }
+    }
+
     override fun setContentEqualCallback(
         isContentEqual: (oldItem: NativeListItem, newItem: NativeListItem) -> Boolean
     ) {

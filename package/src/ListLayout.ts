@@ -1,5 +1,5 @@
 import { NitroModules } from 'react-native-nitro-modules'
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import type { NativeListLayout } from './specs/NativeListLayout.nitro'
 import type {
   NativeLinearListLayout,
@@ -31,6 +31,7 @@ export type LinearListLayoutConfig = LinearListLayoutBaseConfig & {
 
 export type ListLayout = {
   __nativeLayout: NativeListLayout
+  release(): void
 }
 
 const defaultLinearListLayoutConfig: NativeLinearListLayoutConfig = {
@@ -63,13 +64,24 @@ export function createLinearListLayout(
 
   return {
     __nativeLayout: nativeLayout,
+    release() {
+      nativeLayout.dispose()
+    },
   }
 }
 
 export function useLinearListLayout(
   config?: LinearListLayoutConfig
 ): ListLayout {
-  return useMemo(() => {
+  const layout = useMemo(() => {
     return createLinearListLayout(config)
   }, [config])
+
+  useEffect(() => {
+    return () => {
+      layout.release()
+    }
+  }, [layout])
+
+  return layout
 }

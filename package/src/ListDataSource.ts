@@ -42,6 +42,7 @@ export type ListDataSourceConfig<TItem extends ListItem> = {
 }
 
 export type ListDataSource<TItem extends ListItem> = {
+  release(): void
   replaceData(data: readonly TItem[], animated?: boolean): void
   insertItem(index: number, item: TItem): void
   updateItem(index: number, item: TItem): void
@@ -130,6 +131,12 @@ export function createListDataSource<TItem extends ListItem>(
         mutationListeners.delete(listener)
       }
     },
+    release() {
+      currentConfig = {}
+      currentItems = []
+      mutationListeners.clear()
+      nativeDataSource.dispose()
+    },
     replaceData(data: readonly TItem[], animated: boolean = false) {
       const nextItems = [...data]
       currentItems = nextItems
@@ -214,6 +221,12 @@ export function useListDataSource<TItem extends ListItem>(
     nativeBackedDataSource.__setConfig(config)
     dataSource.replaceData(config.data, true)
   }, [config, dataSource, nativeBackedDataSource])
+
+  useEffect(() => {
+    return () => {
+      dataSource.release()
+    }
+  }, [dataSource])
 
   return dataSource
 }

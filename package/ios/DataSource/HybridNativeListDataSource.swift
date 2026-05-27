@@ -60,6 +60,13 @@ class HybridNativeListDataSource: HybridNativeListDataSourceSpec {
     private var pendingTargetItems: [DiffableListItem]?
     private var contentEqual: (NativeListItem, NativeListItem) -> Bool = { _, _ in false }
 
+    func dispose() {
+        observer = nil
+        items.removeAll()
+        pendingTargetItems = nil
+        contentEqual = { _, _ in false }
+    }
+
     func setContentEqualCallback(
         isContentEqual: @escaping (NativeListItem, NativeListItem) -> Bool
     ) throws {

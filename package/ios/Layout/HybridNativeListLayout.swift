@@ -17,6 +17,14 @@ class HybridNativeLinearListLayout: HybridNativeLinearListLayoutSpec, NativeList
     private var estimatedItemWidth: CGFloat?
     private var estimatedItemHeight: CGFloat?
 
+    func dispose() {
+        topInset = 16
+        bottomInset = 16
+        itemSpacing = 12
+        estimatedItemWidth = nil
+        estimatedItemHeight = nil
+    }
+
     func setConfig(config: NativeLinearListLayoutConfig) throws {
         topInset = CGFloat(config.topInset)
         bottomInset = CGFloat(config.bottomInset)

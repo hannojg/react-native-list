@@ -20,6 +20,12 @@ class HybridNativeLinearListLayout :
     private var bottomInset = 16
     private var itemSpacing = 12
 
+    override fun dispose() {
+        topInset = 16
+        bottomInset = 16
+        itemSpacing = 12
+    }
+
     override fun setConfig(config: NativeLinearListLayoutConfig) {
         topInset = config.topInset.roundToInt()
         bottomInset = config.bottomInset.roundToInt()

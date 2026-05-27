@@ -117,8 +117,24 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
   }, [listState])
 
   const resolvedLayout = useMemo(() => {
-    return layout ?? createLinearListLayout()
+    if (layout != null) {
+      return layout
+    }
+
+    return createLinearListLayout()
   }, [layout])
+
+  const ownsResolvedLayout = layout == null
+
+  useEffect(() => {
+    if (!ownsResolvedLayout) {
+      return
+    }
+
+    return () => {
+      resolvedLayout.release()
+    }
+  }, [ownsResolvedLayout, resolvedLayout])
 
   const boxedDataSource = useMemo(() => {
     const nativeDataSource = getNativeListDataSource(dataSource)

@@ -301,6 +301,12 @@ export function DynamicTextHeightsExample(props: { onBack: () => void }) {
     replaceDataSourceData(dataSource, rows, false);
   }, [dataSource, rows]);
 
+  useEffect(() => {
+    return () => {
+      dataSource.release();
+    };
+  }, [dataSource]);
+
   return (
     <View style={styles.root}>
       <ExampleHeader

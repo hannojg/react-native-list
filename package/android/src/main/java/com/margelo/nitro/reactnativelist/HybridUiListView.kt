@@ -81,7 +81,11 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
             dataSource = null
             adapter?.dataSource = null
             adapter = null
-            view.adapter = null
+            // setAdapter(null) asks RecyclerView to recycle attached holders immediately.
+            // During list teardown the whole native view is going away, so drop the adapter
+            // without entering RecyclerView's recycling path.
+            view.swapAdapter(null, false)
+            view.layoutManager?.removeAllViews()
             isRecyclerViewLayoutScheduled = false
 
             val surface = rendererSurface

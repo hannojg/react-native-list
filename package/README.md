@@ -4,6 +4,10 @@ High-performance list primitives for React Native.
 
 ## Installation
 
+> [!WARNING]
+> Using this library requires you to use [react-native-worklets **bundle mode**](https://docs.swmansion.com/react-native-worklets/docs/bundleMode/setup).
+> Please follow the setup instructions of it first, and make sure your app works before using react-native-list!
+
 ```sh
 bun add react-native-list
 ```
@@ -27,10 +31,3 @@ Run TypeScript checks:
 ```sh
 bun run typecheck
 ```
-
-## Native Names
-
-- npm package: `react-native-list`
-- iOS module / pod: `ReactNativeList`
-- Android namespace: `com.hannojg.reactnativelist`
-- Nitro namespace: `reactnativelist`

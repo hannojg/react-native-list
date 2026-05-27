@@ -64,6 +64,12 @@ final class CollectionViewDelegateProxy: NSObject, UICollectionViewDelegateFlowL
     }
 }
 
+private struct HostedFabricViewRestorePoint {
+    let view: UIView
+    let originalSuperview: UIView
+    let originalIndex: Int
+}
+
 class HybridUiListView : HybridUiListViewSpec {
     let view: UIView
 
@@ -77,6 +83,10 @@ class HybridUiListView : HybridUiListViewSpec {
     private var hasScheduledLayoutInvalidation = false
     private let measuredSizeTolerance: CGFloat = 0.5
     private var rendererSurfaceId: ReactTag?
+    // Fabric unmount asserts that a child is still mounted under its original parent.
+    // Cells temporarily host those views, so teardown must restore the parent first.
+    private var fabricRestorePointsByReactTag: [ReactTag: HostedFabricViewRestorePoint] = [:]
+    private let hostedCells = NSHashTable<HostCell>.weakObjects()
 
     private var createViewCallback: ((_ type: String) -> Double)?
     private var updateViewCallback: ((_ reactTag: Double, _ item: NativeListItem, _ index: Double) -> Bool)?
@@ -135,6 +145,9 @@ class HybridUiListView : HybridUiListViewSpec {
             self.dataSource = nil
             self.collectionView?.dataSource = nil
             self.collectionView?.delegate = nil
+            // RCTFabricSurface.stop() commits an empty tree. Let Fabric perform that cleanup
+            // after the UIKit hierarchy matches Fabric's expected parent-child structure again (otherwise we crash).
+            self.restoreFabricViewHierarchy()
             self.collectionView?.removeFromSuperview()
             self.collectionView = nil
             self.collectionDataSourceProxy = nil
@@ -251,8 +264,77 @@ class HybridUiListView : HybridUiListViewSpec {
         let rawViewTag = createViewCallback(type)
         let viewTag = ReactTag(rawViewTag)
         let resolvedView = try SurfaceHelper.getViewByTag(viewTag)
+        try recordFabricRestorePoint(for: resolvedView, viewTag: viewTag)
         resolvedView.removeFromSuperview()
         return (resolvedView, viewTag)
+    }
+
+    private func recordFabricRestorePoint(for resolvedView: UIView, viewTag: ReactTag) throws {
+        guard let originalSuperview = resolvedView.superview else {
+            throw RuntimeError.error(
+                withMessage: "Fabric view \(viewTag) must have a superview before being hosted by the list."
+            )
+        }
+
+        guard let originalIndex = originalSuperview.subviews.firstIndex(of: resolvedView) else {
+            throw RuntimeError.error(
+                withMessage: "Fabric view \(viewTag) must be present in its Fabric parent before being hosted by the list."
+            )
+        }
+
+        let restorePoint = HostedFabricViewRestorePoint(
+            view: resolvedView,
+            originalSuperview: originalSuperview,
+            originalIndex: originalIndex
+        )
+        fabricRestorePointsByReactTag[viewTag] = restorePoint
+    }
+
+    private func restoreFabricViewHierarchy() {
+        detachHostedCells()
+
+        let restorePoints = fabricRestorePointsByReactTag.values.sorted { firstPoint, secondPoint in
+            return firstPoint.originalIndex < secondPoint.originalIndex
+        }
+
+        for restorePoint in restorePoints {
+            restoreFabricView(restorePoint)
+        }
+
+        fabricRestorePointsByReactTag.removeAll()
+    }
+
+    private func detachHostedCells() {
+        let cells = hostedCells.allObjects
+        for cell in cells {
+            cell.detachHostedView()
+        }
+        hostedCells.removeAllObjects()
+    }
+
+    private func restoreFabricView(_ restorePoint: HostedFabricViewRestorePoint) {
+        let hostedView = restorePoint.view
+        let originalSuperview = restorePoint.originalSuperview
+
+        if hostedView.superview === originalSuperview {
+            let currentIndex = originalSuperview.subviews.firstIndex(of: hostedView)
+            if currentIndex == restorePoint.originalIndex {
+                return
+            }
+            hostedView.removeFromSuperview()
+        }
+
+        precondition(hostedView.superview == nil, "Fabric view must be detached before restoring it.")
+
+        let subviewCount = originalSuperview.subviews.count
+        let insertionIndex: Int
+        if restorePoint.originalIndex <= subviewCount {
+            insertionIndex = restorePoint.originalIndex
+        } else {
+            insertionIndex = subviewCount
+        }
+
+        originalSuperview.insertSubview(hostedView, at: insertionIndex)
     }
 
     private func measure(view: UIView) -> CGSize? {
@@ -372,6 +454,7 @@ class HybridUiListView : HybridUiListViewSpec {
             itemType: item.type
         )
         cell.reactTag = result.1
+        hostedCells.add(cell)
     }
 
     private func retainMeasuredContent(in dataSource: HybridNativeListDataSource) {

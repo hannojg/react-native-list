@@ -505,7 +505,7 @@ class HybridUiListView : HybridUiListViewSpec {
 
     func layoutSizeForItem(at index: Int) -> CGSize {
         guard let dataSource else { return .zero }
-        let item = dataSource.item(at: index)
+        let item = dataSource.itemForCollectionViewQuery(at: index)
         let contentSize = resolvedContentSize(for: item)
         return layoutProvider.layoutSize(contentSize: contentSize)
     }
@@ -519,7 +519,7 @@ class HybridUiListView : HybridUiListViewSpec {
             return .zero
         }
 
-        let item = dataSource.item(at: indexPath.item)
+        let item = dataSource.itemForCollectionViewQuery(at: indexPath.item)
         let contentSize = resolvedContentSize(for: item)
         return layoutProvider.layoutSize(contentSize: contentSize)
     }
@@ -532,7 +532,7 @@ class HybridUiListView : HybridUiListViewSpec {
             return UICollectionViewCell()
         }
 
-        let item = dataSource.item(at: indexPath.item)
+        let item = dataSource.itemForCollectionViewQuery(at: indexPath.item)
         let reuseIdentifier = reuseIdentifier(for: item)
         ensureReuseRegistered(for: reuseIdentifier)
 

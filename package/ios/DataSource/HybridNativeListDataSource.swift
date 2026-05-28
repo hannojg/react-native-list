@@ -58,12 +58,14 @@ class HybridNativeListDataSource: HybridNativeListDataSourceSpec {
     weak var observer: NativeListDataSourceObserver?
     private var items: [DiffableListItem] = []
     private var pendingTargetItems: [DiffableListItem]?
+    private var animatedReloadSourceItems: [DiffableListItem]?
     private var contentEqual: (NativeListItem, NativeListItem) -> Bool = { _, _ in false }
 
     func dispose() {
         observer = nil
         items.removeAll()
         pendingTargetItems = nil
+        animatedReloadSourceItems = nil
         contentEqual = { _, _ in false }
     }
 
@@ -77,12 +79,22 @@ class HybridNativeListDataSource: HybridNativeListDataSourceSpec {
         let targetItems = wrap(newItems)
         guard animated, observer != nil else {
             pendingTargetItems = nil
+            animatedReloadSourceItems = nil
             items = targetItems
             observer?.dataSourceDidReload(self, animated: false, changeset: nil)
             return
         }
 
+        animatedReloadSourceItems = items
         let changeset = StagedChangeset(source: items, target: targetItems)
+        guard !changeset.isEmpty else {
+            pendingTargetItems = nil
+            animatedReloadSourceItems = nil
+            items = targetItems
+            observer?.dataSourceDidReload(self, animated: false, changeset: nil)
+            return
+        }
+
         pendingTargetItems = targetItems
         observer?.dataSourceDidReload(self, animated: true, changeset: changeset)
     }
@@ -129,9 +141,32 @@ class HybridNativeListDataSource: HybridNativeListDataSourceSpec {
         return items[index].nativeItem
     }
 
+    func itemForCollectionViewQuery(at index: Int) -> NativeListItem {
+        if items.indices.contains(index) {
+            return items[index].nativeItem
+        }
+
+        // During DifferenceKit staged reloads, UICollectionViewFlowLayout can still ask for
+        // sizing information from the pre-animation snapshot after the stage data was applied.
+        if let animatedReloadSourceItems, animatedReloadSourceItems.indices.contains(index) {
+            return animatedReloadSourceItems[index].nativeItem
+        }
+
+        preconditionFailure("List item index \(index) is out of bounds for collection view query.")
+    }
+
     func replaceWrappedItemsFromCollectionView(_ nextItems: [DiffableListItem]) {
         items = nextItems
-        pendingTargetItems = nil
+
+        guard let pendingTargetItems else {
+            animatedReloadSourceItems = nil
+            return
+        }
+
+        if hasSameIdentity(nextItems, pendingTargetItems) {
+            self.pendingTargetItems = nil
+            animatedReloadSourceItems = nil
+        }
     }
 
     func itemsForPremeasurement() -> [NativeListItem] {
@@ -148,6 +183,19 @@ class HybridNativeListDataSource: HybridNativeListDataSourceSpec {
     private func wrap(_ nativeItems: [NativeListItem]) -> [DiffableListItem] {
         return nativeItems.map { item in
             wrap(item)
+        }
+    }
+
+    private func hasSameIdentity(
+        _ firstItems: [DiffableListItem],
+        _ secondItems: [DiffableListItem]
+    ) -> Bool {
+        if firstItems.count != secondItems.count {
+            return false
+        }
+
+        return zip(firstItems, secondItems).allSatisfy { firstItem, secondItem in
+            return firstItem.differenceIdentifier == secondItem.differenceIdentifier
         }
     }
 

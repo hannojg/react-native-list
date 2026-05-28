@@ -10,8 +10,23 @@ export type UiManagerBinding = CustomType<
   { include: 'JSIConverter+UIManagerBinding.hpp' }
 >
 
+type ShadowNodeListType = {
+  _stubToMakeNitroHappy_doesNotExist_doNotUse: void
+}
+
+export type ShadowNodeList = CustomType<
+  ShadowNodeListType,
+  'facebook::react::ShadowNode::UnsharedListOfShared',
+  { include: 'JSIConverter+ShadowNodeList.hpp' }
+>
+
 export interface UiManagerHelper extends HybridObject<{ android: 'c++' }> {
   renderSync(nativeFabricUIManager: UiManagerBinding, surfaceId: number): void
+  completeRootSync(
+    nativeFabricUIManager: UiManagerBinding,
+    surfaceId: number,
+    childSet: ShadowNodeList
+  ): void
   registerManagedSurface(surfaceId: number): void
   unregisterManagedSurface(surfaceId: number): void
 }

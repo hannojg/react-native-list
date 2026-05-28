@@ -4,6 +4,8 @@
 
 #include "HybridUiManagerHelper.hpp"
 #include <react/renderer/core/EventTarget.h>
+#include <react/renderer/mounting/ShadowTree.h>
+#include <react/renderer/uimanager/UIManager.h>
 #include <react/renderer/uimanager/UIManagerBinding.h>
 
 namespace margelo::nitro::reactnativelist
@@ -31,6 +33,36 @@ namespace margelo::nitro::reactnativelist
             // This will immediately cause all queued mounting transactions to be processed
             Logger::log(LogLevel::Debug, "HybridUiManagerHelper", "Notifying delegates of updates for surfaceId %d", targetSurfaceId);
             shadowTree.notifyDelegatesOfUpdates(); });
+    }
+
+    // Mirrors React Native's UIManagerBinding.cpp `completeRoot` host function, but calls
+    // UIManager::completeSurface with `mountSynchronously=true`. The stock Fabric binding always
+    // passes `mountSynchronously=false`, which lets Android enqueue the Java MountItem later; this
+    // list needs the view to be mounted before `createNativeView()` resolves the tag.
+    void
+    HybridUiManagerHelper::completeRootSync(
+        std::shared_ptr<facebook::react::UIManagerBinding> binding,
+        double surfaceId,
+        facebook::react::ShadowNode::UnsharedListOfShared childSet)
+    {
+        if (!binding)
+        {
+            throw std::runtime_error(
+                "HybridUiManagerHelper::completeRootSync: UIManagerBinding is not installed in the runtime.");
+        }
+
+        react::UIManager &uiManager = binding->getUIManager();
+        react::SurfaceId targetSurfaceId = static_cast<react::SurfaceId>(surfaceId);
+        Logger::log(LogLevel::Debug, "HybridUiManagerHelper", "[UserDebug] completeRootSync start surfaceId %d", targetSurfaceId);
+        uiManager.completeSurface(
+            targetSurfaceId,
+            childSet,
+            {
+                .enableStateReconciliation = true,
+                .mountSynchronously = true,
+                .source = react::ShadowTree::CommitSource::React,
+            });
+        Logger::log(LogLevel::Debug, "HybridUiManagerHelper", "[UserDebug] completeRootSync end surfaceId %d", targetSurfaceId);
     }
 
     void HybridUiManagerHelper::registerManagedSurface(double surfaceId)

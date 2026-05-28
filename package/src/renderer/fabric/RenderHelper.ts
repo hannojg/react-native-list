@@ -1,6 +1,7 @@
 import { NitroModules } from 'react-native-nitro-modules'
 import { uiListModule } from '../../UiListModule'
 import { uiManagerHelper } from './UiManagerHelper'
+import type { ShadowNodeList } from '../../specs/UIManagerHelper.nitro'
 
 export const uiListModuleBoxed = NitroModules.box(uiListModule)
 const capturedOnJS = global.nativeFabricUIManager
@@ -14,6 +15,15 @@ export function renderSyncWorklet(surfaceId: number) {
   'worklet'
   const uiManagerHelperUnboxed = uiManagerHelperBoxed.unbox()
   uiManagerHelperUnboxed.renderSync(capturedOnJS, surfaceId)
+}
+
+export function completeRootSyncWorklet(
+  surfaceId: number,
+  childSet: ShadowNodeList
+) {
+  'worklet'
+  const uiManagerHelperUnboxed = uiManagerHelperBoxed.unbox()
+  uiManagerHelperUnboxed.completeRootSync(capturedOnJS, surfaceId, childSet)
 }
 
 export function registerManagedSurfaceWorklet(surfaceId: number) {

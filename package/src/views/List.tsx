@@ -20,6 +20,7 @@ import {
 import { createLinearListLayout, ListLayout } from '../ListLayout'
 import { useChangeEffect } from '../hooks/useChangeEffect'
 import {
+  completeRootSyncWorklet,
   renderSyncWorklet,
   registerManagedSurfaceWorklet,
   unregisterManagedSurfaceWorklet,
@@ -380,7 +381,12 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
 
             const elements = renderListElements()
             const parentContainer = <View>{elements}</View>
-            reactRender(surfaceId, parentContainer, () => {})
+            reactRender(
+              surfaceId,
+              parentContainer,
+              () => {},
+              completeRootSyncWorklet
+            )
             rebuildTagPositions()
           }
 

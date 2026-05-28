@@ -7,6 +7,7 @@
 #include "HybridUiManagerHelperSpec.hpp"
 #include "WorkletsUiCallInvoker.hpp"
 
+#include <react/renderer/core/ShadowNode.h>
 #include <react/renderer/core/EventListener.h>
 #include <react/renderer/scheduler/Scheduler.h>
 #include <mutex>
@@ -24,6 +25,10 @@ namespace margelo::nitro::reactnativelist
         void renderSync(
             std::shared_ptr<facebook::react::UIManagerBinding> nativeFabricUIManager,
             double surfaceId) override;
+        void completeRootSync(
+            std::shared_ptr<facebook::react::UIManagerBinding> nativeFabricUIManager,
+            double surfaceId,
+            facebook::react::ShadowNode::UnsharedListOfShared childSet) override;
         void registerManagedSurface(double surfaceId) override;
         void unregisterManagedSurface(double surfaceId) override;
         static std::shared_ptr<react::EventListener> createEventInterceptor(std::shared_ptr<react::CallInvoker> uiCallInvoker);

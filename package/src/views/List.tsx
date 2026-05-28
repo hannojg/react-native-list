@@ -251,7 +251,7 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
 
         const { disposeReactRoot } = getReactFabricRenderer()
         unregisterManagedSurfaceWorklet(surfaceId)
-        disposeReactRoot(surfaceId)
+        disposeReactRoot(surfaceId, completeRootSyncWorklet)
         state.elementRecords = []
 
         for (const key of Object.keys(state.reactTagToRecordIndex)) {

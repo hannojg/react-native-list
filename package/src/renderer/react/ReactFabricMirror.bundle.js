@@ -1978,14 +1978,20 @@ function reactRender(surfaceId, element, callback, completeRootSync) {
     currentCompleteRootSync = previousCompleteRootSync;
   }
 }
-function disposeReactRoot(surfaceId) {
+function disposeReactRoot(surfaceId, completeRootSync) {
   const rootContainer = global.rootContainersBySurfaceId[surfaceId];
   if (rootContainer == null) {
     return;
   }
-  Renderer.updateContainerSync(null, rootContainer, null, null);
-  Renderer.flushSyncWork();
-  delete global.rootContainersBySurfaceId[surfaceId];
-  nativeLog("[ReactFabricMirror] disposed root", surfaceId);
+  const previousCompleteRootSync = currentCompleteRootSync;
+  currentCompleteRootSync = completeRootSync;
+  try {
+    Renderer.updateContainerSync(null, rootContainer, null, null);
+    Renderer.flushSyncWork();
+    delete global.rootContainersBySurfaceId[surfaceId];
+    nativeLog("[ReactFabricMirror] disposed root", surfaceId);
+  } finally {
+    currentCompleteRootSync = previousCompleteRootSync;
+  }
 }
 nativeLog("[ReactFabricMirror] ReactFabricMirror initialized");

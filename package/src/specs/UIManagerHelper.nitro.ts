@@ -20,8 +20,10 @@ export type ShadowNodeList = CustomType<
   { include: 'JSIConverter+ShadowNodeList.hpp' }
 >
 
-export interface UiManagerHelper extends HybridObject<{ android: 'c++' }> {
-  renderSync(nativeFabricUIManager: UiManagerBinding, surfaceId: number): void
+export interface UiManagerHelper extends HybridObject<{
+  android: 'c++'
+  ios: 'c++'
+}> {
   completeRootSync(
     nativeFabricUIManager: UiManagerBinding,
     surfaceId: number,

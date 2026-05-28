@@ -22,9 +22,6 @@ namespace margelo::nitro::reactnativelist
         HybridUiManagerHelper() : HybridObject(TAG) {}
 
     public:
-        void renderSync(
-            std::shared_ptr<facebook::react::UIManagerBinding> nativeFabricUIManager,
-            double surfaceId) override;
         void completeRootSync(
             std::shared_ptr<facebook::react::UIManagerBinding> nativeFabricUIManager,
             double surfaceId,

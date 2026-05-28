@@ -16,25 +16,6 @@ namespace margelo::nitro::reactnativelist
     std::mutex HybridUiManagerHelper::managedSurfaceIdsMutex_;
     std::unordered_set<react::SurfaceId> HybridUiManagerHelper::managedSurfaceIds_;
 
-    void
-    HybridUiManagerHelper::renderSync(
-        std::shared_ptr<facebook::react::UIManagerBinding> binding,
-        double surfaceId)
-    {
-        if (!binding)
-        {
-            throw std::runtime_error(
-                "HybridUiManagerHelper::renderSync: UIManagerBinding is not installed in the runtime.");
-        }
-        react::UIManager &uiManager = binding->getUIManager();
-        react::SurfaceId targetSurfaceId = static_cast<react::SurfaceId>(surfaceId);
-        uiManager.getShadowTreeRegistry().visit(targetSurfaceId, [targetSurfaceId](const react::ShadowTree &shadowTree)
-                                                {
-            // This will immediately cause all queued mounting transactions to be processed
-            Logger::log(LogLevel::Debug, "HybridUiManagerHelper", "Notifying delegates of updates for surfaceId %d", targetSurfaceId);
-            shadowTree.notifyDelegatesOfUpdates(); });
-    }
-
     // Mirrors React Native's UIManagerBinding.cpp `completeRoot` host function, but calls
     // UIManager::completeSurface with `mountSynchronously=true`. The stock Fabric binding always
     // passes `mountSynchronously=false`, which lets Android enqueue the Java MountItem later; this

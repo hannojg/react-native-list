@@ -49,7 +49,6 @@ namespace margelo::nitro::reactnativelist {
 
     public:
       // Methods
-      virtual void renderSync(std::shared_ptr<facebook::react::UIManagerBinding> nativeFabricUIManager, double surfaceId) = 0;
       virtual void completeRootSync(std::shared_ptr<facebook::react::UIManagerBinding> nativeFabricUIManager, double surfaceId, facebook::react::ShadowNode::UnsharedListOfShared childSet) = 0;
       virtual void registerManagedSurface(double surfaceId) = 0;
       virtual void unregisterManagedSurface(double surfaceId) = 0;

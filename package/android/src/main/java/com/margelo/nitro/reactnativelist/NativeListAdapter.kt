@@ -75,7 +75,9 @@ internal class NativeListAdapter(
         prepareChildLayoutForMeasurement(child, item)
         val reactTag = holder.reactTag
         if (reactTag != null) {
-            updateView(reactTag.toDouble(), item, position.toDouble())
+            val reactTagDouble = reactTag.toDouble()
+            val positionDouble = position.toDouble()
+            updateView(reactTagDouble, item, positionDouble)
         }
 
         captureMeasuredContentSize(item.key, child)

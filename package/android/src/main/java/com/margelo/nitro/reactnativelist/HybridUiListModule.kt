@@ -99,8 +99,6 @@ class HybridUiListModule : HybridUiListModuleSpec() {
         val fabricUIManager = uiManager as? FabricUIManager
             ?: throw IllegalStateException("UIManager is not a FabricUIManager! Is the Fabric architecture enabled?")
         setupEventInterceptor(fabricUIManager)
-
-        android.util.Log.d("HannoDebug", "✅✅✅✅ UI runtime setup complete!")
     }
 
     @OptIn(FrameworkAPI::class)

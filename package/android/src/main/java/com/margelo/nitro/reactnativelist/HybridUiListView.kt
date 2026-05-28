@@ -3,7 +3,6 @@ package com.margelo.nitro.reactnativelist
 import android.graphics.Color
 import android.graphics.Canvas
 import android.os.Looper
-import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
@@ -41,9 +40,6 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
     private var rendererSurfaceId: Int? = null
     private var isRendererSurfaceStarted = false
     private var isDisposed = false
-    private val debugId = nextDebugId()
-    private var activeCreateNativeViewCount = 0
-    private var nextCreateNativeViewSequence = 1
 
     override val view: RecyclerView by lazy {
         ClippedRecyclerView(reactContext).apply {
@@ -61,7 +57,6 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
         createView: CreateViewCallbackType,
         updateView: UpdateViewCallbackType
     ) {
-        Log.d(USER_DEBUG_TAG, "list#$debugId setListCallbacks")
         isDisposed = false
         createViewCallback = createView
         updateViewCallback = updateView
@@ -74,13 +69,11 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
         val surfaceId = runOnMainSync {
             ensureRendererSurface()
         }
-        Log.d(USER_DEBUG_TAG, "list#$debugId getSurfaceId surfaceId=$surfaceId")
         return surfaceId.toDouble()
     }
 
     override fun disposeRendererSurface() {
         runOnMainSync {
-            Log.d(USER_DEBUG_TAG, "list#$debugId disposeRendererSurface")
             isDisposed = true
             createViewCallback = null
             updateViewCallback = null
@@ -122,15 +115,9 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
         runOnMain {
             val existingDataSource = this.dataSource
             if (existingDataSource === nativeDataSource) {
-                Log.w("HybridUiListView", "setDataSource called with the same data source instance. Ignoring.")
-                Log.d(USER_DEBUG_TAG, "list#$debugId setDataSource ignored same instance count=${nativeDataSource.getCountAsInt()}")
                 return@runOnMain
             }
 
-            Log.d(
-                USER_DEBUG_TAG,
-                "list#$debugId setDataSource count=${nativeDataSource.getCountAsInt()} existing=${existingDataSource != null} adapter=${adapter != null}"
-            )
             this.dataSource?.observer = null
             this.dataSource = nativeDataSource
             nativeDataSource.observer = this
@@ -147,7 +134,6 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
             ?: throw IllegalStateException("NativeListLayout must provide a platform layout.")
 
         runOnMain {
-            Log.d(USER_DEBUG_TAG, "list#$debugId setLayout")
             layoutProvider.applyTo(view, reactContext)
             scheduleRecyclerViewLayout()
         }
@@ -157,11 +143,6 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
         runOnMain {
             val nativeAdapter = ensureAdapter()
             val nativeDataSource = dataSource
-            val count = nativeDataSource?.getCountAsInt()
-            Log.d(
-                USER_DEBUG_TAG,
-                "list#$debugId dataSourceDidReload animated=$animated hasDiff=${diffResult != null} count=$count"
-            )
             if (nativeDataSource != null) {
                 nativeAdapter.retainMeasuredContent(nativeDataSource)
             }
@@ -179,7 +160,6 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
 
     override fun dataSourceDidInsert(index: Int) {
         runOnMain {
-            Log.d(USER_DEBUG_TAG, "list#$debugId dataSourceDidInsert index=$index")
             val nativeAdapter = ensureAdapter()
             nativeAdapter.notifyItemInserted(index)
             scheduleRecyclerViewLayout()
@@ -188,10 +168,6 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
 
     override fun dataSourceDidUpdate(index: Int, previousItem: NativeListItem) {
         runOnMain {
-            Log.d(
-                USER_DEBUG_TAG,
-                "list#$debugId dataSourceDidUpdate index=$index previousKey=${previousItem.key}"
-            )
             val nativeAdapter = ensureAdapter()
             nativeAdapter.notifyItemChanged(index)
             scheduleRecyclerViewLayout()
@@ -200,10 +176,6 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
 
     override fun dataSourceDidRemove(index: Int, removedItem: NativeListItem) {
         runOnMain {
-            Log.d(
-                USER_DEBUG_TAG,
-                "list#$debugId dataSourceDidRemove index=$index removedKey=${removedItem.key}"
-            )
             val nativeAdapter = ensureAdapter()
             nativeAdapter.notifyItemRemoved(index)
             scheduleRecyclerViewLayout()
@@ -212,10 +184,6 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
 
     override fun dataSourceDidMove(fromIndex: Int, toIndex: Int) {
         runOnMain {
-            Log.d(
-                USER_DEBUG_TAG,
-                "list#$debugId dataSourceDidMove fromIndex=$fromIndex toIndex=$toIndex"
-            )
             val nativeAdapter = ensureAdapter()
             nativeAdapter.notifyItemMoved(fromIndex, toIndex)
             scheduleRecyclerViewLayout()
@@ -232,7 +200,6 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
             return existingAdapter
         }
 
-        Log.d(USER_DEBUG_TAG, "list#$debugId ensureAdapter create dataSource=${dataSource != null}")
         val nativeAdapter = NativeListAdapter(
             reactContext = reactContext,
             createView = { type ->
@@ -256,7 +223,6 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
 
         val surfaceId = rendererSurfaceId
         if (surfaceId != null && !isRendererSurfaceStarted) {
-            Log.d(USER_DEBUG_TAG, "list#$debugId attachAdapter deferred surfaceId=$surfaceId rendererStarted=false")
             return
         }
 
@@ -266,7 +232,6 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
         }
 
         view.adapter = nativeAdapter
-        Log.d(USER_DEBUG_TAG, "list#$debugId attachAdapter attached surfaceId=$surfaceId")
     }
 
     private fun ensureRendererSurface(): Int {
@@ -292,7 +257,6 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
         isRendererSurfaceStarted = false
         isDisposed = false
 
-        Log.d(USER_DEBUG_TAG, "list#$debugId ensureRendererSurface start surfaceId=$surfaceId")
         val startTask = surface.start()
         val waitThread = Thread {
             try {
@@ -304,18 +268,15 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
                     }
 
                     if (isDisposed) {
-                        Log.d(USER_DEBUG_TAG, "list#$debugId renderer surface start ignored disposed surfaceId=$surfaceId")
                         return@post
                     }
 
                     val currentSurfaceId = rendererSurfaceId
                     if (currentSurfaceId != surfaceId) {
-                        Log.d(USER_DEBUG_TAG, "list#$debugId renderer surface start ignored stale surfaceId=$surfaceId current=$currentSurfaceId")
                         return@post
                     }
 
                     isRendererSurfaceStarted = true
-                    Log.d(USER_DEBUG_TAG, "list#$debugId renderer surface start completed surfaceId=$surfaceId")
                     attachAdapterIfRendererReady()
                     scheduleRecyclerViewLayout()
                 }
@@ -327,7 +288,6 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
         }
         waitThread.name = "UiListSurfaceStart-$surfaceId"
         waitThread.start()
-        Log.d(USER_DEBUG_TAG, "list#$debugId ensureRendererSurface after start surfaceId=$surfaceId")
 
         return surfaceId
     }
@@ -340,18 +300,7 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
         val capturedCallback = createViewCallback
             ?: throw IllegalStateException("CreateView callback is not set.")
 
-        val sequence = nextCreateNativeViewSequence
-        nextCreateNativeViewSequence += 1
-        activeCreateNativeViewCount += 1
-        Log.d(
-            USER_DEBUG_TAG,
-            "list#$debugId createNativeView#$sequence start type=$type activeCreates=$activeCreateNativeViewCount thread=${Thread.currentThread().name}"
-        )
         val viewTag = capturedCallback(type).toInt()
-        Log.d(
-            USER_DEBUG_TAG,
-            "list#$debugId createNativeView#$sequence callback returned type=$type viewTag=$viewTag activeCreates=$activeCreateNativeViewCount thread=${Thread.currentThread().name}"
-        )
         val fabricUiManager = UIManagerHelper.getUIManager(reactContext, UIManagerType.FABRIC)
             ?: throw IllegalStateException("Fabric UIManager is null. Is Fabric enabled?")
 
@@ -369,34 +318,22 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
 
         parent.addView(View(reactContext), childIndex)
 
-        Log.d(
-            USER_DEBUG_TAG,
-            "list#$debugId createNativeView#$sequence finish type=$type viewTag=$viewTag parentChildIndex=$childIndex activeCreates=$activeCreateNativeViewCount thread=${Thread.currentThread().name}"
-        )
-        activeCreateNativeViewCount -= 1
         return resolvedView
     }
 
     private fun scheduleRecyclerViewLayout() {
         val surfaceId = rendererSurfaceId
         if (surfaceId != null && !isRendererSurfaceStarted) {
-            Log.d(USER_DEBUG_TAG, "list#$debugId scheduleRecyclerViewLayout deferred surfaceId=$surfaceId rendererStarted=false")
             return
         }
 
         if (isRecyclerViewLayoutScheduled) {
-            Log.d(USER_DEBUG_TAG, "list#$debugId scheduleRecyclerViewLayout skipped already scheduled")
             return
         }
 
         isRecyclerViewLayoutScheduled = true
-        Log.d(USER_DEBUG_TAG, "list#$debugId scheduleRecyclerViewLayout posted")
         view.post {
             isRecyclerViewLayoutScheduled = false
-            Log.d(
-                USER_DEBUG_TAG,
-                "list#$debugId scheduleRecyclerViewLayout run activeCreates=$activeCreateNativeViewCount thread=${Thread.currentThread().name}"
-            )
             performRecyclerViewLayoutIfReady()
         }
     }
@@ -405,10 +342,6 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
         val viewWidth = view.width
         val viewHeight = view.height
         if (!view.isAttachedToWindow || viewWidth <= 0 || viewHeight <= 0) {
-            Log.d(
-                USER_DEBUG_TAG,
-                "list#$debugId performRecyclerViewLayoutIfReady skipped attached=${view.isAttachedToWindow} size=${viewWidth}x$viewHeight"
-            )
             return
         }
 
@@ -417,13 +350,8 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
         // pending adapter updates with the current RN layout.
         val widthSpec = View.MeasureSpec.makeMeasureSpec(viewWidth, View.MeasureSpec.EXACTLY)
         val heightSpec = View.MeasureSpec.makeMeasureSpec(viewHeight, View.MeasureSpec.EXACTLY)
-        Log.d(
-            USER_DEBUG_TAG,
-            "list#$debugId performRecyclerViewLayoutIfReady measure-layout size=${viewWidth}x$viewHeight adapterCount=${adapter?.itemCount} activeCreates=$activeCreateNativeViewCount thread=${Thread.currentThread().name}"
-        )
         view.measure(widthSpec, heightSpec)
         view.layout(view.left, view.top, view.right, view.bottom)
-        Log.d(USER_DEBUG_TAG, "list#$debugId performRecyclerViewLayoutIfReady finish")
     }
 
     private fun runOnMain(block: () -> Unit) {
@@ -471,14 +399,4 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
         }
     }
 
-    companion object {
-        private const val USER_DEBUG_TAG = "UserDebug"
-        private var debugIdCounter = 1
-
-        private fun nextDebugId(): Int {
-            val debugId = debugIdCounter
-            debugIdCounter += 1
-            return debugId
-        }
-    }
 }

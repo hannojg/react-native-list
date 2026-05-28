@@ -1,4 +1,7 @@
-export type ExampleId = "update-lab" | "dynamic-text";
+export type ExampleId =
+  | "update-lab"
+  | "dynamic-text"
+  | "dynamic-text-push-stress";
 
 export type ExampleCase = {
   id: ExampleId;

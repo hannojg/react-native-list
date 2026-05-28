@@ -16,6 +16,12 @@ const exampleCases: ExampleCase[] = [
     description:
       "Generated text rows whose item width and height are measured from rendered content.",
   },
+  {
+    id: "dynamic-text-push-stress",
+    title: "Dynamic height push stress",
+    description:
+      "Pushes a fresh dynamic-height list screen every 400ms to stress list creation.",
+  },
 ];
 
 export function ExamplePicker(props: {

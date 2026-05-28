@@ -255,7 +255,11 @@ function getContentWidth(windowWidth: number) {
   return contentWidth;
 }
 
-export function DynamicTextHeightsExample(props: { onBack: () => void }) {
+export function DynamicTextHeightsExample(props: {
+  onBack: () => void;
+  title: string;
+  subtitle: string;
+}) {
   const { width } = useWindowDimensions();
   const contentWidth = getContentWidth(width);
   const variants = useMemo(() => {
@@ -310,8 +314,8 @@ export function DynamicTextHeightsExample(props: { onBack: () => void }) {
   return (
     <View style={styles.root}>
       <ExampleHeader
-        title="Dynamic text heights"
-        subtitle="Rows omit item width and height; the native list measures each rendered text row."
+        title={props.title}
+        subtitle={props.subtitle}
         onBack={props.onBack}
       />
 

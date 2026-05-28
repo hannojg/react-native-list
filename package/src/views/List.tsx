@@ -21,7 +21,6 @@ import { createLinearListLayout, ListLayout } from '../ListLayout'
 import { useChangeEffect } from '../hooks/useChangeEffect'
 import {
   completeRootSyncWorklet,
-  renderSyncWorklet,
   registerManagedSurfaceWorklet,
   unregisterManagedSurfaceWorklet,
   uiListModuleBoxed,
@@ -450,8 +449,6 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
             state.reactTagToRecordIndex[reactTag] = currentIndex
             state.reactTagToReactKey[reactTag] = reactKey
 
-            renderSyncWorklet(surfaceId)
-
             return reactTag
           }
 
@@ -506,7 +503,6 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
             record.dataKey = item.key
 
             renderContentInReact()
-            renderSyncWorklet(surfaceId)
 
             return true
           }

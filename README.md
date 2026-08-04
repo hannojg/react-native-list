@@ -67,7 +67,7 @@ module.exports = config;
 
 ```tsx
 import {  List, useLinearListLayout, useListDataSource } from "react-native-list";
-import type { ListItem, ListRenderers } from "react-native-list";
+import type { ListItem, ListRenderer } from "react-native-list";
 
 type TextItem = ListItem<
   // The type of your list item
@@ -83,7 +83,7 @@ type ImageItem = ...
 type Items = TextItem | ImageItem
 
 // Provide render functions for your item types:
-const renderers: ListRenderers<Items> = {
+const renderers: ListRenderer<Items> = {
   text: {
     renderItemWorklet: ({ item }) => {
       "worklet"; // 👀 Note: our render function is a worklet!

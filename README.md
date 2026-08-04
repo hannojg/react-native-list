@@ -45,7 +45,7 @@ module.exports = config;
 ```
 
 > [!NOTE]
-> If you're using expo you need to make sure to enable inline requires in your metro config:
+> If you're using **expo** you need to make sure to enable inline requires in your metro config:
 >
 > ```js
 > const config = {
@@ -62,6 +62,32 @@ module.exports = config;
 > ```
 >
 > If you don't see a `metro.config.js` in your project, see [expo's documentation on modifying metro](https://docs.expo.dev/guides/customizing-metro/).
+
+### Configuring Babel
+
+When enabling bundle mode, you will set options for the worklet plugin. In there, you have to allow all the modules you want to allow for rendering with react-native list.
+A good set of defaults is:
+
+```js
+/** @type {import('react-native-worklets/plugin').PluginOptions} */
+const workletsPluginOptions = {
+  bundleMode: true,
+  importForwarding: {
+    moduleNames: [
+      "react-native-list",
+      "react-native-reanimated",
+      "react-native-worklets",
+      "react-native",
+      "_reactNative",
+      "react-native-nitro-modules",
+      "expo-modules-core",
+      "expo",
+    ],
+  },
+};
+```
+
+> If you're using **expo** and you don't see a `babel.config.js` in your project, see [expo's documentation on modifying babel](https://docs.expo.dev/versions/latest/config/babel/).
 
 ## Simple example
 

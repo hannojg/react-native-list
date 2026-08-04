@@ -251,6 +251,7 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
 
         const { disposeReactRoot } = getReactFabricRenderer()
         unregisterManagedSurfaceWorklet(surfaceId)
+        // @ts-expect-error TODO: fix this one day
         disposeReactRoot(surfaceId, completeRootSyncWorklet)
         state.elementRecords = []
 
@@ -384,6 +385,7 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
               surfaceId,
               parentContainer,
               () => {},
+              // @ts-expect-error TODO: fix this one day
               completeRootSyncWorklet
             )
             rebuildTagPositions()

@@ -21,7 +21,10 @@ Pod::Spec.new do |s|
     # Implementation (C++ objects)
     "cpp/**/*.{hpp,cpp}",
   ]
-  s.public_header_files = "ios/**/*.h"
+  s.public_header_files = [
+    "ios/**/*.h",
+    "cpp/**/*.hpp",
+  ]
   s.pod_target_xcconfig = {
     "HEADER_SEARCH_PATHS" => [
       '"$(PODS_TARGET_SRCROOT)/ReactCommon"',

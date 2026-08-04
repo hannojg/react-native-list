@@ -33,6 +33,9 @@ const { getDefaultConfig } = require("expo/metro-config");
 const {
   getBundleModeMetroConfig,
 } = require("react-native-worklets/bundleMode");
+const {
+  getReactNativeListMetroConfig,
+} = require("react-native-list/metro-config");
 
 let config = getDefaultConfig(__dirname);
 config = getBundleModeMetroConfig(config);

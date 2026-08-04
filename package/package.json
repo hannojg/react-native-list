@@ -44,7 +44,7 @@
     "bundle:js:prod": "NODE_ENV=production bun run react-bundler/bundle.ts",
     "prepack": "cp ../README.md ./README.md",
     "postpack": "rm ./README.md",
-    "release": "release-it"
+    "release": "bun run typescript && release-it"
   },
   "keywords": [
     "react-native",

@@ -6,10 +6,14 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { Text, View } from "react-native";
 import { ExampleHeader } from "./components";
 import { ExamplePicker } from "./ExamplePicker";
+import { CardsFeedExample } from "./examples/CardsFeedExample";
 import { ChatBenchmarkExample } from "./examples/ChatBenchmarkExample";
 import { DynamicTextHeightsExample } from "./examples/DynamicTextHeightsExample";
+import { LegendListCardsFeedExample } from "./examples/LegendListCardsFeedExample";
 import { LegendListChatBenchmarkExample } from "./examples/LegendListChatBenchmarkExample";
+import { LegendListCardsExample } from "./examples/LegendListCardsExample";
 import { ListUpdateLabExample } from "./examples/ListUpdateLabExample";
+import { CardsExample } from "./examples/CardsExample";
 import { styles } from "./styles";
 import type { ExampleId } from "./types";
 
@@ -20,6 +24,10 @@ type ExamplesStackParamList = {
   DynamicTextHeightsPushStress: undefined;
   ChatBenchmark: undefined;
   LegendListChatBenchmark: undefined;
+  CardsFeed: undefined;
+  LegendListCardsFeed: undefined;
+  Cards: undefined;
+  LegendListCards: undefined;
 };
 
 type DynamicTextHeightsRouteParams = {
@@ -57,6 +65,23 @@ type LegendListChatBenchmarkScreenProps = NativeStackScreenProps<
   "LegendListChatBenchmark"
 >;
 
+type CardsFeedScreenProps = NativeStackScreenProps<
+  ExamplesStackParamList,
+  "CardsFeed"
+>;
+
+type LegendListCardsFeedScreenProps = NativeStackScreenProps<
+  ExamplesStackParamList,
+  "LegendListCardsFeed"
+>;
+
+type CardsScreenProps = NativeStackScreenProps<ExamplesStackParamList, "Cards">;
+
+type LegendListCardsScreenProps = NativeStackScreenProps<
+  ExamplesStackParamList,
+  "LegendListCards"
+>;
+
 const Stack = createNativeStackNavigator<ExamplesStackParamList>();
 
 const screenOptions: NativeStackNavigationOptions = {
@@ -82,6 +107,26 @@ function ExamplePickerScreen(props: ExamplePickerScreenProps) {
 
     if (exampleId === "legend-list-chat-benchmark") {
       props.navigation.navigate("LegendListChatBenchmark");
+      return;
+    }
+
+    if (exampleId === "cards-feed") {
+      props.navigation.navigate("CardsFeed");
+      return;
+    }
+
+    if (exampleId === "legend-list-cards-feed") {
+      props.navigation.navigate("LegendListCardsFeed");
+      return;
+    }
+
+    if (exampleId === "cards") {
+      props.navigation.navigate("Cards");
+      return;
+    }
+
+    if (exampleId === "legend-list-cards") {
+      props.navigation.navigate("LegendListCards");
       return;
     }
 
@@ -229,6 +274,38 @@ function LegendListChatBenchmarkScreen(
   return <LegendListChatBenchmarkExample onBack={goBack} />;
 }
 
+function CardsFeedScreen(props: CardsFeedScreenProps) {
+  function goBack() {
+    props.navigation.goBack();
+  }
+
+  return <CardsFeedExample onBack={goBack} />;
+}
+
+function LegendListCardsFeedScreen(props: LegendListCardsFeedScreenProps) {
+  function goBack() {
+    props.navigation.goBack();
+  }
+
+  return <LegendListCardsFeedExample onBack={goBack} />;
+}
+
+function CardsScreen(props: CardsScreenProps) {
+  function goBack() {
+    props.navigation.goBack();
+  }
+
+  return <CardsExample onBack={goBack} />;
+}
+
+function LegendListCardsScreen(props: LegendListCardsScreenProps) {
+  function goBack() {
+    props.navigation.goBack();
+  }
+
+  return <LegendListCardsExample onBack={goBack} />;
+}
+
 export function ExamplesApp() {
   return (
     <NavigationContainer>
@@ -250,6 +327,16 @@ export function ExamplesApp() {
         <Stack.Screen
           name="LegendListChatBenchmark"
           component={LegendListChatBenchmarkScreen}
+        />
+        <Stack.Screen name="CardsFeed" component={CardsFeedScreen} />
+        <Stack.Screen
+          name="LegendListCardsFeed"
+          component={LegendListCardsFeedScreen}
+        />
+        <Stack.Screen name="Cards" component={CardsScreen} />
+        <Stack.Screen
+          name="LegendListCards"
+          component={LegendListCardsScreen}
         />
       </Stack.Navigator>
     </NavigationContainer>

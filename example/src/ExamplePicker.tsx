@@ -34,6 +34,29 @@ const exampleCases: ExampleCase[] = [
     description:
       "The same 10k dynamic chat dataset rendered through Legend List.",
   },
+  {
+    id: "cards-feed",
+    title: "Cards feed",
+    description:
+      "A mixed card feed with stories, media, polls, quotes, and events in react-native-list.",
+  },
+  {
+    id: "legend-list-cards-feed",
+    title: "Legend List cards feed",
+    description: "The same mixed card feed rendered through Legend List.",
+  },
+  {
+    id: "cards",
+    title: "Cards",
+    description:
+      "1k expandable card rows based on the Legend List cards example in react-native-list.",
+  },
+  {
+    id: "legend-list-cards",
+    title: "Legend List cards",
+    description:
+      "The Legend List cards example adjusted for the current Legend List API.",
+  },
 ];
 
 export function ExamplePicker(props: {

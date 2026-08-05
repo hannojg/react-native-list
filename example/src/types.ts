@@ -3,7 +3,11 @@ export type ExampleId =
   | "dynamic-text"
   | "dynamic-text-push-stress"
   | "chat-benchmark"
-  | "legend-list-chat-benchmark";
+  | "legend-list-chat-benchmark"
+  | "cards-feed"
+  | "legend-list-cards-feed"
+  | "cards"
+  | "legend-list-cards";
 
 export type ExampleCase = {
   id: ExampleId;

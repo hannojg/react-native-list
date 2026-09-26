@@ -28,8 +28,10 @@ find_package(react-native-worklets REQUIRED)       # <-- for Worklets
 
 # Worklets prefab headers transitively need these React Native internal headers
 # (they are PRIVATE in the worklets CMakeLists.txt, so not propagated via prefab)
-#TODO: THIS SHOULDN'T BE HARDCODED LIKE THIS!
-set(REACT_NATIVE_DIR "${CMAKE_SOURCE_DIR}/../../node_modules/react-native")
+# Gradle resolves this from the consuming app because package-manager layouts are not stable.
+if(NOT DEFINED REACT_NATIVE_DIR OR REACT_NATIVE_DIR STREQUAL "")
+    message(FATAL_ERROR "REACT_NATIVE_DIR must be provided by the Android Gradle build.")
+endif()
 target_include_directories(${PACKAGE_NAME} PRIVATE
         "${REACT_NATIVE_DIR}/ReactCommon"
         "${REACT_NATIVE_DIR}/ReactCommon/callinvoker"

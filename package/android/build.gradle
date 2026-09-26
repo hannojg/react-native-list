@@ -41,6 +41,49 @@ def getExtOrIntegerDefault(name) {
   return rootProject.ext.has(name) ? rootProject.ext.get(name) : (project.properties["ReactNativeList_" + name]).toInteger()
 }
 
+def getAppExtOrDefault(name, fallback) {
+  def appProject = rootProject.allprojects.find { candidate ->
+    return candidate.plugins.hasPlugin("com.android.application")
+  }
+  if (appProject == null) {
+    return fallback
+  }
+
+  def extraProperties = appProject.extensions.extraProperties
+  if (!extraProperties.has(name)) {
+    return fallback
+  }
+
+  return extraProperties.get(name)
+}
+
+def resolveReactNativeDirectory() {
+  def configuredDirectory = getAppExtOrDefault("REACT_NATIVE_NODE_MODULES_DIR", null)
+  if (configuredDirectory != null) {
+    return file(configuredDirectory)
+  }
+
+  // Resolve from the consuming app so this also works with monorepos and non-hoisted dependencies.
+  def resolution = providers.exec {
+    workingDir(rootDir)
+    commandLine("node", "--print", "require.resolve('react-native/package.json')")
+  }
+  def output = resolution.standardOutput.asText.get()
+  def packagePath = output.trim()
+  def packageFile = file(packagePath)
+  if (!packageFile.exists()) {
+    throw new GradleException(
+      "[ReactNativeList] Unable to resolve react-native. Set REACT_NATIVE_NODE_MODULES_DIR in app/build.gradle."
+    )
+  }
+
+  return packageFile.parentFile
+}
+
+def reactNativeDirectory = resolveReactNativeDirectory()
+def reactNativePath = reactNativeDirectory.absolutePath
+def reactNativeCMakePath = reactNativePath.replace("\\", "/")
+
 android {
   namespace "com.hannojg.reactnativelist"
   ndkVersion getExtOrDefault("ndkVersion")
@@ -54,7 +97,9 @@ android {
     externalNativeBuild {
       cmake {
         cppFlags "-frtti -fexceptions -Wall -Wextra -fstack-protector-all"
-        arguments "-DANDROID_STL=c++_shared", "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
+        arguments "-DANDROID_STL=c++_shared",
+                  "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON",
+                  "-DREACT_NATIVE_DIR=${reactNativeCMakePath}"
         abiFilters (*reactNativeArchitectures())
 
         buildTypes {

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef } from "react";
 import { Text, useWindowDimensions, View } from "react-native";
-import type { StyleProp, ViewStyle } from "react-native";
+import type { StyleProp, TextStyle, ViewStyle } from "react-native";
 import {
   createListDataSource,
   List,
@@ -14,7 +14,10 @@ import type {
 } from "react-native-list";
 import { ExampleHeader } from "../components";
 import { styles } from "../styles";
-import type { ChatBenchmarkMessage } from "./chatBenchmarkData";
+import type {
+  ChatBenchmarkMessage,
+  ChatBenchmarkReaction,
+} from "./chatBenchmarkData";
 import {
   areChatBenchmarkMessagesEqual,
   chatBenchmarkMessageCount,
@@ -50,11 +53,23 @@ function makeChatItems(
 }
 
 function renderChatItem(
-  item: ChatBenchmarkItem,
+  item: ChatBenchmarkItem | undefined,
   contentWidth: number,
 ): React.ReactElement {
   "worklet";
 
+  let authorText = "";
+  let messageText = "";
+  let timestampText = "";
+  let reactions: readonly ChatBenchmarkReaction[] = [];
+  let authorStyle: StyleProp<TextStyle> = [
+    styles.chatAuthor,
+    styles.chatAuthorHidden,
+  ];
+  let reactionsStyle: StyleProp<ViewStyle> = [
+    styles.chatReactions,
+    styles.chatReactionsHidden,
+  ];
   let rowStyle: StyleProp<ViewStyle> = [
     styles.chatRow,
     styles.chatRowOther,
@@ -66,71 +81,72 @@ function renderChatItem(
     styles.chatBubble,
     styles.chatBubbleOther,
   ];
-  let author = null;
-  let reactions = null;
 
-  if (item.data.isOwnMessage) {
-    rowStyle = [
-      styles.chatRow,
-      styles.chatRowOwn,
-      {
-        width: contentWidth,
-      },
-    ];
-    bubbleStyle = [styles.chatBubble, styles.chatBubbleOwn];
-  } else {
-    author = <Text style={styles.chatAuthor}>{item.data.author}</Text>;
-  }
+  if (item != null) {
+    messageText = item.data.message;
+    timestampText = item.data.timestamp;
+    reactions = item.data.reactions;
 
-  if (item.data.reactions.length > 0) {
-    reactions = (
-      <View style={styles.chatReactions}>
-        {item.data.reactions.map((reaction) => {
-          return (
-            <View key={reaction.emoji} style={styles.chatReactionChip}>
-              <Text style={styles.chatReactionText}>{reaction.emoji}</Text>
-              <Text style={styles.chatReactionText}>{reaction.count}</Text>
-            </View>
-          );
-        })}
-      </View>
-    );
+    if (item.data.isOwnMessage) {
+      rowStyle = [
+        styles.chatRow,
+        styles.chatRowOwn,
+        {
+          width: contentWidth,
+        },
+      ];
+      bubbleStyle = [styles.chatBubble, styles.chatBubbleOwn];
+    } else {
+      authorText = item.data.author;
+      authorStyle = styles.chatAuthor;
+    }
+
+    if (item.data.reactions.length > 0) {
+      reactionsStyle = styles.chatReactions;
+    }
   }
 
   return (
     <View style={rowStyle}>
       <View style={bubbleStyle}>
-        {author}
-        <Text style={styles.chatMessage}>{item.data.message}</Text>
-        <Text style={styles.chatMeta}>{item.data.timestamp}</Text>
+        <Text style={authorStyle}>{authorText}</Text>
+        <Text style={styles.chatMessage}>{messageText}</Text>
+        <Text style={styles.chatMeta}>{timestampText}</Text>
       </View>
-      {reactions}
+      <View style={reactionsStyle}>
+        {renderChatReactionSlot("reaction-0", reactions, 0)}
+        {renderChatReactionSlot("reaction-1", reactions, 1)}
+        {renderChatReactionSlot("reaction-2", reactions, 2)}
+      </View>
     </View>
   );
 }
 
-function renderChatPlaceholder(contentWidth: number): React.ReactElement {
+function renderChatReactionSlot(
+  slotKey: string,
+  reactions: readonly ChatBenchmarkReaction[],
+  index: number,
+) {
   "worklet";
 
-  const rowStyle: StyleProp<ViewStyle> = [
-    styles.chatRow,
-    styles.chatRowOther,
-    {
-      width: contentWidth,
-    },
-  ];
-  const bubbleStyle: StyleProp<ViewStyle> = [
-    styles.chatBubble,
-    styles.chatBubbleOther,
+  const reaction = reactions[index];
+  let emojiText = "";
+  let countText = "";
+  let chipStyle: StyleProp<ViewStyle> = [
+    styles.chatReactionChip,
+    styles.chatReactionChipHidden,
   ];
 
+  if (reaction != null) {
+    emojiText = reaction.emoji;
+    countText = String(reaction.count);
+    chipStyle = styles.chatReactionChip;
+  }
+
   return (
-    <View style={rowStyle}>
-      <View style={bubbleStyle}>
-        <Text style={styles.chatAuthor}>{""}</Text>
-        <Text style={styles.chatMessage}>{""}</Text>
-        <Text style={styles.chatMeta}>{""}</Text>
-      </View>
+    <View key={slotKey} style={chipStyle}>
+      <Text style={styles.chatReactionText}>{emojiText}</Text>
+      <Text style={styles.chatReactionText}>{countText}</Text>
     </View>
   );
 }
@@ -142,10 +158,6 @@ function makeChatRenderers(
     [chatBenchmarkItemType]: {
       renderItemWorklet: ({ item }) => {
         "worklet";
-
-        if (item == null) {
-          return renderChatPlaceholder(contentWidth);
-        }
 
         return renderChatItem(item, contentWidth);
       },

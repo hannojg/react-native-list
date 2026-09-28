@@ -1,6 +1,8 @@
 package com.margelo.nitro.reactnativelist
 
+import androidx.annotation.Keep
 import androidx.recyclerview.widget.DiffUtil
+import com.facebook.proguard.annotations.DoNotStrip
 
 internal interface NativeListDataSourceObserver {
     fun dataSourceDidReload(diffResult: DiffUtil.DiffResult?, animated: Boolean)
@@ -10,6 +12,8 @@ internal interface NativeListDataSourceObserver {
     fun dataSourceDidMove(fromIndex: Int, toIndex: Int)
 }
 
+@DoNotStrip
+@Keep
 class HybridNativeListDataSource : HybridNativeListDataSourceSpec() {
     internal var observer: NativeListDataSourceObserver? = null
     private var items: List<NativeListItem> = emptyList()

@@ -5,9 +5,11 @@ import android.graphics.Canvas
 import android.os.Looper
 import android.view.View
 import android.view.ViewGroup
+import androidx.annotation.Keep
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.facebook.proguard.annotations.DoNotStrip
 import com.facebook.react.ReactApplication
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.interfaces.fabric.ReactSurface
@@ -28,6 +30,8 @@ typealias UpdateViewCallbackType = (
     index: Double
 ) -> Boolean
 
+@DoNotStrip
+@Keep
 class HybridUiListView(val reactContext: ThemedReactContext) :
     HybridUiListViewSpec(),
     NativeListDataSourceObserver {

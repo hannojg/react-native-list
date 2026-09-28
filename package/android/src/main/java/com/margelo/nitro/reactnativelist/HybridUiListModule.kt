@@ -1,5 +1,7 @@
 package com.margelo.nitro.reactnativelist
 
+import androidx.annotation.Keep
+import com.facebook.proguard.annotations.DoNotStrip
 import com.facebook.react.ReactApplication
 import com.facebook.react.ReactPackage
 import com.facebook.react.bridge.ReactApplicationContext
@@ -21,6 +23,8 @@ import com.swmansion.worklets.WorkletsModule
 import java.util.ArrayList
 import kotlin.concurrent.Volatile
 
+@DoNotStrip
+@Keep
 class HybridUiListModule : HybridUiListModuleSpec() {
     override fun iosGetWorkletsModule(): HybridIOSWorkletsModuleProxyHolderSpec {
         throw IllegalStateException("iosGetWorkletsModule is iOS-only and must not be called on Android.")

@@ -16,10 +16,9 @@ namespace margelo::nitro::reactnativelist
     std::mutex HybridUiManagerHelper::managedSurfaceIdsMutex_;
     std::unordered_set<react::SurfaceId> HybridUiManagerHelper::managedSurfaceIds_;
 
-    // Mirrors React Native's UIManagerBinding.cpp `completeRoot` host function, but calls
-    // UIManager::completeSurface with `mountSynchronously=true`. The stock Fabric binding always
-    // passes `mountSynchronously=false`, which lets Android enqueue the Java MountItem later; this
-    // list needs the view to be mounted before `createNativeView()` resolves the tag.
+    // This is an imperative native commit rather than a React commit. Marking it as React lets
+    // Fabric commit branching defer the mount even when mountSynchronously is true, but this list
+    // must resolve the native view immediately after this function returns.
     void
     HybridUiManagerHelper::completeRootSync(
         std::shared_ptr<facebook::react::UIManagerBinding> binding,
@@ -40,7 +39,7 @@ namespace margelo::nitro::reactnativelist
             {
                 .enableStateReconciliation = true,
                 .mountSynchronously = true,
-                .source = react::ShadowTree::CommitSource::React,
+                .source = react::ShadowTree::CommitSource::Unknown,
             });
     }
 

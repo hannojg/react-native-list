@@ -1,6 +1,6 @@
 package com.margelo.nitro.reactnativelist
 
-import com.facebook.react.ReactActivity
+import com.facebook.react.ReactApplication
 import com.facebook.react.ReactPackage
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.RuntimeExecutor
@@ -40,10 +40,11 @@ class HybridUiListModule : HybridUiListModuleSpec() {
         val nativeModuleProxyInstalled = prepareUiRuntime(workletsModule)
 
         if (!nativeModuleProxyInstalled) {
-            val reactActivity = context.currentActivity as? ReactActivity
-                ?: throw IllegalStateException("Current activity is not a ReactActivity!")
-            val reactHost = reactActivity.reactActivityDelegate.reactHost
-                ?: throw IllegalStateException("ReactNativeHost is null!")
+            // Runtime setup can happen before ReactApplicationContext has an attached Activity.
+            val application = context.applicationContext as? ReactApplication
+                ?: throw IllegalStateException("Application is not a ReactApplication!")
+            val reactHost = application.reactHost
+                ?: throw IllegalStateException("ReactHost is null!")
 
             // Next: Create a TurboModuleManager for the UI runtime, which will set global.nativeModuleProxy
             // This is whats being used when doing NativeModule.MyNativeModule in JS!

@@ -2,11 +2,15 @@ package com.margelo.nitro.reactnativelist
 
 import android.graphics.Rect
 import android.view.View
+import androidx.annotation.Keep
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.facebook.proguard.annotations.DoNotStrip
 import com.facebook.react.uimanager.ThemedReactContext
 import kotlin.math.roundToInt
 
+@DoNotStrip
+@Keep
 open class HybridNativeListLayout : HybridNativeListLayoutSpec()
 
 internal interface NativeListLayoutProvider {
@@ -19,6 +23,8 @@ data class ItemContentInsets(
     val vertical: Int
 )
 
+@DoNotStrip
+@Keep
 class HybridNativeLinearListLayout :
     HybridNativeLinearListLayoutSpec(),
     NativeListLayoutProvider {

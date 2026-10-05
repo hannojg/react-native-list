@@ -12,6 +12,7 @@
   const help = document.getElementById('help');
   const closeHelp = document.getElementById('close-help');
   const animation = window.syncRendering;
+  const scrollHashes = ['-scroll', '-scroll-30', '-scroll-20'];
   let current = 0;
   let build = false;
   let controlsTimer;
@@ -57,7 +58,8 @@
   }
 
   function writeHash() {
-    const suffix = build ? '-build' : '';
+    const scrolling = build && slides[current].dataset.animation === 'sync' && animation.scrolling;
+    const suffix = scrolling ? scrollHashes[animation.scrollPhase] : build ? '-build' : '';
     const hash = `#slide-${current + 1}${suffix}`;
     history.replaceState(null, '', hash);
   }
@@ -115,7 +117,13 @@
       setBuild(true, false, true);
       return;
     }
-    if (build && slide.dataset.animation === 'sync' && animation.nextStep()) return;
+    if (build && slide.dataset.animation === 'sync') {
+      const advanced = animation.nextStep();
+      if (advanced) {
+        writeHash();
+        return;
+      }
+    }
     const video = activeVideo();
     if (video && slide.dataset.videoStarted !== 'true') {
       slide.dataset.videoStarted = 'true';
@@ -128,7 +136,13 @@
   function previous() {
     if (build) {
       const slide = slides[current];
-      if (slide.dataset.animation === 'sync' && animation.previousStep()) return;
+      if (slide.dataset.animation === 'sync') {
+        const reversed = animation.previousStep();
+        if (reversed) {
+          writeHash();
+          return;
+        }
+      }
       setBuild(false, false, true);
       return;
     }
@@ -164,6 +178,7 @@
       playVideo(video);
     }
     updateMediaControls();
+    writeHash();
   }
 
   function toggleFullscreen() {
@@ -172,11 +187,17 @@
   }
 
   function readHash() {
-    const match = location.hash.match(/^#slide-(\d+)(-build)?$/);
+    const match = location.hash.match(/^#slide-(\d+)(-build|-scroll(?:-(30|20))?)?$/);
     if (match) {
       const number = Number(match[1]);
       const showBuild = Boolean(match[2]);
       show(number - 1, showBuild);
+      const scrollBuild = match[2] && match[2].startsWith('-scroll');
+      if (scrollBuild && slides[current].dataset.animation === 'sync') {
+        const phaseIndex = match[3] === '20' ? 2 : match[3] === '30' ? 1 : 0;
+        animation.startScroll(phaseIndex);
+        writeHash();
+      }
     } else show(0);
   }
 

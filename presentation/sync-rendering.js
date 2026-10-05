@@ -2,7 +2,9 @@
 
   const canvas = document.getElementById('scene');
   const ctx = canvas.getContext('2d');
-  const duration = 24;
+  const walkthroughLabel = canvas.getAttribute('aria-label');
+  const walkthroughDuration = 24;
+  const duration = 38;
   let stepIndex = -1;
   let position = 0;
   let playing = false;
@@ -52,7 +54,14 @@
     { start: 18.0, end: 20.2, row: 9 }
   ];
   const cuts = [0, 0.13, 0.31, 0.49, 0.77, 1];
-  const stepCount = stages.length + 1;
+  const scrollStep = stages.length + 1;
+  const frameBudget = 1000 / 60;
+  const scrollPhases = [
+    { start: 0, end: 3, bind: 4, layout: 5, label: 'Within the frame budget' },
+    { start: 3, end: 7, bind: 10, layout: 17, label: 'Layout runs past the deadline' },
+    { start: 7, end: 13.3, bind: 16, layout: 26, label: 'UI work misses two frame deadlines' }
+  ];
+  const stepCount = scrollStep + scrollPhases.length;
 
   function clamp(value, min, max) {
     const lower = Math.max(min, value);
@@ -192,10 +201,12 @@
     ctx.rect(215, 380, 320, 520);
     ctx.clip();
     const target = s.index >= 0 ? cycles[s.index].row : -1;
-    for (let i = 1; i <= 11; i += 1) {
+    const firstRow = s.fastScroll ? Math.floor(s.offset / 104) + 1 : 1;
+    const lastRow = s.fastScroll ? firstRow + 6 : 11;
+    for (let i = firstRow; i <= lastRow; i += 1) {
       const rowY = 386 + (i - 1) * 104 - s.offset;
       if (rowY + 90 < 380 || rowY > 900) { continue; }
-      const isNew = i > 5;
+      const isNew = s.fastScroll ? false : i > 5;
       const isTarget = i === target;
       const isReady = i < target || (isTarget && s.active >= 4) || t >= 20.2;
       const requested = isTarget && s.active >= 2;
@@ -222,6 +233,7 @@
     ctx.restore();
     rr(319, 926, 112, 5, 3, C.dim);
 
+    if (s.fastScroll) return;
     if (t >= 2.7 && t < 20.5) {
       ctx.save();
       const showProgress = (t - 2.7) / 0.5;
@@ -302,6 +314,130 @@
     }
   }
 
+  function scrollStateAt(t) {
+    const elapsed = t - walkthroughDuration;
+    const scrollTime = Math.max(0, elapsed - 0.7);
+    let phase = scrollPhases[0];
+    let offset = 416;
+    for (const candidate of scrollPhases) {
+      const work = 2 + candidate.bind + candidate.layout + 3;
+      const displayFrames = Math.ceil(work / frameBudget);
+      const interval = displayFrames / 60;
+      const phaseTime = scrollTime - candidate.start;
+      const phaseDuration = candidate.end - candidate.start;
+      const boundedTime = clamp(phaseTime, 0, phaseDuration);
+      const renderedFrames = Math.floor(boundedTime / interval + 0.00001);
+      offset += renderedFrames * interval * 1500;
+      if (scrollTime >= candidate.start) phase = candidate;
+    }
+    const work = 2 + phase.bind + phase.layout + 3;
+    const displayFrames = Math.ceil(work / frameBudget);
+    const fps = 60 / displayFrames;
+    const localTime = scrollTime - phase.start;
+    const interval = displayFrames / 60;
+    const phaseEnd = walkthroughDuration + 0.7 + phase.end;
+    const progress = t >= phaseEnd - 0.001 ? 1 : (localTime % interval) / interval;
+    return { elapsed, scrollTime, phase, work, displayFrames, fps, progress, offset, index: -1, fastScroll: true };
+  }
+
+  function frameTiming(s) {
+    const overloaded = s.displayFrames > 1;
+    const warning = '#bf503b';
+    const statusColor = overloaded ? warning : C.text;
+    const fpsLabel = String(s.fps);
+    text(fpsLabel, 655, 468, 120, statusColor, 600, 'left', 'Clash Display');
+    text('FPS', 655, 558, 34, C.text, 500);
+    text('Simulated on a 60 Hz display', 655, 598, 22, C.muted);
+    text(s.phase.label, 655, 337, 46, statusColor, 600, 'left', 'Clash Display');
+
+    const chartOpacity = smooth(s.scrollTime - 2.1);
+    ctx.save();
+    ctx.globalAlpha = chartOpacity;
+    const x = 1010;
+    const y = 475;
+    const pixelsPerMs = 14;
+    text('Main-thread work per frame', x, 401, 29, C.text, 500);
+    const tasks = [
+      { label: 'Touch', time: 2, color: '#b9c7e4' },
+      { label: 'Bind', time: s.phase.bind, color: '#83b4ec' },
+      { label: 'Layout', time: s.phase.layout, color: overloaded ? '#e7a18f' : '#99acd0' },
+      { label: 'Draw', time: 3, color: '#7385ac' }
+    ];
+    const boundaries = [0, frameBudget, frameBudget * 2, frameBudget * 3];
+    for (const boundary of boundaries) {
+      const bx = x + boundary * pixelsPerMs;
+      line(bx, y - 10, bx, y + 140, C.border, 1.5);
+      const label = boundary.toFixed(1);
+      text(`${label} ms`, bx, y + 169, 21, C.muted, 400, 'center');
+    }
+    let taskX = x;
+    for (const task of tasks) {
+      const width = task.time * pixelsPerMs;
+      rr(taskX, y, width, 62, 0, task.color);
+      taskX += width;
+    }
+    const deadlineX = x + frameBudget * pixelsPerMs;
+    const workWidth = s.work * pixelsPerMs;
+    const cursorX = x + workWidth * s.progress;
+    line(cursorX, y - 5, cursorX, y + 67, C.text, 3);
+    line(deadlineX, y - 18, deadlineX, y + 143, statusColor, 3);
+    text('Frame deadline', deadlineX, y - 40, 22, statusColor, 500, 'center');
+    text(`${s.work} ms of UI work`, x, y + 107, 28, statusColor, 500);
+    let legendX = x;
+    for (const task of tasks) {
+      rr(legendX, y + 215, 14, 14, 2, task.color);
+      text(task.label, legendX + 23, y + 222, 22, C.muted);
+      legendX += 170;
+    }
+
+    text('Display refreshes', 655, 759, 26, C.text, 500);
+    const refreshIndex = Math.floor(s.scrollTime * 60);
+    for (let i = 0; i < 18; i += 1) {
+      const frameIndex = refreshIndex - 17 + i;
+      const presented = frameIndex % s.displayFrames === 0;
+      const markerX = 655 + i * 61;
+      const fill = presented ? C.text : '#bf503b24';
+      rr(markerX, 794, 44, 44, 8, fill);
+      if (presented) {
+        circle(markerX + 22, 816, 5, '#ffffff');
+      } else {
+        line(markerX + 15, 809, markerX + 29, 823, warning, 2.5);
+        line(markerX + 29, 809, markerX + 15, 823, warning, 2.5);
+      }
+    }
+    circle(662, 875, 6, C.text);
+    text('New frame', 679, 875, 22, C.muted);
+    text('×', 850, 875, 29, warning, 500);
+    text('Missed refresh', 872, 875, 22, C.muted);
+    const explanation = overloaded
+      ? 'The UI thread is still busy. The display repeats the previous frame.'
+      : 'Each scroll update finishes before the next display refresh.';
+    text(explanation, 655, 939, 29, statusColor, 500);
+    ctx.restore();
+  }
+
+  function fastScroll(t) {
+    const s = scrollStateAt(t);
+    const missed = s.displayFrames - 1;
+    const refreshLabel = missed === 1 ? 'refresh' : 'refreshes';
+    const label = `Fast scroll simulation on a 60 Hz display. ${s.fps} FPS. Binding takes ${s.phase.bind} ms and layout takes ${s.phase.layout} ms. Total UI work: ${s.work} ms. ${missed} missed ${refreshLabel} per new frame. The display repeats the previous frame while the UI thread is busy.`;
+    if (canvas.getAttribute('aria-label') !== label) canvas.setAttribute('aria-label', label);
+    phone(t, s);
+    const fade = smooth(s.elapsed / 0.7);
+    if (fade < 1) {
+      const completed = stateAt(walkthroughDuration);
+      ctx.save();
+      ctx.globalAlpha = 1 - fade;
+      pipeline(walkthroughDuration, completed);
+      connection(walkthroughDuration, completed);
+      ctx.restore();
+    }
+    ctx.save();
+    ctx.globalAlpha = fade;
+    frameTiming(s);
+    ctx.restore();
+  }
+
   function renderFrame(t) {
     ctx.clearRect(0, 0, 1920, 1080);
     ctx.fillStyle = C.bg;
@@ -313,9 +449,14 @@
     const s = stateAt(t);
     ctx.save();
     ctx.translate(0, 44);
-    phone(t, s);
-    pipeline(t, s);
-    connection(t, s);
+    if (t >= walkthroughDuration && stepIndex >= scrollStep) {
+      fastScroll(t);
+    } else {
+      if (canvas.getAttribute('aria-label') !== walkthroughLabel) canvas.setAttribute('aria-label', walkthroughLabel);
+      phone(t, s);
+      pipeline(t, s);
+      connection(t, s);
+    }
     ctx.restore();
   }
   renderFrame(0);
@@ -375,8 +516,15 @@
   }
 
   function stepTimes(index) {
+    if (index >= scrollStep) {
+      const phaseIndex = index - scrollStep;
+      const phase = scrollPhases[phaseIndex];
+      const start = phaseIndex === 0 ? walkthroughDuration : walkthroughDuration + 0.7 + phase.start + 0.001;
+      const end = phaseIndex === scrollPhases.length - 1 ? duration : walkthroughDuration + 0.7 + phase.end - 0.001;
+      return { start, end };
+    }
     if (index === stages.length) {
-      return { start: cycles[1].start + 0.001, end: duration };
+      return { start: cycles[1].start + 0.001, end: walkthroughDuration - 0.001 };
     }
     const cycle = cycles[0];
     const cycleDuration = cycle.end - cycle.start;
@@ -422,15 +570,30 @@
     else playUntil(times.end);
   }
 
+  function replay() {
+    if (stepIndex >= scrollStep) {
+      pause();
+      const times = stepTimes(stepIndex);
+      seek(times.start);
+    } else reset();
+  }
+
+  function startScroll(phaseIndex = 0) {
+    playStep(scrollStep + phaseIndex);
+  }
+
   window.syncRendering = {
     ready: assetsReady,
     play: resumeStep,
     pause,
     seek,
-    replay: reset,
+    replay,
     reset,
     nextStep,
     previousStep,
+    startScroll,
+    get scrolling() { return stepIndex >= scrollStep; },
+    get scrollPhase() { return stepIndex - scrollStep; },
     get stepIndex() { return stepIndex; },
     stepCount,
     get playing() { return playing; },

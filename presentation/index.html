@@ -6,7 +6,9 @@
   <meta name="color-scheme" content="light">
   <title>True native lists in React Native</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="list-scene.js" defer></script>
   <script src="sync-rendering.js" defer></script>
+  <script src="async-rendering.js" defer></script>
   <script src="presentation.js" defer></script>
 </head>
 <body>
@@ -44,19 +46,13 @@
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide" id="slide-5" data-source-slide="6" data-transition="shared-header" data-build-state="intro" aria-label="Slide 5" hidden>
+    <section class="slide" id="slide-5" data-source-slide="6" data-animation="async" data-transition="shared-header" data-build-state="intro" aria-label="Slide 5" hidden>
       <header class="shared-header">
         <h1 class="shared-header-title">Async list rendering</h1>
-        <p class="shared-header-subtitle">React Native’s case</p>
+        <p class="shared-header-subtitle">FlatList’s typical async path</p>
       </header>
-      <div class="draft-notes source-6" data-build-content aria-hidden="true" inert>
-        <p>TODO: </p>
-        <p>- explain how scroll view interaction is main thread</p>
-        <p>- Then show how it has to threat hope to make rendering happen on JS</p>
-        <p>- And then how that has to be brought back to JS</p>
-        <p>(explain RNs asynchronous rendering arch)</p>
-        <p><br></p>
-        <p>=&gt; show the case of blank cells (discord shop example)</p>
+      <div class="animation-build" data-build-content aria-hidden="true" inert>
+        <canvas id="async-scene" width="1920" height="1080" role="img" aria-label="A phone showing rows 1–5 with a viewport strip above it, progressively revealing native scrolling, JS rendering, native mounting, and blank content."></canvas>
       </div>
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>

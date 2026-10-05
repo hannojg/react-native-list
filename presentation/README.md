@@ -2,7 +2,7 @@
 
 Open `index.html` in a browser. All fonts, images, and videos are local, so the deck works offline. Keep the `assets` folder beside the HTML.
 
-The deck contains original Keynote slides 1, 2, and 4–13, in order. Original slide 3 is omitted. All TODO text is retained; slide 5 reveals its notes after the title transition.
+The deck contains original Keynote slides 1, 2, and 4–13, in order. Original slide 3 is omitted. Slides 4 and 5 include editable rendering animations. The remaining draft slides retain their TODO text.
 
 ## Presenting
 
@@ -20,14 +20,20 @@ Left / Page Up returns to the previous step, paused, through 20, 30, and 60 FPS,
 
 ## Editing
 
-HTML slide 5 opens with its title and subtitle centered. Advance once to move those same elements into the normal header position and reveal the draft content below. Left reverses the transition. Going back from slide 6 returns to slide 5's expanded view.
+HTML slide 5 opens with its title and subtitle centered. Advance once to move those elements into the normal header position and reveal the viewport strip across the top with the phone showing rows 1–5 below it. The strip shows which cells have native views and outlines the visible rows. Each subsequent advance plays and holds one of five steps: begin scrolling and reveal the native scroll event on the Main / UI thread, reveal the JS thread and React rendering, reveal native mounting after commit/layout, scroll past mounted content while JS is busy, and mount the missing batch at the current scroll position. The commit/layout block ends before the native mounting block starts. The 60 UI FPS counter appears only in the final blank-content and catch-up steps. Blank regions in the phone contain no skeletons or placeholders. Both slides omit the display/simulation subtitle beneath the FPS counter.
+
+Left reverses one animation step at a time, paused, hiding the later layers, then reverses the title transition. P plays or pauses the current step. R rewinds only the current step without starting it. Going back from slide 6 restores the completed catch-up step. `#slide-5-build` opens the viewport introduction; `#slide-5-async-1` through `#slide-5-async-5` start individual steps.
 
 To reuse this transition, add `data-transition="shared-header"` to a slide, put its heading and subtitle in a `.shared-header` using `.shared-header-title` and `.shared-header-subtitle`, and mark the content below with `data-build-content`. The navigation handles the intro and expanded build automatically. Set `--header-transition-duration` or `--header-transition-easing` on that slide to customize its motion. Reduced-motion preferences skip the movement.
 
 - `index.html`: slide text, order, images, and video placement. Each section records its original Keynote slide number.
 - `styles.css`: fonts, colors, original 1920 × 1080 layout, and responsive scaling.
-- `sync-rendering.js`: editable canvas animation. Adjust `stages`, `cycles`, and `cuts` to change the sequence and timing. The touch indicator is a small dot.
+- `list-scene.js`: shared phone, cell drawing, fonts, canvas primitives, and background for both rendering animations.
+- `sync-rendering.js`: synchronous rendering and the steppable FPS simulation. Adjust `stages`, `cycles`, and `cuts` to change the sequence and timing. The touch indicator is a small dot.
+- `async-rendering.js`: FlatList's progressive rendering and blank-content simulation. Adjust `stages` and `stateAt` to change timing, scrolling, and mounting.
 - `presentation.js`: navigation, builds, fullscreen, and media playback.
 - `assets/`: original media and local fonts.
 
 The animation illustrates the native Android case with schematic slow-motion timing. Its item binding stage uses `Adapter.onBindViewHolder()`. It omits prefetching and background image loading to focus on the synchronous UI work during one scroll update. The fast-scroll build is a simulation, not a device benchmark: 14, 32, and 47 ms of UI work require one, two, and three display intervals respectively. The phone advances only on simulated presented frames, so its stutter and FPS counter share the same timing model. The timeline magnifies one frame's work for readability. See the [Android RecyclerView documentation](https://developer.android.com/develop/ui/views/layout/recyclerview) and [rendering performance guidance](https://developer.android.com/topic/performance/issues/render).
+
+The async slide illustrates FlatList's typical JS rendering path, with deliberately slowed schematic timing and a small mounted buffer. Native scrolling does not wait for receipt of scroll events on JS. New cells need React rendering, renderer commit/layout work, and mounting on the UI thread before they become visible. If scrolling outruns that preparation, VirtualizedList can expose blank content. The simulated 60 UI FPS isolates this case; it is not a claim that every FlatList scroll stays smooth. The two lanes simplify renderer scheduling, which can vary, and Fabric also supports synchronous rendering scenarios. See the [React Native performance guide](https://reactnative.dev/docs/performance), [VirtualizedList documentation](https://reactnative.dev/docs/virtualizedlist), [render pipeline](https://reactnative.dev/architecture/render-pipeline), and [threading model](https://reactnative.dev/architecture/threading-model).

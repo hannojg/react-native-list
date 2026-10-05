@@ -62,6 +62,32 @@
     history.replaceState(null, '', hash);
   }
 
+  function hasBuild(slide) {
+    return slide.dataset.animation === 'sync' || slide.dataset.transition === 'shared-header';
+  }
+
+  function setBuild(showBuild, lastStep = false, animate = false) {
+    const slide = slides[current];
+    build = hasBuild(slide) && showBuild;
+    if (slide.dataset.animation === 'sync') {
+      const animationBuild = slide.querySelector('.animation-build');
+      animationBuild.hidden = build === false;
+      if (build) animation.reset(lastStep);
+    }
+    if (slide.dataset.transition === 'shared-header') {
+      slide.dataset.transitionMotion = animate ? 'animate' : 'instant';
+      slide.dataset.buildState = build ? 'content' : 'intro';
+      const contentElements = slide.querySelectorAll('[data-build-content]');
+      for (const content of contentElements) {
+        content.inert = build === false;
+        const hidden = String(build === false);
+        content.setAttribute('aria-hidden', hidden);
+      }
+    }
+    updateMediaControls();
+    writeHash();
+  }
+
   function show(index, showBuild = false, lastStep = false) {
     animation.pause();
     for (const slide of slides) {
@@ -77,25 +103,19 @@
     current = Math.min(slides.length - 1, boundedIndex);
     const slide = slides[current];
     slide.hidden = false;
-    const hasAnimation = slide.dataset.animation === 'sync';
-    build = hasAnimation && showBuild;
-    const animationBuild = slide.querySelector('.animation-build');
-    if (animationBuild) animationBuild.hidden = build === false;
-    if (build) animation.reset(lastStep);
+    setBuild(showBuild, lastStep);
     counter.value = `${current + 1} / ${slides.length}`;
     previousButton.disabled = current === 0;
     nextButton.disabled = current === slides.length - 1 && activeVideo() === null;
-    updateMediaControls();
-    writeHash();
   }
 
   function next() {
     const slide = slides[current];
-    if (slide.dataset.animation === 'sync' && build === false) {
-      show(current, true);
+    if (hasBuild(slide) && build === false) {
+      setBuild(true, false, true);
       return;
     }
-    if (build && animation.nextStep()) return;
+    if (build && slide.dataset.animation === 'sync' && animation.nextStep()) return;
     const video = activeVideo();
     if (video && slide.dataset.videoStarted !== 'true') {
       slide.dataset.videoStarted = 'true';
@@ -107,20 +127,21 @@
 
   function previous() {
     if (build) {
-      if (animation.previousStep()) return;
-      show(current);
+      const slide = slides[current];
+      if (slide.dataset.animation === 'sync' && animation.previousStep()) return;
+      setBuild(false, false, true);
       return;
     }
     if (current > 0) {
       const previousIndex = current - 1;
       const previousSlide = slides[previousIndex];
-      const showBuild = previousSlide.dataset.animation === 'sync';
+      const showBuild = hasBuild(previousSlide);
       show(previousIndex, showBuild, true);
     }
   }
 
   function toggleMedia() {
-    if (build) {
+    if (build && slides[current].dataset.animation === 'sync') {
       if (animation.playing) animation.pause();
       else animation.play();
     } else {
@@ -134,7 +155,7 @@
   }
 
   function replay() {
-    if (build) animation.replay();
+    if (build && slides[current].dataset.animation === 'sync') animation.replay();
     else {
       const video = activeVideo();
       if (video === null) return;

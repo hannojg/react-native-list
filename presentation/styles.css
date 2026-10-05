@@ -194,28 +194,6 @@ h1 {
 .data-note p + p { margin-top: 25px; }
 .animation-build { position: absolute; inset: 0; }
 .sync-slide .slide-title, .sync-slide .slide-subtitle { z-index: 1; }
-.animation-step, .animation-swipe {
-  position: absolute;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--navy);
-}
-.animation-step { left: 782px; width: 1008px; height: 85px; }
-.animation-swipe {
-  top: 947px;
-  width: 210px;
-  height: 48px;
-  clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 50%, calc(100% - 20px) 100%, 0 100%);
-}
-.animation-swipe[data-swipe="0"] { z-index: 4; border-radius: 12px 0 0 12px; }
-.animation-swipe[data-swipe="1"] { z-index: 3; }
-.animation-swipe[data-swipe="2"] { z-index: 2; }
-.animation-swipe[data-swipe="3"] { z-index: 1; }
-.animation-step:hover { background: #2f3f7108; }
-.animation-swipe:hover { background: transparent; box-shadow: inset 0 0 0 2px #ffffff80; }
-.animation-step:focus-visible, .animation-swipe:focus-visible { outline-color: var(--navy); }
-.animation-swipe:focus-visible { outline-offset: -3px; }
 canvas { display: block; width: 1920px; height: 1080px; }
 .controls {
   position: fixed;

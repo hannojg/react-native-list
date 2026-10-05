@@ -44,6 +44,8 @@
     replayButton.hidden = hasMedia === false;
     const playing = hasAnimation ? animation.playing : video && video.paused === false;
     mediaButton.textContent = playing ? 'Pause' : 'Play';
+    replayButton.textContent = hasAnimation ? 'Restart' : 'Replay';
+    replayButton.title = hasAnimation ? 'Restart animation (R)' : 'Replay (R)';
   }
 
   function showControls() {
@@ -60,7 +62,7 @@
     history.replaceState(null, '', hash);
   }
 
-  function show(index, showBuild = false) {
+  function show(index, showBuild = false, lastStep = false) {
     animation.pause();
     for (const slide of slides) {
       slide.hidden = true;
@@ -79,7 +81,7 @@
     build = hasAnimation && showBuild;
     const animationBuild = slide.querySelector('.animation-build');
     if (animationBuild) animationBuild.hidden = build === false;
-    if (build) animation.reset();
+    if (build) animation.reset(lastStep);
     counter.value = `${current + 1} / ${slides.length}`;
     previousButton.disabled = current === 0;
     nextButton.disabled = current === slides.length - 1 && activeVideo() === null;
@@ -93,6 +95,7 @@
       show(current, true);
       return;
     }
+    if (build && animation.nextStep()) return;
     const video = activeVideo();
     if (video && slide.dataset.videoStarted !== 'true') {
       slide.dataset.videoStarted = 'true';
@@ -104,6 +107,7 @@
 
   function previous() {
     if (build) {
+      if (animation.previousStep()) return;
       show(current);
       return;
     }
@@ -111,7 +115,7 @@
       const previousIndex = current - 1;
       const previousSlide = slides[previousIndex];
       const showBuild = previousSlide.dataset.animation === 'sync';
-      show(previousIndex, showBuild);
+      show(previousIndex, showBuild, true);
     }
   }
 

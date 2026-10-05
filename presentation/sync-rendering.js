@@ -3,12 +3,7 @@
   const canvas = document.getElementById('scene');
   const ctx = canvas.getContext('2d');
   const duration = 24;
-  const stageElements = document.querySelectorAll('[data-stage]');
-  const stageButtons = Array.from(stageElements);
-  const swipeElements = document.querySelectorAll('[data-swipe]');
-  const swipeButtons = Array.from(swipeElements);
-  let displayedCycle = -2;
-  let displayedStage = -2;
+  let stepIndex = -1;
   let position = 0;
   let playing = false;
   let previous = 0;
@@ -57,6 +52,7 @@
     { start: 18.0, end: 20.2, row: 9 }
   ];
   const cuts = [0, 0.13, 0.31, 0.49, 0.77, 1];
+  const stepCount = stages.length + 1;
 
   function clamp(value, min, max) {
     const lower = Math.max(min, value);
@@ -242,13 +238,6 @@
   function pipeline(t, s) {
     text('Main / UI thread', 784, 291, 35, C.text, 600, 'left', 'Clash Display');
     const finished = t >= 20.2;
-    if (finished === false) {
-      const indexLabel = String(s.index + 1);
-      const formattedIndex = indexLabel.padStart(2, '0');
-      const update = s.index >= 0 ? formattedIndex : '01';
-      text(`Scroll update ${update} · expanded`, 1790, 291, 23, C.muted, 400, 'right');
-    }
-    line(782, 337, 1790, 337, C.border, 1);
 
     for (let i = 0; i < 5; i += 1) {
       const y = 355 + i * 101;
@@ -279,11 +268,8 @@
     const currentSwipe = s.index >= 0 ? s.index : 0;
     for (let j = 3; j >= 0; j -= 1) {
       const x = 978 + j * 190;
-      const distance = Math.max(0, j - currentSwipe);
-      let colorIndex = distance;
-      if (finished) colorIndex = j;
-      else if (j < currentSwipe) colorIndex = j + 1;
-      const fill = swipeColors[colorIndex];
+      const distance = Math.abs(j - currentSwipe);
+      const fill = swipeColors[distance];
       swipeSegment(x, stripY - 24, 210, 48, fill, j === 0);
     }
     for (let j = 0; j < 4; j += 1) {
@@ -325,7 +311,6 @@
       ctx.fillRect(0, 0, 1920, 1080);
     }
     const s = stateAt(t);
-    updateSelection(s);
     ctx.save();
     ctx.translate(0, 44);
     phone(t, s);
@@ -335,20 +320,6 @@
   }
   renderFrame(0);
 
-
-  function updateSelection(state) {
-    if (displayedCycle === state.index && displayedStage === state.active) return;
-    displayedCycle = state.index;
-    displayedStage = state.active;
-    for (let index = 0; index < stageButtons.length; index += 1) {
-      const selected = state.index >= 0 && index === state.active;
-      stageButtons[index].setAttribute('aria-pressed', selected);
-    }
-    for (let index = 0; index < swipeButtons.length; index += 1) {
-      const selected = index === state.index;
-      swipeButtons[index].setAttribute('aria-pressed', selected);
-    }
-  }
 
   function notifyState() {
     const event = new Event('media-state-change');
@@ -377,7 +348,7 @@
     if (playing) frameRequest = requestAnimationFrame(tick);
   }
 
-  async function play(until = duration) {
+  async function playUntil(until) {
     playbackVersion += 1;
     const requestedVersion = playbackVersion;
     await assetsReady;
@@ -396,52 +367,72 @@
     renderFrame(position);
   }
 
-  function replay() {
-    reset();
-    return play();
-  }
-
-  function reset() {
+  function reset(lastStep = false) {
     pause();
-    seek(0);
+    stepIndex = lastStep ? stepCount - 1 : -1;
+    const time = lastStep ? duration : 0;
+    seek(time);
   }
 
-  function playStage(cycleIndex, stageIndex) {
-    const cycle = cycles[cycleIndex];
+  function stepTimes(index) {
+    if (index === stages.length) {
+      return { start: cycles[1].start + 0.001, end: duration };
+    }
+    const cycle = cycles[0];
     const cycleDuration = cycle.end - cycle.start;
-    const start = cycle.start + cycleDuration * cuts[stageIndex];
-    const end = cycle.start + cycleDuration * cuts[stageIndex + 1] - 0.001;
+    const start = cycle.start + cycleDuration * cuts[index] + 0.001;
+    const boundary = cycle.start + cycleDuration * cuts[index + 1];
+    const end = boundary - 0.001;
+    return { start, end };
+  }
+
+  function playStep(index) {
+    const times = stepTimes(index);
     pause();
-    seek(start);
-    return play(end);
+    stepIndex = index;
+    seek(times.start);
+    return playUntil(times.end);
   }
 
-  function selectStage(stageIndex) {
-    const state = stateAt(position);
-    const cycleIndex = state.index >= 0 ? state.index : 0;
-    return playStage(cycleIndex, stageIndex);
+  function nextStep() {
+    if (stepIndex >= stepCount - 1) return false;
+    const index = stepIndex + 1;
+    playStep(index);
+    return true;
   }
 
-  function selectSwipe(cycleIndex) {
-    return playStage(cycleIndex, 0);
+  function previousStep() {
+    if (stepIndex < 0) return false;
+    pause();
+    stepIndex -= 1;
+    if (stepIndex >= 0) {
+      const times = stepTimes(stepIndex);
+      seek(times.end);
+    } else seek(0);
+    return true;
   }
 
-  for (let index = 0; index < stageButtons.length; index += 1) {
-    stageButtons[index].addEventListener('click', () => selectStage(index));
-  }
-  for (let index = 0; index < swipeButtons.length; index += 1) {
-    swipeButtons[index].addEventListener('click', () => selectSwipe(index));
+  function resumeStep() {
+    if (stepIndex < 0) {
+      nextStep();
+      return;
+    }
+    const times = stepTimes(stepIndex);
+    if (position >= times.end) playStep(stepIndex);
+    else playUntil(times.end);
   }
 
   window.syncRendering = {
     ready: assetsReady,
-    play,
+    play: resumeStep,
     pause,
     seek,
-    replay,
+    replay: reset,
     reset,
-    selectStage,
-    selectSwipe,
+    nextStep,
+    previousStep,
+    get stepIndex() { return stepIndex; },
+    stepCount,
     get playing() { return playing; },
     get position() { return position; },
     duration

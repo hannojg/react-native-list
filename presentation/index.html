@@ -40,19 +40,6 @@
       </div>
       <div class="animation-build" hidden>
         <canvas id="scene" width="1920" height="1080" role="img" aria-label="An Android list scrolls under a small touch dot. The UI thread handles touch, advances RecyclerView, requests an item, renders and binds native views synchronously, and lays out and records drawing."></canvas>
-        <div class="animation-steps" role="group" aria-label="UI thread animation steps">
-          <button class="animation-step" data-stage="0" style="top:399px" type="button" aria-label="Handle the touch" aria-pressed="false"></button>
-          <button class="animation-step" data-stage="1" style="top:500px" type="button" aria-label="Advance the list" aria-pressed="false"></button>
-          <button class="animation-step" data-stage="2" style="top:601px" type="button" aria-label="Request the item" aria-pressed="false"></button>
-          <button class="animation-step" data-stage="3" style="top:702px" type="button" aria-label="Bind the item synchronously" aria-pressed="false"></button>
-          <button class="animation-step" data-stage="4" style="top:803px" type="button" aria-label="Layout and record drawing" aria-pressed="false"></button>
-        </div>
-        <div class="animation-swipes" role="group" aria-label="Swipe updates">
-          <button class="animation-swipe" data-swipe="0" style="left:978px" type="button" aria-label="Swipe 01" aria-pressed="false"></button>
-          <button class="animation-swipe" data-swipe="1" style="left:1168px" type="button" aria-label="Swipe 02" aria-pressed="false"></button>
-          <button class="animation-swipe" data-swipe="2" style="left:1358px" type="button" aria-label="Swipe 03" aria-pressed="false"></button>
-          <button class="animation-swipe" data-swipe="3" style="left:1548px" type="button" aria-label="Swipe 04" aria-pressed="false"></button>
-        </div>
       </div>
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
@@ -136,7 +123,7 @@
   <nav class="controls" aria-label="Presentation controls">
     <button id="previous" type="button" aria-label="Previous slide" title="Previous (←)">←</button>
     <output id="counter" aria-live="polite">1 / 12</output>
-    <button id="next" type="button" aria-label="Next slide or build" title="Next (→ or Space)">→</button>
+    <button id="next" type="button" aria-label="Next slide, build, or animation step" title="Next (→ or Space)">→</button>
     <button id="media" type="button" title="Play or pause (P)" hidden>Play</button>
     <button id="replay" type="button" title="Replay (R)" hidden>Replay</button>
     <button id="fullscreen" type="button" title="Fullscreen (F)">Fullscreen</button>
@@ -145,11 +132,11 @@
   <dialog id="help">
     <h2>Presentation controls</h2>
     <dl>
-      <dt>→ / Space / Page Down</dt><dd>Next slide or build</dd>
-      <dt>← / Page Up</dt><dd>Previous slide or build</dd>
+      <dt>→ / Space / Page Down</dt><dd>Next slide, build, or animation step</dd>
+      <dt>← / Page Up</dt><dd>Previous slide, build, or animation step</dd>
       <dt>Home / End</dt><dd>First / last slide</dd>
       <dt>F</dt><dd>Fullscreen</dd>
-      <dt>P / R</dt><dd>Pause or play / replay media</dd>
+      <dt>P / R</dt><dd>Pause or play / restart media</dd>
       <dt>?</dt><dd>Show these shortcuts</dd>
       <dt>Esc</dt><dd>Close shortcuts or leave fullscreen</dd>
     </dl>

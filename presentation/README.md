@@ -6,15 +6,15 @@ The deck contains original Keynote slides 1, 2, and 4–13, in order. Original s
 
 ## Presenting
 
-- **Right / Space / Page Down:** advance a slide or its next build.
-- **Left / Page Up:** go back. On the scrolling animation, this returns to the TODO content.
+- **Right / Space / Page Down:** advance a slide, build, or animation step.
+- **Left / Page Up:** return to the previous animation step, build, or slide.
 - **F:** enter or leave fullscreen.
-- **P:** play or pause the current animation or video.
-- **R:** replay the current animation or video.
+- **P:** play or pause the current animation segment or video.
+- **R:** reset the animation without starting it, or replay the current video.
 - **Home / End:** jump to the first or last slide.
 - **?:** display shortcuts.
 
-On HTML slide 4 (original slide 5), advance once to reveal the synchronous rendering animation, paused. Click any numbered UI-thread step to play just that step, then stop. Click a blue Swipe segment to select that swipe update and play its touch step. You can select the steps with Tab and activate them with Enter or Space. P plays the full sequence, and R replays it. Advance again to continue to slide 5. Back reverses this sequence: slide 5 → slide 4's animation → slide 4's TODO content. Returning to the animation resets it without starting playback. On the two video slides, the first advance plays the demo and the next advance continues. You can also click a demo to play or pause it.
+On HTML slide 4 (original slide 5), advance once to reveal the synchronous rendering animation, paused. Each subsequent Right / Space / Page Down plays one of Swipe 01's five UI-thread steps and stops. The next advance starts continuous playback through Swipes 02–04. Advance again to continue to slide 5. Left / Page Up returns to the previous step, paused; from the continuous segment, it returns to the end of Swipe 01. Going back from slide 5 returns to the completed animation, and continuing backward eventually returns to slide 4's TODO content. The numbered points and Swipe segments are labels, without click targets. On the two video slides, the first advance plays the demo and the next advance continues. You can also click a demo to play or pause it.
 
 ## Editing
 

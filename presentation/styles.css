@@ -68,6 +68,52 @@ h1 {
   border: 2px solid #0000001e;
   object-fit: cover;
 }
+.introduction-portrait {
+  left: 99px;
+  top: 270px;
+  width: 550px;
+  height: 550px;
+}
+.introduction-copy {
+  position: absolute;
+  left: 760px;
+  top: 270px;
+  width: 1061px;
+}
+.introduction-copy h1 {
+  font-size: 112px;
+  line-height: 1;
+}
+.introduction-role {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 26px;
+  font-size: 48px;
+  line-height: 1.3;
+}
+.introduction-company {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+.introduction-company img {
+  width: 44px;
+  height: auto;
+}
+.introduction-aside {
+  margin-top: 14px;
+  color: var(--subtitle);
+  font-size: 38px;
+  line-height: 1.3;
+}
+.introduction-facts {
+  margin: 64px 0 0;
+  padding-left: 42px;
+  font-size: 48px;
+  line-height: 1.3;
+}
+.introduction-facts li + li { margin-top: 30px; }
 .cover-mark {
   position: absolute;
   left: 1672.3px;

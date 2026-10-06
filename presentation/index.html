@@ -28,12 +28,26 @@
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide" id="slide-3" data-source-slide="4" aria-label="Slide 3" hidden>
+    <section class="slide introduction" id="slide-3" aria-label="Slide 3: Hanno Gödece" hidden>
+      <img class="portrait introduction-portrait" src="assets/portrait.jpeg" alt="Hanno Gödece">
+      <div class="introduction-copy">
+        <h1>Hanno Gödece</h1>
+        <p class="introduction-role">SWE &amp; Team Lead @ <span class="introduction-company"><img src="assets/mark.png" alt="">margelo</span></p>
+        <p class="introduction-aside">(Not working <em>for</em> Discord)</p>
+        <ul class="introduction-facts">
+          <li>Obsessed with mobile app performance</li>
+          <li>Building mobile apps professionally<br>for over 11 years</li>
+        </ul>
+      </div>
+      <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
+    </section>
+
+    <section class="slide" id="slide-4" data-source-slide="4" aria-label="Slide 4" hidden>
       <h1 class="section-title source-4">synchronous vs asynchronous  <br>rendering</h1>
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide" id="slide-4" data-source-slide="5" data-animation="sync" data-transition="shared-header" data-build-state="intro" aria-label="Slide 4" hidden>
+    <section class="slide" id="slide-5" data-source-slide="5" data-animation="sync" data-transition="shared-header" data-build-state="intro" aria-label="Slide 5" hidden>
       <header class="shared-header">
         <h1 class="shared-header-title">Sync list rendering</h1>
         <p class="shared-header-subtitle">The simple case - what native apps today use</p>
@@ -44,7 +58,7 @@
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide" id="slide-5" data-source-slide="6" data-animation="async" data-transition="shared-header" data-build-state="intro" aria-label="Slide 5" hidden>
+    <section class="slide" id="slide-6" data-source-slide="6" data-animation="async" data-transition="shared-header" data-build-state="intro" aria-label="Slide 6" hidden>
       <header class="shared-header">
         <h1 class="shared-header-title">Async list rendering</h1>
         <p class="shared-header-subtitle">React Native’s async rendering pipeline</p>
@@ -55,7 +69,7 @@
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide" id="slide-6" data-source-slide="7" aria-label="Slide 6" hidden>
+    <section class="slide" id="slide-7" data-source-slide="7" aria-label="Slide 7" hidden>
       <h1 class="slide-title">Async list rendering</h1>
       <p class="slide-subtitle">How about the new &lt;VirtualView /&gt; ?!?!</p>
       <img class="virtualview" src="assets/virtualview.png" alt="React Native VirtualView documentation screenshot">
@@ -63,18 +77,18 @@
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide" id="slide-7" data-source-slide="8" data-animation="runtime" data-transition="shared-header" data-build-state="intro" aria-label="Slide 7" hidden>
+    <section class="slide" id="slide-8" data-source-slide="8" data-animation="runtime" data-transition="shared-header" data-build-state="intro" aria-label="Slide 8" hidden>
       <header class="shared-header">
         <h1 class="shared-header-title">Synchronous React rendering</h1>
         <p class="shared-header-subtitle">How VirtualView works</p>
       </header>
       <div class="animation-build" data-build-content aria-hidden="true" inert>
-        <canvas id="runtime-scene" width="1920" height="1080" role="img" aria-label="One React Native runtime stays in memory while exclusive access switches between the JS and UI threads."></canvas>
+        <canvas id="runtime-scene" width="1920" height="1080" role="img" aria-label="App's memory contains a fixed JS runtime. Item rendering switches between the JS and UI threads, with JS work frozen while the UI thread uses the runtime."></canvas>
       </div>
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide" id="slide-8" data-source-slide="9" aria-label="Slide 8" hidden>
+    <section class="slide" id="slide-9" data-source-slide="9" aria-label="Slide 9" hidden>
       <h1 class="slide-title">Async list rendering</h1>
       <p class="slide-subtitle">How VirtualView works</p>
       <div class="draft-notes source-9">
@@ -85,24 +99,24 @@
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide" id="slide-9" data-source-slide="10" aria-label="Slide 9" hidden>
+    <section class="slide" id="slide-10" data-source-slide="10" aria-label="Slide 10" hidden>
       <h1 class="section-title source-10">synchronous rendering in RN with two runtimes</h1>
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide" id="slide-10" data-source-slide="11" aria-label="Slide 10" hidden>
+    <section class="slide" id="slide-11" data-source-slide="11" aria-label="Slide 11" hidden>
       <h1 class="section-title source-11">Some nice features</h1>
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide" id="slide-11" data-source-slide="12" aria-label="Slide 11" hidden>
+    <section class="slide" id="slide-12" data-source-slide="12" aria-label="Slide 12" hidden>
       <h1 class="feature-title">Automatic animations</h1>
       <p class="feature-subtitle">Platform backed</p>
       <video class="feature-demo" src="assets/list-demo.mp4" poster="assets/demo-poster.png" muted playsinline preload="metadata" aria-label="List layout and animation demo"></video>
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide" id="slide-12" data-source-slide="13" aria-label="Slide 12" hidden>
+    <section class="slide" id="slide-13" data-source-slide="13" aria-label="Slide 13" hidden>
       <h1 class="feature-title">Powerful<br>Data API</h1>
       <p class="feature-subtitle">Imperative w/o going through react</p>
       <video class="feature-demo" src="assets/list-demo.mp4" poster="assets/demo-poster.png" muted playsinline preload="metadata" aria-label="List layout and animation demo"></video>
@@ -116,7 +130,7 @@
   </main>
   <nav class="controls" aria-label="Presentation controls">
     <button id="previous" type="button" aria-label="Previous slide" title="Previous (←)">←</button>
-    <output id="counter" aria-live="polite">1 / 12</output>
+    <output id="counter" aria-live="polite">1 / 13</output>
     <button id="next" type="button" aria-label="Next slide, build, or animation step" title="Next (→ or Space)">→</button>
     <button id="media" type="button" title="Play or pause (P)" hidden>Play</button>
     <button id="replay" type="button" title="Replay (R)" hidden>Replay</button>

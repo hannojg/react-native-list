@@ -9,6 +9,7 @@
   <script src="list-scene.js" defer></script>
   <script src="sync-rendering.js" defer></script>
   <script src="async-rendering.js" defer></script>
+  <script src="runtime-handoff.js" defer></script>
   <script src="presentation.js" defer></script>
 </head>
 <body>
@@ -32,15 +33,12 @@
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide sync-slide" id="slide-4" data-source-slide="5" data-animation="sync" aria-label="Slide 4" hidden>
-      <h1 class="slide-title">Sync list rendering</h1>
-      <p class="slide-subtitle">The simple case - what native apps today use</p>
-      <div class="draft-notes source-5">
-        <p>TODO: graphics with scroll + UI thread</p>
-        <p><br></p>
-        <p>- Show the case of dropping frames</p>
-      </div>
-      <div class="animation-build" hidden>
+    <section class="slide" id="slide-4" data-source-slide="5" data-animation="sync" data-transition="shared-header" data-build-state="intro" aria-label="Slide 4" hidden>
+      <header class="shared-header">
+        <h1 class="shared-header-title">Sync list rendering</h1>
+        <p class="shared-header-subtitle">The simple case - what native apps today use</p>
+      </header>
+      <div class="animation-build" data-build-content aria-hidden="true" inert>
         <canvas id="scene" width="1920" height="1080" role="img" aria-label="An Android list scrolls under a small touch dot. The UI thread handles touch, advances RecyclerView, requests an item, renders and binds native views synchronously, and lays out and records drawing."></canvas>
       </div>
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
@@ -65,15 +63,13 @@
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide" id="slide-7" data-source-slide="8" aria-label="Slide 7" hidden>
-      <h1 class="slide-title">Async list rendering</h1>
-      <p class="slide-subtitle">How VirtualView works</p>
-      <div class="draft-notes source-8">
-        <p>TODO: </p>
-        <p>- explain how it has to render react views, that typically live in JS, on the UI thread</p>
-        <p>  -&gt; Make the comparison to reanimated/worklets</p>
-        <p>  - Explain how that works differently with a separate runtime, and how that’s the reason both can run in parallel</p>
-        <p>- explain how virtual view blocks the JS thread and waits for main thread depletion</p>
+    <section class="slide" id="slide-7" data-source-slide="8" data-animation="runtime" data-transition="shared-header" data-build-state="intro" aria-label="Slide 7" hidden>
+      <header class="shared-header">
+        <h1 class="shared-header-title">Synchronous React rendering</h1>
+        <p class="shared-header-subtitle">How VirtualView works</p>
+      </header>
+      <div class="animation-build" data-build-content aria-hidden="true" inert>
+        <canvas id="runtime-scene" width="1920" height="1080" role="img" aria-label="One React Native runtime stays in memory while exclusive access switches between the JS and UI threads."></canvas>
       </div>
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>

@@ -252,7 +252,6 @@ h1 {
 .data-note { position: absolute; left: 239.4px; top: 799.6px; font-size: 43px; line-height: 1.2; white-space: nowrap; }
 .data-note p + p { margin-top: 25px; }
 .animation-build { position: absolute; inset: 0; }
-.sync-slide .slide-title, .sync-slide .slide-subtitle { z-index: 1; }
 canvas { display: block; width: 1920px; height: 1080px; }
 .controls {
   position: fixed;

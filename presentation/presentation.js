@@ -11,7 +11,7 @@
   const helpButton = document.getElementById('help-button');
   const help = document.getElementById('help');
   const closeHelp = document.getElementById('close-help');
-  const animations = { sync: window.syncRendering, async: window.asyncRendering };
+  const animations = { sync: window.syncRendering, async: window.asyncRendering, runtime: window.runtimeHandoff };
   const animationPlayers = Object.values(animations);
   const scrollHashes = ['-scroll', '-scroll-30', '-scroll-20'];
   let current = 0;
@@ -71,8 +71,9 @@
     if (build && slide.dataset.animation === 'sync' && animation.scrolling) {
       suffix = scrollHashes[animation.scrollPhase];
     }
-    if (build && slide.dataset.animation === 'async' && animation.stepIndex >= 0) {
-      suffix = `-async-${animation.stepIndex + 1}`;
+    const steppedAnimation = slide.dataset.animation === 'async' || slide.dataset.animation === 'runtime';
+    if (build && steppedAnimation && animation.stepIndex >= 0) {
+      suffix = `-${slide.dataset.animation}-${animation.stepIndex + 1}`;
     }
     const hash = `#slide-${current + 1}${suffix}`;
     history.replaceState(null, '', hash);
@@ -89,10 +90,6 @@
     if (animation) {
       if (build) animation.reset(lastStep);
       else animation.pause();
-    }
-    if (slide.dataset.animation === 'sync') {
-      const animationBuild = slide.querySelector('.animation-build');
-      animationBuild.hidden = build === false;
     }
     if (slide.dataset.transition === 'shared-header') {
       slide.dataset.transitionMotion = animate ? 'animate' : 'instant';
@@ -208,7 +205,7 @@
   }
 
   function readHash() {
-    const match = location.hash.match(/^#slide-(\d+)(-build|-scroll(?:-(30|20))?|-async-(\d+))?$/);
+    const match = location.hash.match(/^#slide-(\d+)(-build|-scroll(?:-(30|20))?|-(async|runtime)-(\d+))?$/);
     if (match) {
       const number = Number(match[1]);
       const showBuild = Boolean(match[2]);
@@ -220,8 +217,8 @@
         animation.startScroll(phaseIndex);
         writeHash();
       }
-      if (match[4] && slides[current].dataset.animation === 'async') {
-        const step = Number(match[4]);
+      if (match[4] && slides[current].dataset.animation === match[4]) {
+        const step = Number(match[5]);
         animation.startStep(step - 1);
         writeHash();
       }

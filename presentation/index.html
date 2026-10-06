@@ -12,7 +12,8 @@
   <script src="runtime-handoff.js" defer></script>
   <script src="pill-mix.js" defer></script>
   <script src="title-shuffle.js?v=line-break" defer></script>
-  <script src="presentation.js?v=sync-pipeline" defer></script>
+  <script src="shop-benchmark.js" defer></script>
+  <script src="presentation.js?v=shop-comparison" defer></script>
 </head>
 <body>
   <main id="deck" aria-label="True native lists presentation">
@@ -449,21 +450,180 @@
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide" id="slide-27" data-source-slide="13" aria-label="Slide 27" hidden>
-      <h1 class="feature-title">Powerful<br>Data API</h1>
-      <p class="feature-subtitle">Imperative w/o going through react</p>
-      <video class="feature-demo" src="assets/list-demo.mp4" poster="assets/demo-poster.png" muted playsinline preload="metadata" aria-label="List layout and animation demo"></video>
-      <p class="big-todo">TODO</p>
-      <div class="data-note">
-        <p>TODO: explain how updating data prop means</p>
-        <p>Full reactJS re-render</p>
+    <section class="slide code-example data-api-examples" id="slide-27" data-source-slide="13" aria-label="Slide 27: Powerful Data API" hidden>
+      <h1 class="slide-title">Powerful Data API</h1>
+      <p class="slide-subtitle">Update list data without rerendering the screen</p>
+      <div class="renderer-example renderer-types">
+        <h2>Create once, connect to the list</h2>
+        <pre class="worklets-code"><code><span class="code-keyword">const</span> dataSource =
+  <span class="code-function">createListDataSource</span>&lt;TextItem&gt;({
+    isContentEqualByType: {
+      text: (prev, next) <span class="code-keyword">=&gt;</span>
+        prev.data.text === next.data.text,
+    },
+  });
+
+dataSource.<span class="code-function">replaceData</span>(initialItems);
+
+&lt;<span class="code-function">List</span>
+  dataSource={dataSource}
+  renderers={renderers}
+  layout={layout}
+/&gt;</code></pre>
+      </div>
+      <div class="renderer-example renderer-functions">
+        <h2>Mutate individual items</h2>
+        <pre class="worklets-code"><code>dataSource.<span class="code-function">insertItem</span>(<span class="code-number">0</span>, newItem);
+dataSource.<span class="code-function">updateItem</span>(<span class="code-number">0</span>, updatedItem);
+
+dataSource.<span class="code-function">moveItem</span>(<span class="code-number">0</span>, <span class="code-number">3</span>);
+dataSource.<span class="code-function">removeItem</span>(<span class="code-number">3</span>);</code></pre>
+        <h2 class="data-api-replace-title">Replace with an animated diff</h2>
+        <pre class="worklets-code"><code>dataSource.<span class="code-function">replaceData</span>(nextItems, <span class="code-keyword">true</span>);</code></pre>
+      </div>
+      <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
+    </section>
+    <section class="slide code-example renderer-examples layout-api-examples" id="slide-28" aria-label="Slide 28: Native list layout" hidden>
+      <h1 class="slide-title">Native list layout</h1>
+      <p class="slide-subtitle">Use a built-in layout, or provide your own</p>
+      <div class="renderer-example renderer-types">
+        <h2>Built-in linear layout</h2>
+        <pre class="worklets-code"><code><span class="code-keyword">const</span> layout =
+  <span class="code-function">useLinearListLayout</span>(layoutConfig);
+
+&lt;<span class="code-function">List</span> layout={layout}
+      dataSource={dataSource}
+      renderers={renderers} /&gt;</code></pre>
+      </div>
+      <div class="renderer-example renderer-functions" data-reveal-step="1" hidden>
+        <h2>Custom waterfall layout</h2>
+        <pre class="worklets-code"><code><span class="code-keyword">class</span> WaterfallLayout :
+  <span class="code-function">HybridNativeListLayoutSpec</span>(),
+  NativeListLayoutProvider {
+
+  <span class="code-keyword">override fun</span> <span class="code-function">applyTo</span>(
+    view: RecyclerView,
+    context: ThemedReactContext
+  ) {
+    view.layoutManager =
+      <span class="code-function">StaggeredGridLayoutManager</span>(
+        <span class="code-number">2</span>, RecyclerView.VERTICAL
+      )
+  }
+  <span class="code-comment">// Inset method omitted</span>
+}</code></pre>
+        <p class="layout-api-custom-note">Android implementation sketch · Nitro HybridObject</p>
+      </div>
+      <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
+    </section>
+    <section class="slide shop-benchmark" id="slide-29" aria-label="Slide 29: Discord Shop performance comparison" hidden>
+      <h1 class="slide-title">Discord Shop: RNL vs. FlashList</h1>
+      <div class="benchmark-demos">
+        <figure class="benchmark-demo benchmark-rnl">
+          <figcaption>RNL</figcaption>
+          <video data-benchmark-video="rnl" src="assets/benchmarks/shop-rnl.mp4" poster="assets/benchmarks/rnl-poster.jpg" muted playsinline preload="metadata" aria-label="RNL Discord Shop scrolling demo"></video>
+        </figure>
+        <figure class="benchmark-demo benchmark-flashlist">
+          <figcaption>FlashList</figcaption>
+          <video data-benchmark-video="flashlist" src="assets/benchmarks/shop-flashlist.mp4" poster="assets/benchmarks/flashlist-poster.jpg" muted playsinline preload="metadata" aria-label="FlashList Discord Shop scrolling demo"></video>
+        </figure>
+      </div>
+      <div class="benchmark-results">
+        <div class="benchmark-metrics">
+      <!-- shop-benchmark-metrics:start -->
+      <figure class="benchmark-metric benchmark-metric-frameInterval" aria-label="Average frame interval over selected scrolling time. Selected-window values: RNL: 16.63 ms; FlashList: 16.79 ms">
+        <figcaption><strong>Average frame interval<small>↓ lower is better</small></strong><span class="benchmark-summary"><span class="benchmark-rnl"><b data-benchmark-value="frameInterval" data-run="rnl" data-decimals="2">—</b><small>ms</small><small class="benchmark-drop-total"> · <b data-benchmark-value="legacy" data-run="rnl" data-decimals="0">0</b> drops</small></span><span class="benchmark-flashlist"><b data-benchmark-value="frameInterval" data-run="flashlist" data-decimals="2">—</b><small>ms</small><small class="benchmark-drop-total"> · <b data-benchmark-value="legacy" data-run="flashlist" data-decimals="0">0</b> drops</small></span></span></figcaption>
+        <svg class="benchmark-plot" viewBox="0 0 997 165" role="img" aria-label="Average frame interval timeline; horizontal axis is seconds since the selected window started; vertical axis is ms">
+          <path class="benchmark-grid" d="M65,117.00H989"/><text x="51" y="124.00" text-anchor="end">16</text>
+          <path class="benchmark-grid" d="M65,67.45H989"/><text x="51" y="74.45" text-anchor="end">17</text>
+          <path class="benchmark-grid" d="M65,17.91H989"/><text x="51" y="24.91" text-anchor="end">18</text>
+          <path class="benchmark-grid benchmark-time-grid" d="M65.00,8V117"/>
+          <path class="benchmark-grid benchmark-time-grid" d="M363.06,8V117"/>
+          <path class="benchmark-grid benchmark-time-grid" d="M661.13,8V117"/>
+          <path class="benchmark-grid benchmark-time-grid" d="M959.19,8V117"/>
+          <defs><clipPath id="benchmark-clip-frameInterval-rnl"><rect x="65" y="0" width="0" height="165" data-benchmark-reveal="rnl"/></clipPath></defs><path class="benchmark-line benchmark-rnl" clip-path="url(#benchmark-clip-frameInterval-rnl)" d="M79.90,85.58 C89.84,85.62 99.77,85.69 109.71,85.69 C119.65,85.69 129.58,85.67 139.52,85.66 C149.45,85.66 159.39,85.64 169.32,85.64 C179.26,85.64 189.19,85.66 199.13,85.66 C209.06,85.66 219.00,85.63 228.94,85.63 C238.87,85.63 248.81,85.67 258.74,85.67 C268.68,85.67 278.61,85.66 288.55,85.66 C298.48,85.65 308.42,85.62 318.35,85.62 C328.29,85.62 338.23,85.66 348.16,85.66 C358.10,85.66 368.03,85.64 377.97,85.64 C387.90,85.64 397.84,85.66 407.77,85.66 C417.71,85.66 427.65,85.63 437.58,85.63 C447.52,85.63 457.45,85.66 467.39,85.66 C477.32,85.66 487.26,85.63 497.19,85.63 C507.13,85.63 517.06,85.67 527.00,85.67 C536.94,85.67 546.87,85.63 556.81,85.62 C566.74,85.61 576.68,85.60 586.61,85.60 C596.55,85.60 606.48,85.71 616.42,85.71 C626.35,85.71 636.29,85.67 646.23,85.66 C656.16,85.65 666.10,85.64 676.03,85.64 C685.97,85.64 695.90,85.66 705.84,85.66 C715.77,85.66 725.71,85.64 735.65,85.64 C745.58,85.64 755.52,85.66 765.45,85.66 C775.39,85.66 785.32,85.63 795.26,85.63 C805.19,85.63 815.13,85.66 825.06,85.66 C835.00,85.66 844.94,85.63 854.87,85.63 C864.81,85.63 874.74,85.65 884.68,85.65 C894.61,85.65 904.55,85.65 914.48,85.64 C921.55,85.63 928.61,85.12 935.67,84.86"/>
+          <circle class="benchmark-drop-owner benchmark-rnl" cx="53" cy="137" r="4"/><path class="benchmark-drop-lane" d="M65,137H989"/>
+          <defs><clipPath id="benchmark-clip-frameInterval-flashlist"><rect x="65" y="0" width="0" height="165" data-benchmark-reveal="flashlist"/></clipPath></defs><path class="benchmark-line benchmark-flashlist" clip-path="url(#benchmark-clip-frameInterval-flashlist)" d="M79.90,71.47 C89.84,71.54 99.77,71.54 109.71,71.69 C119.65,71.84 129.58,85.63 139.52,85.63 C149.45,85.63 159.39,42.29 169.32,42.29 C179.26,42.29 189.19,85.63 199.13,85.63 C209.06,85.63 219.00,57.25 228.94,57.25 C238.87,57.25 248.81,85.60 258.74,85.63 C268.68,85.65 278.61,85.66 288.55,85.66 C298.48,85.66 308.42,42.25 318.35,42.25 C328.29,42.25 338.23,85.66 348.16,85.66 C358.10,85.66 368.03,85.64 377.97,85.64 C387.90,85.64 397.84,85.67 407.77,85.67 C417.71,85.67 427.65,71.65 437.58,71.65 C447.52,71.65 457.45,85.66 467.39,85.66 C477.32,85.66 487.26,85.65 497.19,85.64 C507.13,85.62 517.06,57.72 527.00,57.72 C536.94,57.72 546.87,85.61 556.81,85.63 C566.74,85.65 576.68,85.66 586.61,85.66 C596.55,85.66 606.48,85.62 616.42,85.62 C626.35,85.62 636.29,85.66 646.23,85.66 C656.16,85.66 666.10,85.63 676.03,85.63 C685.97,85.63 695.90,85.67 705.84,85.67 C715.77,85.67 725.71,71.66 735.65,71.66 C745.58,71.66 755.52,85.67 765.45,85.67 C775.39,85.67 785.32,85.65 795.26,85.62 C805.19,85.58 815.13,71.76 825.06,71.70 C835.00,71.63 844.94,71.60 854.87,71.60 C864.81,71.60 874.74,85.72 884.68,85.72 C894.23,85.72 903.78,85.59 913.33,85.52"/>
+          <circle class="benchmark-drop-owner benchmark-flashlist" cx="53" cy="153" r="4"/><path class="benchmark-drop-lane" d="M65,153H989"/>
+          <path class="benchmark-drop-mark" data-drop-run="flashlist" data-drop-count="1" clip-path="url(#benchmark-clip-frameInterval-flashlist)" d="M85.73,149.5L92.73,156.5M85.73,156.5L92.73,149.5"><title>FlashList: 1 estimated missed 60 Hz slot at 0.813 s</title></path>
+          <path class="benchmark-drop-mark" data-drop-run="flashlist" data-drop-count="1" clip-path="url(#benchmark-clip-frameInterval-flashlist)" d="M110.52,149.5L117.52,156.5M110.52,156.5L117.52,149.5"><title>FlashList: 1 estimated missed 60 Hz slot at 1.645 s</title></path>
+          <path class="benchmark-drop-mark" data-drop-run="flashlist" data-drop-count="1" clip-path="url(#benchmark-clip-frameInterval-flashlist)" d="M159.60,149.5L166.60,156.5M159.60,156.5L166.60,149.5"><title>FlashList: 1 estimated missed 60 Hz slot at 3.291 s</title></path>
+          <path class="benchmark-drop-mark" data-drop-run="flashlist" data-drop-count="1" clip-path="url(#benchmark-clip-frameInterval-flashlist)" d="M166.05,149.5L173.05,156.5M166.05,156.5L173.05,149.5"><title>FlashList: 1 estimated missed 60 Hz slot at 3.507 s</title></path>
+          <path class="benchmark-drop-mark" data-drop-run="flashlist" data-drop-count="1" clip-path="url(#benchmark-clip-frameInterval-flashlist)" d="M167.04,149.5L174.04,156.5M167.04,156.5L174.04,149.5"><title>FlashList: 1 estimated missed 60 Hz slot at 3.541 s</title></path>
+          <path class="benchmark-drop-mark" data-drop-run="flashlist" data-drop-count="1" clip-path="url(#benchmark-clip-frameInterval-flashlist)" d="M214.13,149.5L221.13,156.5M214.13,156.5L221.13,149.5"><title>FlashList: 1 estimated missed 60 Hz slot at 5.121 s</title></path>
+          <path class="benchmark-drop-mark" data-drop-run="flashlist" data-drop-count="1" clip-path="url(#benchmark-clip-frameInterval-flashlist)" d="M231.49,149.5L238.49,156.5M231.49,156.5L238.49,149.5"><title>FlashList: 1 estimated missed 60 Hz slot at 5.703 s</title></path>
+          <path class="benchmark-drop-mark" data-drop-run="flashlist" data-drop-count="1" clip-path="url(#benchmark-clip-frameInterval-flashlist)" d="M303.37,149.5L310.37,156.5M303.37,156.5L310.37,149.5"><title>FlashList: 1 estimated missed 60 Hz slot at 8.115 s</title></path>
+          <path class="benchmark-drop-mark" data-drop-run="flashlist" data-drop-count="1" clip-path="url(#benchmark-clip-frameInterval-flashlist)" d="M312.79,149.5L319.79,156.5M312.79,156.5L319.79,149.5"><title>FlashList: 1 estimated missed 60 Hz slot at 8.431 s</title></path>
+          <path class="benchmark-drop-mark" data-drop-run="flashlist" data-drop-count="1" clip-path="url(#benchmark-clip-frameInterval-flashlist)" d="M328.66,149.5L335.66,156.5M328.66,156.5L335.66,149.5"><title>FlashList: 1 estimated missed 60 Hz slot at 8.963 s</title></path>
+          <path class="benchmark-drop-mark" data-drop-run="flashlist" data-drop-count="1" clip-path="url(#benchmark-clip-frameInterval-flashlist)" d="M424.34,149.5L431.34,156.5M424.34,156.5L431.34,149.5"><title>FlashList: 1 estimated missed 60 Hz slot at 12.173 s</title></path>
+          <path class="benchmark-drop-mark" data-drop-run="flashlist" data-drop-count="1" clip-path="url(#benchmark-clip-frameInterval-flashlist)" d="M520.52,149.5L527.52,156.5M520.52,156.5L527.52,149.5"><title>FlashList: 1 estimated missed 60 Hz slot at 15.400 s</title></path>
+          <path class="benchmark-drop-mark" data-drop-run="flashlist" data-drop-count="1" clip-path="url(#benchmark-clip-frameInterval-flashlist)" d="M521.51,149.5L528.51,156.5M521.51,156.5L528.51,149.5"><title>FlashList: 1 estimated missed 60 Hz slot at 15.433 s</title></path>
+          <path class="benchmark-drop-mark" data-drop-run="flashlist" data-drop-count="1" clip-path="url(#benchmark-clip-frameInterval-flashlist)" d="M730.72,149.5L737.72,156.5M730.72,156.5L737.72,149.5"><title>FlashList: 1 estimated missed 60 Hz slot at 22.452 s</title></path>
+          <path class="benchmark-drop-mark" data-drop-run="flashlist" data-drop-count="1" clip-path="url(#benchmark-clip-frameInterval-flashlist)" d="M822.44,149.5L829.44,156.5M822.44,156.5L829.44,149.5"><title>FlashList: 1 estimated missed 60 Hz slot at 25.529 s</title></path>
+          <path class="benchmark-drop-mark" data-drop-run="flashlist" data-drop-count="1" clip-path="url(#benchmark-clip-frameInterval-flashlist)" d="M839.30,149.5L846.30,156.5M839.30,156.5L846.30,149.5"><title>FlashList: 1 estimated missed 60 Hz slot at 26.095 s</title></path>
+          <text class="benchmark-drop-key" x="989" y="22" text-anchor="end">× frame drops / jank</text>
+        </svg>
+      </figure>
+      <figure class="benchmark-metric benchmark-metric-fps" aria-label="Average frame rate over selected scrolling time. Selected-window values: RNL: 60.12 fps; FlashList: 59.57 fps">
+        <figcaption><strong>Average frame rate<small>↑ higher is better</small></strong><span class="benchmark-summary"><span class="benchmark-rnl"><b data-benchmark-value="fps" data-run="rnl" data-decimals="2">—</b><small>fps</small></span><span class="benchmark-flashlist"><b data-benchmark-value="fps" data-run="flashlist" data-decimals="2">—</b><small>fps</small></span></span></figcaption>
+        <svg class="benchmark-plot" viewBox="0 0 997 100" role="img" aria-label="Average frame rate timeline; horizontal axis is seconds since the selected window started; vertical axis is fps">
+          <path class="benchmark-grid" d="M65,88.00H989"/><text x="51" y="95.00" text-anchor="end">50</text>
+          <path class="benchmark-grid" d="M65,34.67H989"/><text x="51" y="41.67" text-anchor="end">60</text>
+          <path class="benchmark-grid benchmark-time-grid" d="M65.00,8V88"/>
+          <path class="benchmark-grid benchmark-time-grid" d="M363.06,8V88"/>
+          <path class="benchmark-grid benchmark-time-grid" d="M661.13,8V88"/>
+          <path class="benchmark-grid benchmark-time-grid" d="M959.19,8V88"/>
+          <defs><clipPath id="benchmark-clip-fps-rnl"><rect x="65" y="0" width="0" height="100" data-benchmark-reveal="rnl"/></clipPath></defs><path class="benchmark-line benchmark-rnl" clip-path="url(#benchmark-clip-fps-rnl)" d="M79.90,34.04 C89.84,34.03 99.77,34.00 109.71,34.00 C119.65,34.00 129.58,34.01 139.52,34.01 C149.45,34.01 159.39,34.02 169.32,34.02 C179.26,34.02 189.19,34.01 199.13,34.01 C209.06,34.01 219.00,34.02 228.94,34.02 C238.87,34.02 248.81,34.01 258.74,34.01 C268.68,34.01 278.61,34.01 288.55,34.01 C298.48,34.01 308.42,34.02 318.35,34.02 C328.29,34.02 338.23,34.01 348.16,34.01 C358.10,34.01 368.03,34.02 377.97,34.02 C387.90,34.02 397.84,34.01 407.77,34.01 C417.71,34.01 427.65,34.02 437.58,34.02 C447.52,34.02 457.45,34.01 467.39,34.01 C477.32,34.01 487.26,34.02 497.19,34.02 C507.13,34.02 517.06,34.01 527.00,34.01 C536.94,34.01 546.87,34.02 556.81,34.03 C566.74,34.03 576.68,34.03 586.61,34.03 C596.55,34.03 606.48,33.99 616.42,33.99 C626.35,33.99 636.29,34.01 646.23,34.01 C656.16,34.01 666.10,34.02 676.03,34.02 C685.97,34.02 695.90,34.01 705.84,34.01 C715.77,34.01 725.71,34.02 735.65,34.02 C745.58,34.02 755.52,34.01 765.45,34.01 C775.39,34.01 785.32,34.02 795.26,34.02 C805.19,34.02 815.13,34.01 825.06,34.01 C835.00,34.01 844.94,34.02 854.87,34.02 C864.81,34.02 874.74,34.01 884.68,34.01 C894.61,34.01 904.55,34.02 914.48,34.02 C921.55,34.02 928.61,34.22 935.67,34.32"/>
+          <defs><clipPath id="benchmark-clip-fps-flashlist"><rect x="65" y="0" width="0" height="100" data-benchmark-reveal="flashlist"/></clipPath></defs><path class="benchmark-line benchmark-flashlist" clip-path="url(#benchmark-clip-fps-flashlist)" d="M79.90,39.44 C89.84,39.41 99.77,39.41 109.71,39.36 C119.65,39.30 129.58,34.02 139.52,34.02 C149.45,34.02 159.39,50.04 169.32,50.04 C179.26,50.04 189.19,34.02 199.13,34.02 C209.06,34.02 219.00,44.70 228.94,44.70 C238.87,44.70 248.81,34.03 258.74,34.02 C268.68,34.01 278.61,34.01 288.55,34.01 C298.48,34.01 308.42,50.06 318.35,50.06 C328.29,50.06 338.23,34.01 348.16,34.01 C358.10,34.01 368.03,34.02 377.97,34.02 C387.90,34.02 397.84,34.01 407.77,34.01 C417.71,34.01 427.65,39.37 437.58,39.37 C447.52,39.37 457.45,34.01 467.39,34.01 C477.32,34.01 487.26,34.01 497.19,34.02 C507.13,34.02 517.06,44.52 527.00,44.52 C536.94,44.52 546.87,34.03 556.81,34.02 C566.74,34.01 576.68,34.01 586.61,34.01 C596.55,34.01 606.48,34.02 616.42,34.02 C626.35,34.02 636.29,34.01 646.23,34.01 C656.16,34.01 666.10,34.02 676.03,34.02 C685.97,34.02 695.90,34.01 705.84,34.01 C715.77,34.01 725.71,39.37 735.65,39.37 C745.58,39.37 755.52,34.01 765.45,34.01 C775.39,34.01 785.32,34.01 795.26,34.03 C805.19,34.04 815.13,39.33 825.06,39.35 C835.00,39.38 844.94,39.39 854.87,39.39 C864.81,39.39 874.74,33.99 884.68,33.99 C894.23,33.99 903.78,34.04 913.33,34.07"/>
+        </svg>
+      </figure>
+      <figure class="benchmark-metric benchmark-metric-cpu" aria-label="CPU over selected scrolling time. Selected-window values: RNL: 72.4 %; FlashList: 119.2 %">
+        <figcaption><strong>CPU<small>100% = one CPU core</small></strong><span class="benchmark-summary"><span class="benchmark-rnl"><b data-benchmark-value="cpu" data-run="rnl" data-decimals="1">—</b><small>%</small></span><span class="benchmark-flashlist"><b data-benchmark-value="cpu" data-run="flashlist" data-decimals="1">—</b><small>%</small></span></span></figcaption>
+        <svg class="benchmark-plot" viewBox="0 0 997 100" role="img" aria-label="CPU timeline; horizontal axis is seconds since the selected window started; vertical axis is %">
+          <path class="benchmark-grid" d="M65,88.00H989"/><text x="51" y="95.00" text-anchor="end">0</text>
+          <path class="benchmark-grid" d="M65,48.00H989"/><text x="51" y="55.00" text-anchor="end">100</text>
+          <path class="benchmark-grid" d="M65,8.00H989"/><text x="51" y="15.00" text-anchor="end">200</text>
+          <path class="benchmark-grid benchmark-time-grid" d="M65.00,8V88"/>
+          <path class="benchmark-grid benchmark-time-grid" d="M363.06,8V88"/>
+          <path class="benchmark-grid benchmark-time-grid" d="M661.13,8V88"/>
+          <path class="benchmark-grid benchmark-time-grid" d="M959.19,8V88"/>
+          <defs><clipPath id="benchmark-clip-cpu-rnl"><rect x="65" y="0" width="0" height="100" data-benchmark-reveal="rnl"/></clipPath></defs><path class="benchmark-line benchmark-rnl" clip-path="url(#benchmark-clip-cpu-rnl)" d="M94.07,50.07 C104.03,52.86 113.99,58.45 123.95,58.45 C133.91,58.45 143.87,56.82 153.83,56.44 C163.78,56.07 173.72,55.66 183.67,55.66 C193.62,55.66 203.56,60.41 213.51,60.41 C223.47,60.41 233.44,55.26 243.40,55.26 C253.31,55.26 263.22,58.25 273.13,58.85 C283.08,59.44 293.03,60.04 302.98,60.04 C312.99,60.04 323.00,59.60 333.01,59.24 C342.90,58.89 352.80,57.65 362.69,57.65 C372.66,57.65 382.63,60.84 392.60,60.84 C402.55,60.84 412.51,59.84 422.46,58.84 C432.40,57.84 442.34,52.84 452.27,52.84 C462.27,52.84 472.27,61.25 482.27,61.25 C492.20,61.25 502.13,59.49 512.05,59.25 C521.98,59.01 531.91,58.81 541.84,58.81 C551.76,58.81 561.68,62.03 571.61,62.03 C581.55,62.03 591.49,62.04 601.44,62.04 C611.41,62.04 621.39,60.04 631.36,60.04 C641.28,60.04 651.20,61.23 661.12,61.23 C671.10,61.23 681.08,59.65 691.05,59.65 C701.01,59.64 710.97,59.64 720.93,59.63 C730.88,59.63 740.83,57.66 750.79,57.66 C760.73,57.66 770.68,65.63 780.62,65.63 C790.59,65.63 800.55,62.03 810.52,61.25 C820.46,60.47 830.40,59.66 840.34,59.66 C850.27,59.66 860.20,60.42 870.13,60.42 C880.11,60.42 890.08,50.05 900.06,50.05 C910.03,50.05 920.01,57.77 929.98,61.64"/>
+          <defs><clipPath id="benchmark-clip-cpu-flashlist"><rect x="65" y="0" width="0" height="100" data-benchmark-reveal="flashlist"/></clipPath></defs><path class="benchmark-line benchmark-flashlist" clip-path="url(#benchmark-clip-cpu-flashlist)" d="M68.33,44.09 C78.27,45.28 88.21,47.65 98.15,47.65 C108.12,47.65 118.09,40.46 128.06,40.46 C137.99,40.46 147.92,49.25 157.85,49.25 C167.81,49.25 177.77,46.34 187.72,44.47 C197.73,42.60 207.74,37.65 217.75,37.65 C227.69,37.65 237.64,44.86 247.58,44.86 C257.53,44.86 267.49,39.67 277.44,39.67 C287.38,39.67 297.32,49.24 307.26,49.24 C317.22,49.24 327.18,36.12 337.15,32.49 C347.10,28.88 357.04,24.47 366.99,24.47 C376.91,24.47 386.84,46.85 396.76,46.85 C406.72,46.85 416.69,42.87 426.65,42.87 C436.61,42.87 446.57,52.06 456.53,52.06 C466.48,52.06 476.43,51.20 486.38,50.43 C496.32,49.66 506.25,46.49 516.19,46.49 C526.15,46.49 536.12,46.85 546.09,46.85 C556.03,46.85 565.97,34.10 575.91,34.10 C585.87,34.10 595.83,44.07 605.79,44.07 C615.70,44.07 625.61,33.45 635.52,30.08 C645.49,26.69 655.46,24.31 665.43,22.11 C675.35,19.93 685.28,16.52 695.21,16.52 C705.16,16.52 715.11,19.24 725.07,21.73 C735.03,24.21 744.99,30.80 754.95,34.90 C764.94,39.01 774.94,46.47 784.93,46.47 C794.87,46.47 804.81,43.29 814.75,43.29 C824.68,43.29 834.60,46.44 844.53,46.44 C854.48,46.44 864.44,45.97 874.40,45.23 C884.36,44.49 894.33,36.73 904.30,32.48"/>
+        </svg>
+      </figure>
+      <figure class="benchmark-metric benchmark-metric-memory" aria-label="Memory · RSS over selected scrolling time. Selected-window values: RNL: 610 MiB; FlashList: 667 MiB">
+        <figcaption><strong>Memory · RSS<small>↓ lower is better</small></strong><span class="benchmark-summary"><span class="benchmark-rnl"><b data-benchmark-value="memory" data-run="rnl" data-decimals="0">—</b><small>MiB</small></span><span class="benchmark-flashlist"><b data-benchmark-value="memory" data-run="flashlist" data-decimals="0">—</b><small>MiB</small></span></span></figcaption>
+        <svg class="benchmark-plot" viewBox="0 0 997 205" role="img" aria-label="Memory · RSS timeline; horizontal axis is seconds since the selected window started; vertical axis is MiB">
+          <path class="benchmark-grid" d="M65,193.00H989"/><text x="51" y="200.00" text-anchor="end">500</text>
+          <path class="benchmark-grid" d="M65,119.00H989"/><text x="51" y="126.00" text-anchor="end">600</text>
+          <path class="benchmark-grid" d="M65,45.00H989"/><text x="51" y="52.00" text-anchor="end">700</text>
+          <path class="benchmark-grid" d="M65,8.00H989"/><text x="51" y="15.00" text-anchor="end">750</text>
+          <path class="benchmark-grid benchmark-time-grid" d="M65.00,8V193"/>
+          <path class="benchmark-grid benchmark-time-grid" d="M363.06,8V193"/>
+          <path class="benchmark-grid benchmark-time-grid" d="M661.13,8V193"/>
+          <path class="benchmark-grid benchmark-time-grid" d="M959.19,8V193"/>
+          <defs><clipPath id="benchmark-clip-memory-rnl"><rect x="65" y="0" width="0" height="205" data-benchmark-reveal="rnl"/></clipPath></defs><path class="benchmark-line benchmark-rnl" clip-path="url(#benchmark-clip-memory-rnl)" d="M94.07,176.87 C104.03,175.32 113.99,173.36 123.95,172.21 C133.91,171.06 143.87,170.93 153.83,169.48 C163.78,168.03 173.72,159.97 183.67,158.77 C193.62,157.57 203.56,157.75 213.51,156.61 C223.47,155.47 233.44,150.23 243.40,148.39 C253.31,146.57 263.22,145.89 273.13,144.28 C283.08,142.67 293.03,140.71 302.98,138.41 C312.99,136.10 323.00,132.09 333.01,130.01 C342.90,127.95 352.80,127.01 362.69,125.09 C372.66,123.16 382.63,120.13 392.60,118.08 C402.55,116.02 412.51,112.58 422.46,112.58 C432.40,112.58 442.34,121.03 452.27,121.03 C462.27,121.03 472.27,116.47 482.27,115.62 C492.20,114.78 502.13,114.89 512.05,113.97 C521.98,113.05 531.91,107.18 541.84,105.65 C551.76,104.12 561.68,104.03 571.61,102.49 C581.55,100.95 591.49,95.58 601.44,93.89 C611.41,92.19 621.39,91.27 631.36,90.27 C641.28,89.29 651.20,88.47 661.12,87.76 C671.10,87.04 681.08,86.52 691.05,85.88 C701.01,85.25 710.97,84.80 720.93,83.94 C730.88,83.08 740.83,81.66 750.79,80.10 C760.73,78.55 770.68,76.29 780.62,74.13 C790.59,71.97 800.55,68.72 810.52,67.05 C820.46,65.38 830.40,64.23 840.34,63.18 C850.27,62.12 860.20,60.51 870.13,60.51 C880.11,60.51 890.08,74.32 900.06,74.32 C910.03,74.32 920.01,74.23 929.98,74.19"/>
+          <defs><clipPath id="benchmark-clip-memory-flashlist"><rect x="65" y="0" width="0" height="205" data-benchmark-reveal="flashlist"/></clipPath></defs><path class="benchmark-line benchmark-flashlist" clip-path="url(#benchmark-clip-memory-flashlist)" d="M68.33,167.11 C78.27,164.08 88.21,161.85 98.15,158.01 C108.12,154.16 118.09,145.94 128.06,142.23 C137.99,138.53 147.92,136.75 157.85,133.66 C167.81,130.57 177.77,127.92 187.72,123.55 C197.73,119.16 207.74,104.82 217.75,104.82 C227.69,104.82 237.64,106.63 247.58,106.63 C257.53,106.63 267.49,100.57 277.44,98.06 C287.38,95.55 297.32,94.80 307.26,91.34 C317.22,87.86 327.18,70.42 337.15,68.40 C347.10,66.39 357.04,66.53 366.99,64.92 C376.91,63.31 386.84,58.76 396.76,57.02 C406.72,55.27 416.69,53.83 426.65,53.10 C436.61,52.37 446.57,52.30 456.53,51.58 C466.48,50.85 476.43,49.02 486.38,47.80 C496.32,46.59 506.25,45.93 516.19,44.28 C526.15,42.61 536.12,35.83 546.09,35.83 C556.03,35.83 565.97,48.54 575.91,48.54 C585.87,48.54 595.83,45.29 605.79,45.29 C615.70,45.29 625.61,49.33 635.52,49.33 C645.49,49.33 655.46,48.94 665.43,48.94 C675.35,48.94 685.28,53.63 695.21,53.63 C705.16,53.63 715.11,41.83 725.07,41.83 C735.03,41.83 744.99,52.33 754.95,52.33 C764.94,52.33 774.94,49.29 784.93,48.74 C794.87,48.20 804.81,48.20 814.75,47.69 C824.68,47.18 834.60,46.00 844.53,44.84 C854.48,43.69 864.44,40.40 874.40,40.40 C884.36,40.40 894.33,47.02 904.30,50.32"/>
+          <g class="benchmark-memory-gap" data-memory-gap hidden>
+            <path class="benchmark-average-line benchmark-rnl" d="M65,111.51H974"/>
+            <path class="benchmark-average-line benchmark-flashlist" d="M65,69.65H974"/>
+            <text x="989" y="25" text-anchor="end">8.5% lower average RSS</text>
+          </g>
+        </svg>
+      </figure>
+      <script type="application/json" id="benchmark-playback-data">{"rnl":{"duration":29.421872694999998,"progress":[{"time":0,"fps":null,"frameInterval":null,"cpu":null,"memory":null,"legacy":0},{"time":1,"fps":60.1173456146291,"frameInterval":16.634134288135595,"cpu":94.33323754488794,"memory":521.9435987847386,"legacy":0},{"time":2,"fps":60.12150373013235,"frameInterval":16.632983840336134,"cpu":84.16473689556764,"memory":525.0565375267228,"legacy":0},{"time":3,"fps":60.12213654175866,"frameInterval":16.63280877094972,"cpu":82.4189289279362,"memory":527.399698607488,"legacy":0},{"time":4,"fps":60.122033988974614,"frameInterval":16.632837142259415,"cpu":81.9739979074826,"memory":532.1272247494248,"legacy":0},{"time":5,"fps":60.12225063398487,"frameInterval":16.632777207357858,"cpu":79.41655185729284,"memory":535.5722036217497,"legacy":0},{"time":6,"fps":60.12197662843033,"frameInterval":16.63285301114206,"cpu":79.79521971725312,"memory":539.7250220311396,"legacy":0},{"time":7,"fps":60.12223102396219,"frameInterval":16.632782632458234,"cpu":78.80027583832454,"memory":543.4734264393132,"legacy":0},{"time":8,"fps":60.122304368824175,"frameInterval":16.632762341666666,"cpu":77.6969390228219,"memory":547.2544328955341,"legacy":0},{"time":9,"fps":60.122086882326435,"frameInterval":16.63282250925926,"cpu":77.05482628569777,"memory":551.4961275222395,"legacy":0},{"time":10,"fps":60.122214586046304,"frameInterval":16.63278718,"cpu":76.92932988236525,"memory":555.5270184078021,"legacy":0},{"time":11,"fps":60.122143386779314,"frameInterval":16.632806877272728,"cpu":76.11186744640476,"memory":559.6873874089055,"legacy":0},{"time":12,"fps":60.12220956364873,"frameInterval":16.632788569444443,"cpu":75.85404733904235,"memory":563.7658635707078,"legacy":0},{"time":13,"fps":60.122093380486184,"frameInterval":16.63282071153846,"cpu":76.77321626806105,"memory":566.332778589566,"legacy":0},{"time":14,"fps":60.122140107364295,"frameInterval":16.63280778452381,"cpu":76.06537515766017,"memory":569.0715528008051,"legacy":0},{"time":15,"fps":60.122031997030405,"frameInterval":16.632837693333332,"cpu":75.7856284760761,"memory":571.592149368147,"legacy":0},{"time":16,"fps":60.122153599110305,"frameInterval":16.632804052029137,"cpu":75.60647382455946,"memory":574.5030087911975,"legacy":0},{"time":17,"fps":60.12202483106177,"frameInterval":16.632839675808032,"cpu":74.97789826393533,"memory":577.3191419033749,"legacy":0},{"time":18,"fps":60.12183216322048,"frameInterval":16.632892977798335,"cpu":74.42014428060915,"memory":580.4564135016145,"legacy":0},{"time":19,"fps":60.12208865026473,"frameInterval":16.632822020157757,"cpu":74.1819997729973,"memory":583.5328719746599,"legacy":0},{"time":20,"fps":60.12214518239121,"frameInterval":16.632806380516236,"cpu":73.81850712367485,"memory":586.4702375002572,"legacy":0},{"time":21,"fps":60.12210416500641,"frameInterval":16.632817727993658,"cpu":73.67916533568395,"memory":589.2391396454282,"legacy":0},{"time":22,"fps":60.122138857842494,"frameInterval":16.632808130204392,"cpu":73.55363183873453,"memory":591.8790534631397,"legacy":0},{"time":23,"fps":60.12210550345219,"frameInterval":16.632817357711804,"cpu":73.65264126640955,"memory":594.5162143400603,"legacy":0},{"time":24,"fps":60.122142559634234,"frameInterval":16.632807106102636,"cpu":72.92039291357233,"memory":597.2692816912383,"legacy":0},{"time":25,"fps":60.12209637601637,"frameInterval":16.632819882822904,"cpu":72.67490304647916,"memory":600.1801624181592,"legacy":0},{"time":26,"fps":60.12212815355513,"frameInterval":16.632811091549296,"cpu":72.6030850253708,"memory":603.0771918546166,"legacy":0},{"time":27,"fps":60.12208575250625,"frameInterval":16.632822821824906,"cpu":72.4681128821991,"memory":605.8926227093272,"legacy":0},{"time":28,"fps":60.12210274769006,"frameInterval":16.632818120095124,"cpu":73.25527776967462,"memory":607.8408994213364,"legacy":0},{"time":29,"fps":60.122074355769904,"frameInterval":16.632825974741674,"cpu":73.01859611912332,"memory":609.6545586621615,"legacy":0},{"time":29.421872694999998,"fps":60.12122813223793,"frameInterval":16.63306008653846,"cpu":72.41825229995025,"memory":610.1278318072881,"legacy":0}],"legacy":[[0,0],[29.421872694999998,0]]},"flashlist":{"duration":28.922608693,"progress":[{"time":0,"fps":null,"frameInterval":null,"cpu":null,"memory":null,"legacy":0},{"time":1,"fps":59.10501838057542,"frameInterval":16.919037120689655,"cpu":101.87749458164247,"memory":545.9086648698444,"legacy":1},{"time":2,"fps":59.11300185883259,"frameInterval":16.91675212820513,"cpu":109.34001360355474,"memory":556.0446834026092,"legacy":2},{"time":3,"fps":59.45086162120312,"frameInterval":16.820614079096046,"cpu":106.0246827344675,"memory":563.6585225088578,"legacy":2},{"time":4,"fps":58.8649798576642,"frameInterval":16.988029256410258,"cpu":106.37773541529968,"memory":570.8095930549156,"legacy":5},{"time":5,"fps":59.1170465414066,"frameInterval":16.915594714285714,"cpu":109.8557730030105,"memory":579.835371678359,"legacy":5},{"time":6,"fps":58.95028024758076,"frameInterval":16.963447769886365,"cpu":109.89722361569181,"memory":586.0419530208661,"legacy":7},{"time":7,"fps":59.117876737640856,"frameInterval":16.91535716747573,"cpu":111.22524934413869,"memory":591.8745093036266,"legacy":7},{"time":8,"fps":59.24565834513556,"frameInterval":16.878873961945033,"cpu":109.81185197858863,"memory":597.4266660972983,"legacy":7},{"time":9,"fps":59.00883468504539,"frameInterval":16.946614949056602,"cpu":112.43298871485923,"memory":604.866117047491,"legacy":10},{"time":10,"fps":59.12022233780105,"frameInterval":16.914686049152543,"cpu":116.81309094404544,"memory":611.629658598805,"legacy":10},{"time":11,"fps":59.211237500285044,"frameInterval":16.888686036923076,"cpu":116.21247748009489,"memory":618.07817889733,"legacy":10},{"time":12,"fps":59.28728550775194,"frameInterval":16.86702286056338,"cpu":115.821460699604,"memory":623.9310464345456,"legacy":10},{"time":13,"fps":59.27427148439427,"frameInterval":16.87072611703511,"cpu":114.05942638367257,"memory":629.076971533036,"legacy":11},{"time":14,"fps":59.33491391638153,"frameInterval":16.853483623642944,"cpu":112.5822905035596,"memory":633.8214367906252,"legacy":11},{"time":15,"fps":59.38735364674759,"frameInterval":16.838601799775027,"cpu":111.90414915212921,"memory":638.2658341640439,"legacy":11},{"time":16,"fps":59.308922843997124,"frameInterval":16.860869360759494,"cpu":111.34907147864573,"memory":642.7934802262652,"legacy":13},{"time":17,"fps":59.356631996011956,"frameInterval":16.84731707936508,"cpu":112.46418370189512,"memory":646.0237710270171,"legacy":13},{"time":18,"fps":59.39917478091323,"frameInterval":16.835250720037454,"cpu":112.51338054012423,"memory":648.964632847174,"legacy":13},{"time":19,"fps":59.43709905332524,"frameInterval":16.824508866134753,"cpu":113.9558523535592,"memory":651.3938458376692,"legacy":13},{"time":20,"fps":59.47136815742778,"frameInterval":16.814814102693603,"cpu":116.35006994137589,"memory":653.551147296311,"legacy":13},{"time":21,"fps":59.50227621809677,"frameInterval":16.806079759615386,"cpu":119.2307534876059,"memory":655.2557960698713,"legacy":13},{"time":22,"fps":59.530507838338686,"frameInterval":16.798109680428134,"cpu":121.42762118521665,"memory":657.3809387449987,"legacy":13},{"time":23,"fps":59.51260279921853,"frameInterval":16.80316358156547,"cpu":122.1271970870907,"memory":658.8916198334308,"legacy":14},{"time":24,"fps":59.53845000543657,"frameInterval":16.795868886554622,"cpu":121.54555409315344,"memory":660.3583026138988,"legacy":14},{"time":25,"fps":59.56168162932168,"frameInterval":16.789317773521507,"cpu":121.10522324028834,"memory":661.7922273820167,"legacy":14},{"time":26,"fps":59.54476356612404,"frameInterval":16.794088012281836,"cpu":120.48834178844123,"memory":663.2504869060348,"legacy":15},{"time":27,"fps":59.528835058082095,"frameInterval":16.79858171295143,"cpu":119.9695541547375,"memory":664.8056217962436,"legacy":16},{"time":28,"fps":59.550189192949176,"frameInterval":16.792557900360144,"cpu":120.46469713544325,"memory":665.8783980458529,"legacy":16},{"time":28.922608693,"fps":59.56831713754776,"frameInterval":16.787447556910568,"cpu":119.15076091676828,"memory":666.6929694973693,"legacy":16}],"legacy":[[0,0],[0.8129703839999998,1],[1.6446309219999993,2],[3.2912491530000008,3],[3.5074705380000015,4],[3.5407426920000002,5],[5.120865461999999,6],[5.703001768999998,7],[8.114807615999998,8],[8.430813846000001,9],[8.963060692,10],[12.173180846,11],[15.400003077,12],[15.433271615,13],[22.452306616,14],[25.529388462,15],[26.094867847000003,16],[28.922608693,16]]}}</script>
+      <!-- shop-benchmark-metrics:end -->
+        </div>
+        <svg class="benchmark-time-axis" viewBox="0 0 997 34" aria-label="Shared horizontal axis: seconds since the selected window started">
+          <text x="65" y="24" text-anchor="middle">0</text><text x="363.06" y="24" text-anchor="middle">10</text><text x="661.13" y="24" text-anchor="middle">20</text><text x="959.19" y="24" text-anchor="middle">30 s</text>
+        </svg>
       </div>
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
   </main>
   <nav class="controls" aria-label="Presentation controls">
     <button id="previous" type="button" aria-label="Previous slide" title="Previous (←)">←</button>
-    <output id="counter" aria-live="polite">1 / 27</output>
+    <output id="counter" aria-live="polite">1 / 29</output>
     <button id="next" type="button" aria-label="Next slide, build, or animation step" title="Next (→ or Space)">→</button>
     <button id="media" type="button" title="Play or pause (P)" hidden>Play</button>
     <button id="replay" type="button" title="Replay (R)" hidden>Replay</button>

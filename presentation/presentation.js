@@ -30,6 +30,16 @@
     return slides[current].querySelector('video');
   }
 
+  function activeVideos() {
+    const elements = slides[current].querySelectorAll('video');
+    return Array.from(elements);
+  }
+
+  function videosPlaying() {
+    const videos = activeVideos();
+    return videos.some(video => video.paused === false && video.ended === false);
+  }
+
   function activeAnimation() {
     const name = slides[current].dataset.animation;
     return animations[name];
@@ -44,6 +54,16 @@
     }
   }
 
+  async function playVideos() {
+    const videos = activeVideos();
+    const starts = [];
+    for (const video of videos) {
+      const start = playVideo(video);
+      starts.push(start);
+    }
+    await Promise.all(starts);
+  }
+
   function updateMediaControls() {
     const video = activeVideo();
     const animation = activeAnimation();
@@ -51,7 +71,7 @@
     const hasMedia = Boolean(video) || hasAnimation;
     mediaButton.hidden = hasMedia === false;
     replayButton.hidden = hasMedia === false;
-    const playing = hasAnimation ? animation.playing : video && video.paused === false;
+    const playing = hasAnimation ? animation.playing : videosPlaying();
     mediaButton.textContent = playing ? 'Pause' : 'Play';
     replayButton.textContent = hasAnimation ? 'Restart' : 'Replay';
     replayButton.title = hasAnimation ? 'Restart animation (R)' : 'Replay (R)';
@@ -96,6 +116,15 @@
     return lastStep;
   }
 
+  function updateNextButton() {
+    const slide = slides[current];
+    const revealStep = Number(slide.dataset.revealStep ?? 0);
+    const finalStep = lastRevealStep(slide);
+    const pendingReveal = revealStep < finalStep;
+    const atEnd = current === slides.length - 1;
+    nextButton.disabled = atEnd && activeVideo() === null && pendingReveal === false;
+  }
+
   function setRevealStep(step) {
     const slide = slides[current];
     const reveals = slide.querySelectorAll('[data-reveal-step]');
@@ -107,6 +136,7 @@
       const revealIndex = Number(reveal.dataset.revealStep);
       reveal.hidden = revealIndex > boundedStep;
     }
+    updateNextButton();
   }
 
   function setBuild(showBuild, lastStep = false, animate = false) {
@@ -147,8 +177,8 @@
     for (const animation of animationPlayers) animation.pause();
     for (const slide of slides) {
       slide.hidden = true;
-      const video = slide.querySelector('video');
-      if (video) {
+      const videos = slide.querySelectorAll('video');
+      for (const video of videos) {
         video.pause();
         video.currentTime = 0;
         slide.dataset.videoStarted = 'false';
@@ -162,7 +192,7 @@
     setBuild(showBuild, lastStep);
     counter.value = `${current + 1} / ${slides.length}`;
     previousButton.disabled = current === 0;
-    nextButton.disabled = current === slides.length - 1 && activeVideo() === null;
+    updateNextButton();
   }
 
   async function blendToNext() {
@@ -427,7 +457,7 @@
     const video = activeVideo();
     if (video && slide.dataset.videoStarted !== 'true') {
       slide.dataset.videoStarted = 'true';
-      playVideo(video);
+      playVideos();
       return;
     }
     if (current < slides.length - 1) show(current + 1);
@@ -478,11 +508,13 @@
       if (animation.playing) animation.pause();
       else animation.play();
     } else {
-      const video = activeVideo();
-      if (video === null) return;
+      const videos = activeVideos();
+      if (videos.length === 0) return;
       slides[current].dataset.videoStarted = 'true';
-      if (video.paused) playVideo(video);
-      else video.pause();
+      const playing = videosPlaying();
+      if (playing) {
+        for (const video of videos) video.pause();
+      } else playVideos();
     }
     updateMediaControls();
   }
@@ -495,11 +527,11 @@
     const animation = activeAnimation();
     if (build && animation) animation.replay();
     else {
-      const video = activeVideo();
-      if (video === null) return;
+      const videos = activeVideos();
+      if (videos.length === 0) return;
       slides[current].dataset.videoStarted = 'true';
-      video.currentTime = 0;
-      playVideo(video);
+      for (const video of videos) video.currentTime = 0;
+      playVideos();
     }
     updateMediaControls();
     writeHash();
@@ -575,14 +607,14 @@
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       for (const animation of animationPlayers) animation.pause();
-      const video = activeVideo();
-      if (video) video.pause();
+      const videos = activeVideos();
+      for (const video of videos) video.pause();
       updateMediaControls();
     }
   });
   for (const slide of slides) {
-    const video = slide.querySelector('video');
-    if (video) {
+    const videos = slide.querySelectorAll('video');
+    for (const video of videos) {
       video.addEventListener('click', toggleMedia);
       video.addEventListener('play', updateMediaControls);
       video.addEventListener('pause', updateMediaControls);

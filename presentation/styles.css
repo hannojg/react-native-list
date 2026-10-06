@@ -561,9 +561,12 @@ h1 {
   line-height: 1.35;
 }
 .feature-demo { position: absolute; left: 1183.87px; top: 0; width: 499.05px; height: 1080px; object-fit: fill; cursor: pointer; }
-.big-todo { position: absolute; left: 1322.7px; top: 366.8px; color: #ae1700; font-family: 'Clash Display', sans-serif; font-weight: 600; font-size: 116px; letter-spacing: -.02em; line-height: 1.15; pointer-events: none; }
-.data-note { position: absolute; left: 239.4px; top: 799.6px; font-size: 43px; line-height: 1.2; white-space: nowrap; }
-.data-note p + p { margin-top: 25px; }
+.data-api-examples .slide-subtitle,
+.layout-api-examples .slide-subtitle { font-size: 44px; }
+.data-api-examples .renderer-example,
+.layout-api-examples .renderer-example { top: 305px; }
+.data-api-examples .data-api-replace-title { margin-top: 48px; }
+.layout-api-custom-note { margin-top: 20px; color: #79839d; font-size: 26px; }
 .animation-build { position: absolute; inset: 0; }
 canvas { display: block; width: 1920px; height: 1080px; }
 .controls {
@@ -712,3 +715,65 @@ dd { margin: 0; }
   .sync-pipeline [data-reveal-step], .pipeline-to-phone, .pipeline-bind[data-reveal-step="3"] .pipeline-photo { animation: none; }
   .pipeline-node { transition: none; }
 }
+/* Discord Shop measurements and separately recorded scroll demos. */
+.shop-benchmark .slide-title { font-size: 86px; }
+.benchmark-rnl { --benchmark-color: #087ffc; }
+.benchmark-flashlist { --benchmark-color: #bd6242; }
+.benchmark-demos {
+  position: absolute;
+  left: 99px;
+  top: 230px;
+  display: flex;
+  gap: 36px;
+}
+.benchmark-demo { width: 318px; margin: 0; }
+.benchmark-demo figcaption {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 19px;
+  color: var(--benchmark-color);
+  font-size: 38px;
+  font-weight: 700;
+}
+.benchmark-demo figcaption::before { content: ''; width: 21px; height: 21px; background: var(--benchmark-color); border-radius: 50%; }
+.benchmark-demo video {
+  display: block;
+  width: 318px;
+  height: 710px;
+  border: 3px solid var(--benchmark-color);
+  border-radius: 22px;
+  object-fit: contain;
+  background: #202024;
+  cursor: pointer;
+}
+.benchmark-results {
+  position: absolute;
+  left: 824px;
+  top: 230px;
+  width: 997px;
+}
+.benchmark-metrics { display: grid; gap: 2px; }
+.benchmark-metric { margin: 0; min-width: 0; }
+.benchmark-metric figcaption { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 3px; }
+.benchmark-metric figcaption strong { font-size: 30px; font-weight: 700; line-height: 1.2; }
+.benchmark-metric figcaption strong small { margin-left: 18px; font-size: 21px; color: #65708e; font-weight: 500; }
+.benchmark-summary { display: flex; gap: 25px; font-size: 29px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.benchmark-summary > span { color: var(--benchmark-color); }
+.benchmark-summary small { margin-left: 6px; font-size: 22px; font-weight: 500; }
+.benchmark-plot { display: block; width: 997px; height: 100px; overflow: visible; }
+.benchmark-metric-frameInterval .benchmark-plot { height: 165px; }
+.benchmark-metric-memory .benchmark-plot { height: 205px; }
+.benchmark-metric-memory .benchmark-line { stroke-width: 4; }
+.benchmark-average-line { fill: none; stroke: var(--benchmark-color); stroke-width: 2; stroke-dasharray: 7 8; opacity: .6; }
+.benchmark-plot .benchmark-memory-gap text { fill: #087ffc; font-size: 27px; font-weight: 700; }
+.benchmark-plot text, .benchmark-time-axis text { fill: #65708e; font-family: 'Satoshi', sans-serif; font-size: 23px; }
+.benchmark-grid { fill: none; stroke: #ccd2df; stroke-width: 1; }
+.benchmark-time-grid { stroke-dasharray: 4 6; }
+.benchmark-line { fill: none; stroke: var(--benchmark-color); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; }
+.benchmark-drop-owner { fill: var(--benchmark-color); }
+.benchmark-drop-lane { fill: none; stroke: #ccd2df; stroke-width: 1; opacity: .65; }
+.benchmark-drop-mark { fill: none; stroke: #d43c4d; stroke-width: 2.5; stroke-linecap: round; }
+.benchmark-plot .benchmark-drop-key { fill: #a62f3c; font-size: 21px; }
+.benchmark-drop-total { font-size: 21px; white-space: nowrap; }
+.benchmark-time-axis { display: block; width: 997px; height: 34px; }

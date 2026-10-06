@@ -137,6 +137,15 @@ h1 {
   font-size: 55px;
   line-height: 1.2;
 }
+.title-shuffle-layer { position: absolute; inset: 0; z-index: 10; pointer-events: none; }
+.title-shuffle-letter {
+  position: absolute;
+  font-family: 'Clash Display', sans-serif;
+  font-weight: 600;
+  font-size: 112.52px;
+  line-height: .9;
+  white-space: pre;
+}
 .cover-footer, .slide-footer {
   position: absolute;
   width: 129.4px;
@@ -444,6 +453,45 @@ h1 {
   text-shadow: 0 4px 12px #000a;
 }
 .slide.header-bridging { background: transparent; }
+.native-api-intro {
+  position: absolute;
+  left: 99px;
+  top: 208px;
+  width: 1722px;
+  font-size: 40px;
+  line-height: 1.3;
+}
+.native-api-step {
+  position: absolute;
+  left: 99px;
+  width: 1722px;
+}
+.native-api-create { top: 350px; }
+.native-api-bind { top: 705px; }
+.native-api-step-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 30px;
+}
+.native-api-step-heading h2 { margin: 0; font-size: 40px; font-weight: 700; }
+.native-api-step-heading p { color: #79839d; font-size: 30px; }
+.native-api-step .worklets-code {
+  position: relative;
+  left: auto;
+  top: auto;
+  width: 100%;
+  margin-top: 20px;
+  padding: 22px 30px;
+  font-size: 31px;
+  line-height: 1.3;
+}
+.code-return-type {
+  color: #0869a7;
+  text-decoration: underline;
+  text-decoration-color: #0086ff;
+  text-underline-offset: 7px;
+}
 .virtualview-burst span {
   left: 98.5px;
   top: 116px;

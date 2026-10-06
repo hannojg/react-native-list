@@ -11,11 +11,12 @@
   <script src="async-rendering.js" defer></script>
   <script src="runtime-handoff.js" defer></script>
   <script src="pill-mix.js" defer></script>
-  <script src="presentation.js?v=list-header" defer></script>
+  <script src="title-shuffle.js" defer></script>
+  <script src="presentation.js?v=title-shuffle" defer></script>
 </head>
 <body>
   <main id="deck" aria-label="True native lists presentation">
-    <section class="slide" id="slide-1" data-source-slide="1" aria-label="Slide 1" hidden>
+    <section class="slide cover-original" id="slide-1" data-source-slide="1" aria-label="Slide 1" hidden>
       <img class="portrait" src="assets/portrait.jpeg" alt="Presenter portrait">
       <img class="cover-mark" src="assets/mark.png" alt="Margelo">
       <h1 class="cover-title">True native RecyclerView &amp; UICollectionView in react native</h1>
@@ -23,13 +24,20 @@
       <div class="cover-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide" id="slide-2" data-source-slide="2" aria-label="Slide 2" hidden>
+    <section class="slide cover-alternate" id="slide-2" aria-label="Slide 2: Or: how to convince your manager not to rewrite to native" hidden>
+      <img class="portrait" src="assets/portrait.jpeg" alt="Presenter portrait">
+      <img class="cover-mark" src="assets/mark.png" alt="Margelo">
+      <h1 class="cover-title">Or: how to convince your manager not to rewrite to native</h1>
+      <div class="cover-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
+    </section>
+
+    <section class="slide" id="slide-3" data-source-slide="2" aria-label="Slide 3" hidden>
       <div class="burst teaser"><img src="assets/burst.svg" alt=""><span>TEASER</span></div>
       <p class="teaser-note">TODO: Video comparison</p>
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide introduction" id="slide-3" aria-label="Slide 3: Hanno Gödecke" hidden>
+    <section class="slide introduction" id="slide-4" aria-label="Slide 4: Hanno Gödecke" hidden>
       <img class="portrait introduction-portrait" src="assets/portrait.jpeg" alt="Hanno Gödecke">
       <div class="introduction-copy">
         <h1>Hanno Gödecke</h1>
@@ -43,12 +51,12 @@
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide" id="slide-4" data-source-slide="4" aria-label="Slide 4" hidden>
+    <section class="slide" id="slide-5" data-source-slide="4" aria-label="Slide 5" hidden>
       <h1 class="section-title source-4">synchronous vs asynchronous  <br>rendering</h1>
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide" id="slide-5" data-source-slide="5" data-animation="sync" data-transition="shared-header" data-build-state="intro" aria-label="Slide 5" hidden>
+    <section class="slide" id="slide-6" data-source-slide="5" data-animation="sync" data-transition="shared-header" data-build-state="intro" aria-label="Slide 6" hidden>
       <header class="shared-header">
         <h1 class="shared-header-title">Sync list rendering</h1>
         <p class="shared-header-subtitle">The simple case - what native apps today use</p>
@@ -59,7 +67,7 @@
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide" id="slide-6" data-source-slide="6" data-animation="async" data-transition="shared-header" data-build-state="intro" aria-label="Slide 6" hidden>
+    <section class="slide" id="slide-7" data-source-slide="6" data-animation="async" data-transition="shared-header" data-build-state="intro" aria-label="Slide 7" hidden>
       <header class="shared-header">
         <h1 class="shared-header-title">Async list rendering</h1>
         <p class="shared-header-subtitle">React Native’s async rendering pipeline</p>
@@ -70,7 +78,7 @@
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide" id="slide-7" data-source-slide="7" aria-label="Slide 7" hidden>
+    <section class="slide" id="slide-8" data-source-slide="7" aria-label="Slide 8" hidden>
       <h1 class="slide-title">Async list rendering</h1>
       <p class="slide-subtitle">How about the new &lt;VirtualView /&gt; ?!?!</p>
       <img class="virtualview" src="assets/virtualview.png" alt="React Native VirtualView documentation screenshot">
@@ -78,7 +86,7 @@
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide" id="slide-8" data-source-slide="8" data-animation="runtime" data-transition="shared-header" data-build-state="intro" aria-label="Slide 8" hidden>
+    <section class="slide" id="slide-9" data-source-slide="8" data-animation="runtime" data-transition="shared-header" data-build-state="intro" aria-label="Slide 9" hidden>
       <header class="shared-header">
         <h1 class="shared-header-title">Synchronous React rendering</h1>
         <p class="shared-header-subtitle">How VirtualView works</p>
@@ -89,7 +97,7 @@
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide" id="slide-9" data-source-slide="9" aria-label="Slide 9" hidden>
+    <section class="slide" id="slide-10" data-source-slide="9" aria-label="Slide 10" hidden>
       <h1 class="slide-title">Async list rendering</h1>
       <p class="slide-subtitle">How VirtualView works</p>
       <ul class="draft-notes source-9">
@@ -101,12 +109,12 @@
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide" id="slide-10" aria-label="Slide 10" hidden>
+    <section class="slide" id="slide-11" aria-label="Slide 11" hidden>
       <h1 class="section-title audience-question">Do you remember a library that allows us to run JS concurrently on the JS &amp; UI thread? 🤔👀</h1>
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide" id="slide-11" data-source-slide="10" data-transition="shared-header" data-build-state="intro" aria-label="Slide 11" hidden>
+    <section class="slide" id="slide-12" data-source-slide="10" data-transition="shared-header" data-build-state="intro" aria-label="Slide 12" hidden>
       <header class="shared-header">
         <h1 class="shared-header-title">react-native-worklets</h1>
         <p class="shared-header-subtitle">two runtimes, one bundle</p>
@@ -146,7 +154,7 @@
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide bundle-docs" id="slide-12" aria-label="Slide 12: Bundle Mode documentation" hidden>
+    <section class="slide bundle-docs" id="slide-13" aria-label="Slide 13: Bundle Mode documentation" hidden>
       <a href="https://docs.swmansion.com/react-native-worklets/docs/bundleMode/" target="_blank" rel="noopener noreferrer" aria-label="Open Bundle Mode documentation">
         <img class="bundle-docs-screenshot" src="assets/worklets-bundle-mode-docs.png" alt="React Native Worklets Bundle Mode overview, showing RN, UI, and worker runtimes using bundle code">
       </a>
@@ -154,7 +162,7 @@
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide code-example" id="slide-13" aria-label="Slide 13: use any lib / code on any thread" hidden>
+    <section class="slide code-example" id="slide-14" aria-label="Slide 14: use any lib / code on any thread" hidden>
       <h1 class="slide-title">use any lib / code on any thread</h1>
       <p class="slide-subtitle">Use existing libraries without workletizing them</p>
       <pre class="worklets-code"><code><span class="code-keyword">import</span> { chunk } <span class="code-keyword">from</span> <span class="code-string">'lodash'</span>;
@@ -174,7 +182,7 @@
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide pill-mix" id="slide-14" aria-label="Slide 14: Mixing the rendering ingredients" hidden>
+    <section class="slide pill-mix" id="slide-15" aria-label="Slide 15: Mixing the rendering ingredients" hidden>
       <div class="mix-pill" data-x="360" data-y="195" style="left:360px;top:195px"><span>reactJS</span></div>
       <div class="mix-pill" data-x="1330" data-y="190" style="left:1330px;top:190px"><span>react reconciler</span></div>
       <div class="mix-pill" data-x="815" data-y="340" style="left:815px;top:340px"><span>fabric</span></div>
@@ -186,7 +194,7 @@
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide code-example rendering-question" id="slide-15" aria-label="Slide 15: React on the UI thread?" hidden>
+    <section class="slide code-example rendering-question" id="slide-16" aria-label="Slide 16: React on the UI thread?" hidden>
       <h1 class="slide-title">React on the UI thread?</h1>
       <pre class="worklets-code"><code><span class="code-keyword">import</span> React <span class="code-keyword">from</span> <span class="code-string">'react'</span>;
 <span class="code-keyword">import</span> FastImage <span class="code-keyword">from</span> <span class="code-string">'react-native-fast-image'</span>;
@@ -200,13 +208,13 @@
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide list-introduction" id="slide-16" aria-label="Slide 16: react-native-list" hidden>
+    <section class="slide list-introduction" id="slide-17" aria-label="Slide 17: react-native-list" hidden>
       <img class="list-introduction-gif" src="assets/react-native-list-hello.gif" alt="Ralph Wiggum waving hello in The Simpsons">
       <h1 class="list-introduction-title">react-native-list</h1>
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide code-example basic-idea" id="slide-17" aria-label="Slide 17: The basic idea" hidden>
+    <section class="slide code-example basic-idea" id="slide-18" aria-label="Slide 18: The basic idea" hidden>
       <h1 class="slide-title">react-native-list</h1>
       <p class="slide-subtitle">The basic idea</p>
       <pre class="worklets-code"><code><span class="code-keyword">function</span> <span class="code-function">ShopScreen</span>() {
@@ -222,19 +230,46 @@
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide" id="slide-18" data-source-slide="11" aria-label="Slide 18" hidden>
+    <section class="slide code-example native-api-recap" id="slide-19" aria-label="Slide 19: Recap on native list's API" hidden>
+      <h1 class="slide-title">Recap on native list's API</h1>
+      <p class="native-api-intro">Android RecyclerView &amp; iOS UICollectionView: same high-level model</p>
+      <div class="native-api-step native-api-create">
+        <div class="native-api-step-heading">
+          <h2>1. Create the item view structure</h2>
+          <p>Must return synchronously</p>
+        </div>
+        <pre class="worklets-code"><code><span class="code-keyword">public</span> <span class="code-return-type">ShopViewHolder</span> <span class="code-function">onCreateViewHolder</span>(ViewGroup parent, <span class="code-keyword">int</span> viewType) {
+  View view = <span class="code-function">renderItemFromJS</span>();
+  ShopViewHolder holder = <span class="code-keyword">new</span> <span class="code-function">ShopViewHolder</span>(view);
+  <span class="code-keyword">return</span> holder;
+}</code></pre>
+      </div>
+      <div class="native-api-step native-api-bind">
+        <div class="native-api-step-heading">
+          <h2>2. Bind data to views</h2>
+          <p>Reuse the structure, update the content</p>
+        </div>
+        <pre class="worklets-code"><code><span class="code-keyword">public void</span> <span class="code-function">onBindViewHolder</span>(ShopViewHolder holder, <span class="code-keyword">int</span> position) {
+  ShopItemData data = items.<span class="code-function">get</span>(position);
+  holder.viewFromReact.<span class="code-function">setText</span>(data.text);
+}</code></pre>
+      </div>
+      <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
+    </section>
+
+    <section class="slide" id="slide-20" data-source-slide="11" aria-label="Slide 20" hidden>
       <h1 class="section-title source-11">Some nice features</h1>
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide" id="slide-19" data-source-slide="12" aria-label="Slide 19" hidden>
+    <section class="slide" id="slide-21" data-source-slide="12" aria-label="Slide 21" hidden>
       <h1 class="feature-title">Automatic animations</h1>
       <p class="feature-subtitle">Platform backed</p>
       <video class="feature-demo" src="assets/list-demo.mp4" poster="assets/demo-poster.png" muted playsinline preload="metadata" aria-label="List layout and animation demo"></video>
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide" id="slide-20" data-source-slide="13" aria-label="Slide 20" hidden>
+    <section class="slide" id="slide-22" data-source-slide="13" aria-label="Slide 22" hidden>
       <h1 class="feature-title">Powerful<br>Data API</h1>
       <p class="feature-subtitle">Imperative w/o going through react</p>
       <video class="feature-demo" src="assets/list-demo.mp4" poster="assets/demo-poster.png" muted playsinline preload="metadata" aria-label="List layout and animation demo"></video>
@@ -248,7 +283,7 @@
   </main>
   <nav class="controls" aria-label="Presentation controls">
     <button id="previous" type="button" aria-label="Previous slide" title="Previous (←)">←</button>
-    <output id="counter" aria-live="polite">1 / 20</output>
+    <output id="counter" aria-live="polite">1 / 22</output>
     <button id="next" type="button" aria-label="Next slide, build, or animation step" title="Next (→ or Space)">→</button>
     <button id="media" type="button" title="Play or pause (P)" hidden>Play</button>
     <button id="replay" type="button" title="Replay (R)" hidden>Replay</button>

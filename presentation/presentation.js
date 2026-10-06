@@ -252,8 +252,60 @@
     slideBlend = undefined;
   }
 
+  async function shuffleCoverTitle(index) {
+    const outgoing = slides[current];
+    show(index);
+    const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (motionPreference.matches) return;
+    const incoming = slides[current];
+    outgoing.hidden = false;
+    incoming.classList.add('header-bridging');
+    const source = outgoing.querySelector('.cover-title');
+    const target = incoming.querySelector('.cover-title');
+    const shuffle = window.titleShuffle.create(source, target, deck);
+    const animations = [];
+    const outgoingSubtitle = outgoing.querySelector('.cover-subtitle');
+    if (outgoingSubtitle) {
+      const fade = outgoingSubtitle.animate([{ opacity: 1 }, { opacity: 0 }], {
+        duration: 350,
+        fill: 'forwards'
+      });
+      animations.push(fade);
+    }
+    const incomingSubtitle = incoming.querySelector('.cover-subtitle');
+    if (incomingSubtitle) {
+      const fade = incomingSubtitle.animate([{ opacity: 0 }, { opacity: 1 }], {
+        duration: 400,
+        delay: 650,
+        fill: 'both'
+      });
+      animations.push(fade);
+    }
+    const cleanup = () => {
+      shuffle.cleanup();
+      for (const animation of animations) animation.cancel();
+      outgoing.hidden = true;
+      incoming.classList.remove('header-bridging');
+    };
+    const blend = { cleanup };
+    slideBlend = blend;
+    try {
+      await shuffle.finished;
+    } catch (error) {
+      if (error.name === 'AbortError') return;
+      throw error;
+    }
+    if (slideBlend !== blend) return;
+    cleanup();
+    slideBlend = undefined;
+  }
+
   function next() {
     const slide = slides[current];
+    if (slide.classList.contains('cover-original')) {
+      shuffleCoverTitle(current + 1);
+      return;
+    }
     if (slide.classList.contains('list-introduction')) {
       transitionListHeader();
       return;
@@ -291,6 +343,10 @@
   }
 
   function previous() {
+    if (slides[current].classList.contains('cover-alternate')) {
+      shuffleCoverTitle(current - 1);
+      return;
+    }
     if (window.pillMix.mixing) {
       window.pillMix.enter(true);
       return;

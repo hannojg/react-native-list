@@ -11,8 +11,8 @@
   <script src="async-rendering.js" defer></script>
   <script src="runtime-handoff.js" defer></script>
   <script src="pill-mix.js" defer></script>
-  <script src="title-shuffle.js" defer></script>
-  <script src="presentation.js?v=title-shuffle" defer></script>
+  <script src="title-shuffle.js?v=line-break" defer></script>
+  <script src="presentation.js?v=sync-pipeline" defer></script>
 </head>
 <body>
   <main id="deck" aria-label="True native lists presentation">
@@ -27,7 +27,7 @@
     <section class="slide cover-alternate" id="slide-2" aria-label="Slide 2: Or: how to convince your manager not to rewrite to native" hidden>
       <img class="portrait" src="assets/portrait.jpeg" alt="Presenter portrait">
       <img class="cover-mark" src="assets/mark.png" alt="Margelo">
-      <h1 class="cover-title">Or: how to convince your manager not to rewrite to native</h1>
+      <h1 class="cover-title">Or:<br>how to convince your manager not to rewrite to native</h1>
       <div class="cover-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
@@ -257,19 +257,199 @@
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide" id="slide-20" data-source-slide="11" aria-label="Slide 20" hidden>
+    <section class="slide code-example native-api-focus" id="slide-20" aria-label="Slide 20: Create the item view structure" hidden>
+      <div class="native-api-step native-api-create">
+        <div class="native-api-step-heading">
+          <h2>1. Create the item view structure</h2>
+          <p>Must return synchronously</p>
+        </div>
+        <pre class="worklets-code"><code><span class="code-keyword">public</span> <span class="code-return-type">ShopViewHolder</span> <span class="code-function">onCreateViewHolder</span>(ViewGroup parent, <span class="code-keyword">int</span> viewType) {
+  View view = <span class="code-function">renderItemFromJS</span>();
+  ShopViewHolder holder = <span class="code-keyword">new</span> <span class="code-function">ShopViewHolder</span>(view);
+  <span class="code-keyword">return</span> holder;
+}</code></pre>
+      </div>
+      <ul class="native-create-points">
+        <li>We have to separate by <code>viewType</code>, aka. our item type</li>
+        <li>We have to render something <strong>WITHOUT any data yet</strong>
+          <ul><li>To native app devs this is no surprise!</li></ul>
+        </li>
+      </ul>
+      <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
+    </section>
+
+    <section class="slide code-example renderer-examples" id="slide-21" aria-label="Slide 21: Item types and renderers" hidden>
+      <h1 class="slide-title">Item types &amp; renderers</h1>
+      <div class="renderer-example renderer-types">
+        <h2>Item types</h2>
+        <pre class="worklets-code"><code><span class="code-keyword">type</span> TextItem = <span class="code-function">ListItem</span>&lt;
+  <span class="code-comment">// The type of your list item</span>
+  <span class="code-string">"text"</span>,
+  <span class="code-comment">// The data shape for that list item:</span>
+  {
+    text: <span class="code-keyword">string</span>;
+  }
+&gt;;
+
+<span class="code-keyword">type</span> ImageItem = <span class="code-function">ListItem</span>&lt;
+  <span class="code-string">"image"</span>,
+  { uri: <span class="code-keyword">string</span> }
+&gt;;
+
+<span class="code-keyword">type</span> Items = TextItem | ImageItem;</code></pre>
+      </div>
+      <div class="renderer-example renderer-functions" data-reveal-step="1" hidden>
+        <h2>Renderers</h2>
+        <pre class="worklets-code"><code><span class="code-keyword">const</span> renderers: <span class="code-function">ListRenderers</span>&lt;Items&gt; = {
+  text: {
+    <span class="code-function">renderItemWorklet</span>: ({ item }) <span class="code-keyword">=&gt;</span> {
+      <span class="code-string">"worklet"</span>;
+      <span class="code-keyword">return</span> &lt;<span class="code-function">Text</span>&gt;{<span class="optional-item-data">item?.data<span class="optional-data-circle" data-reveal-step="2" aria-hidden="true" hidden></span></span>.text}&lt;/<span class="code-function">Text</span>&gt;;
+    },
+  },
+  image: {
+    <span class="code-function">renderItemWorklet</span>: ({ item }) <span class="code-keyword">=&gt;</span> {
+      <span class="code-string">"worklet"</span>;
+      <span class="code-keyword">return</span> (
+        &lt;<span class="code-function">Image</span>
+          source={{ uri: <span class="optional-item-data">item?.data<span class="optional-data-circle" data-reveal-step="2" aria-hidden="true" hidden></span></span>.uri }}
+          style={{ width: <span class="code-number">200</span>, height: <span class="code-number">120</span> }}
+        /&gt;
+      );
+    },
+  },
+};</code></pre>
+      </div>
+      <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
+    </section>
+
+
+    <section class="slide code-example sync-pipeline pipeline-overview" id="slide-22" aria-label="Slide 22: Our own React renderer" hidden>
+      <h1 class="slide-title">Our own React renderer</h1>
+      <div class="pipeline-phone" aria-label="Native list phone preview">
+        <div class="pipeline-screen">
+          <div class="pipeline-status"><span>9:41</span><span>● ▰</span></div>
+          <h2>Your feed</h2><p class="pipeline-feed-subtitle">Native list</p>
+          <div class="pipeline-feed-rule"></div>
+          <div class="pipeline-native-image" aria-label="Image view, 200 by 120, tag 42"><span class="pipeline-empty-label">Image view</span></div>
+          <div class="pipeline-dimensions">200 × 120</div>
+          <div class="pipeline-view-tag">Native view · tag #42</div>
+          <div class="pipeline-feed-row"><span>02</span><div><b>Item 02</b><i></i><i></i></div></div>
+          <div class="pipeline-feed-row"><span>03</span><div><b>Item 03</b><i></i><i></i></div></div>
+          <div class="pipeline-home"></div>
+        </div>
+      </div>
+      <div class="pipeline-thread"><h2>UI thread</h2><div class="pipeline-thread-rule"></div></div>
+      <div class="pipeline-runtime"><h3>UI runtime</h3>
+        <div class="pipeline-node pipeline-react"><h3>React reconciler</h3><p>Separate instance</p></div>
+        <div class="pipeline-host-group" data-reveal-step="1" hidden><span class="pipeline-arrow">→</span><div class="pipeline-node pipeline-host"><h3>Custom host config</h3><p class="pipeline-host-default">Fabric host operations</p><p class="pipeline-host-clone"><code>cloneNodeWithNewProps()</code></p></div></div>
+      </div>
+      <div class="pipeline-fabric-group" data-reveal-step="2" hidden><span class="pipeline-arrow">→</span><div class="pipeline-node pipeline-fabric"><h3>Fabric</h3><p class="pipeline-fabric-default">Commit · mount</p><p class="pipeline-fabric-create">Create view</p><p class="pipeline-fabric-update">Update props</p></div></div>
+      <div class="pipeline-sync-capability" data-reveal-step="3" hidden>
+        <div class="pipeline-call"><code>syncRender(element)</code><span>React + native mounting finish before return</span></div>
+        <pre class="worklets-code pipeline-code"><code><span class="code-function">updateContainerSync</span>(element);
+<span class="code-function">flushSyncWork</span>();
+<span class="code-function">completeSurface</span>(…, { mountSynchronously: <span class="code-keyword">true</span> });</code></pre>
+      </div>
+      <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
+    </section>
+
+    <section class="slide code-example sync-pipeline pipeline-create" id="slide-23" aria-label="Slide 23: Create the structure" hidden>
+      <h1 class="slide-title">Create the structure</h1>
+      <div class="pipeline-phone" aria-label="Native list phone preview">
+        <div class="pipeline-screen">
+          <div class="pipeline-status"><span>9:41</span><span>● ▰</span></div>
+          <h2>Your feed</h2><p class="pipeline-feed-subtitle">Native list</p>
+          <div class="pipeline-feed-rule"></div>
+          <div class="pipeline-native-image" aria-label="Image view, 200 by 120, tag 42"><span class="pipeline-empty-label">Image view</span></div>
+          <div class="pipeline-dimensions">200 × 120</div>
+          <div class="pipeline-view-tag">Native view · tag #42</div>
+          <div class="pipeline-feed-row"><span>02</span><div><b>Item 02</b><i></i><i></i></div></div>
+          <div class="pipeline-feed-row"><span>03</span><div><b>Item 03</b><i></i><i></i></div></div>
+          <div class="pipeline-home"></div>
+        </div>
+      </div>
+      <div class="pipeline-thread"><h2>UI thread</h2><div class="pipeline-thread-rule"></div></div>
+      <div class="pipeline-runtime"><h3>UI runtime</h3>
+        <div class="pipeline-node pipeline-react"><h3>React reconciler</h3><p>Separate instance</p></div>
+        <div class="pipeline-host-group"><span class="pipeline-arrow">→</span><div class="pipeline-node pipeline-host"><h3>Custom host config</h3><p class="pipeline-host-default">Fabric host operations</p><p class="pipeline-host-clone"><code>cloneNodeWithNewProps()</code></p></div></div>
+      </div>
+      <div class="pipeline-fabric-group"><span class="pipeline-arrow">→</span><div class="pipeline-node pipeline-fabric"><h3>Fabric</h3><p class="pipeline-fabric-default">Commit · mount</p><p class="pipeline-fabric-create">Create view</p><p class="pipeline-fabric-update">Update props</p></div></div>
+      <div class="pipeline-call"><code>createView(<span class="code-string">"image"</span>)</code><span>onCreateViewHolder</span></div>
+      <div class="pipeline-render-source" data-reveal-step="1" hidden>
+        <pre class="worklets-code pipeline-code"><code><span class="code-keyword">const</span> internalRef = React.<span class="code-function">createRef</span>();
+<span class="code-function">renderItemWorklet</span>({ type: <span class="code-string">"image"</span> })
+&lt;<span class="code-function">Image</span> ref={internalRef}
+       source={{ uri: <span class="code-keyword">undefined</span> }}
+       style={{ width: <span class="code-number">200</span>, height: <span class="code-number">120</span> }} /&gt;</code></pre>
+        <div class="pipeline-sync-label"><code>syncRender()</code></div>
+      </div>
+      <div class="pipeline-mount-result" data-reveal-step="2" hidden>
+        <div class="pipeline-operation"><b>Create native image view</b><code>200 × 120 · tag #42</code></div>
+        <div class="pipeline-to-phone" aria-hidden="true">←</div>
+      </div>
+      <div class="pipeline-lookup-result" data-reveal-step="3" hidden>
+        <pre class="worklets-code pipeline-code"><code><span class="code-keyword">const</span> tag = internalRef.current.__nativeTag;
+<span class="code-keyword">const</span> view = <span class="code-function">resolveView</span>(tag);
+<span class="code-keyword">return</span> view;</code></pre>
+        <p class="pipeline-return-note">The native list gets the view synchronously</p>
+      </div>
+      <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
+    </section>
+
+    <section class="slide code-example sync-pipeline pipeline-bind" id="slide-24" aria-label="Slide 24: Bind data to the same view" hidden>
+      <h1 class="slide-title">Bind data to the same view</h1>
+      <div class="pipeline-phone" aria-label="Native list phone preview">
+        <div class="pipeline-screen">
+          <div class="pipeline-status"><span>9:41</span><span>● ▰</span></div>
+          <h2>Your feed</h2><p class="pipeline-feed-subtitle">Native list</p>
+          <div class="pipeline-feed-rule"></div>
+          <div class="pipeline-native-image" aria-label="Image view, 200 by 120, tag 42"><img class="pipeline-photo" src="assets/sync-image-example.jpg" alt="Cafe photograph after the image source loads"><span class="pipeline-empty-label">Image view</span></div>
+          <div class="pipeline-dimensions">200 × 120</div>
+          <div class="pipeline-view-tag">Native view · tag #42</div>
+          <div class="pipeline-feed-row"><span>02</span><div><b>Item 02</b><i></i><i></i></div></div>
+          <div class="pipeline-feed-row"><span>03</span><div><b>Item 03</b><i></i><i></i></div></div>
+          <div class="pipeline-home"></div>
+        </div>
+      </div>
+      <div class="pipeline-thread"><h2>UI thread</h2><div class="pipeline-thread-rule"></div></div>
+      <div class="pipeline-runtime"><h3>UI runtime</h3>
+        <div class="pipeline-node pipeline-react"><h3>React reconciler</h3><p>Separate instance</p></div>
+        <div class="pipeline-host-group"><span class="pipeline-arrow">→</span><div class="pipeline-node pipeline-host"><h3>Custom host config</h3><p class="pipeline-host-default">Fabric host operations</p><p class="pipeline-host-clone"><code>cloneNodeWithNewProps()</code></p></div></div>
+      </div>
+      <div class="pipeline-fabric-group"><span class="pipeline-arrow">→</span><div class="pipeline-node pipeline-fabric"><h3>Fabric</h3><p class="pipeline-fabric-default">Commit · mount</p><p class="pipeline-fabric-create">Create view</p><p class="pipeline-fabric-update">Update props</p></div></div>
+      <div class="pipeline-call"><code>bindView(<span class="code-number">42</span>, item)</code><span>onBindViewHolder</span></div>
+      <div class="pipeline-before-bind"><p>The view already exists</p><code>source: undefined<br>width: 200 · height: 120</code></div>
+      <div class="pipeline-render-source" data-reveal-step="1" hidden>
+        <pre class="worklets-code pipeline-code"><code><span class="code-function">renderItemWorklet</span>({ type: <span class="code-string">"image"</span>, item })
+&lt;<span class="code-function">Image</span> source={{ uri: <span class="code-string">"cafe.jpg"</span> }}
+       style={{ width: <span class="code-number">200</span>, height: <span class="code-number">120</span> }} /&gt;</code></pre>
+        <div class="pipeline-sync-label"><code>syncRender()</code></div>
+      </div>
+      <div class="pipeline-props-diff" data-reveal-step="2" hidden>
+        <div class="pipeline-diff"><h3>Changed props</h3><code>source: <span class="code-comment">undefined</span> → <span class="code-string">"cafe.jpg"</span></code><p>Dimensions unchanged · same React key</p></div>
+      </div>
+      <div class="pipeline-update-result" data-reveal-step="3" hidden>
+        <div class="pipeline-operation"><b>Update props · tag #42</b><code>source: "cafe.jpg"</code></div>
+        <div class="pipeline-to-phone" aria-hidden="true">←</div>
+        <p class="pipeline-return-note">Same native view · image loads separately</p>
+      </div>
+      <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
+    </section>
+
+    <section class="slide" id="slide-25" data-source-slide="11" aria-label="Slide 25" hidden>
       <h1 class="section-title source-11">Some nice features</h1>
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide" id="slide-21" data-source-slide="12" aria-label="Slide 21" hidden>
+    <section class="slide" id="slide-26" data-source-slide="12" aria-label="Slide 26" hidden>
       <h1 class="feature-title">Automatic animations</h1>
       <p class="feature-subtitle">Platform backed</p>
       <video class="feature-demo" src="assets/list-demo.mp4" poster="assets/demo-poster.png" muted playsinline preload="metadata" aria-label="List layout and animation demo"></video>
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide" id="slide-22" data-source-slide="13" aria-label="Slide 22" hidden>
+    <section class="slide" id="slide-27" data-source-slide="13" aria-label="Slide 27" hidden>
       <h1 class="feature-title">Powerful<br>Data API</h1>
       <p class="feature-subtitle">Imperative w/o going through react</p>
       <video class="feature-demo" src="assets/list-demo.mp4" poster="assets/demo-poster.png" muted playsinline preload="metadata" aria-label="List layout and animation demo"></video>
@@ -283,7 +463,7 @@
   </main>
   <nav class="controls" aria-label="Presentation controls">
     <button id="previous" type="button" aria-label="Previous slide" title="Previous (←)">←</button>
-    <output id="counter" aria-live="polite">1 / 22</output>
+    <output id="counter" aria-live="polite">1 / 27</output>
     <button id="next" type="button" aria-label="Next slide, build, or animation step" title="Next (→ or Space)">→</button>
     <button id="media" type="button" title="Play or pause (P)" hidden>Play</button>
     <button id="replay" type="button" title="Replay (R)" hidden>Replay</button>

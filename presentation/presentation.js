@@ -77,7 +77,7 @@
       suffix = `-${slide.dataset.animation}-${animation.stepIndex + 1}`;
     }
     const revealStep = Number(slide.dataset.revealStep);
-    if (build && revealStep > 0) suffix = `-step-${revealStep}`;
+    if (revealStep > 0) suffix = `-step-${revealStep}`;
     const hash = `#slide-${current + 1}${suffix}`;
     history.replaceState(null, '', hash);
   }
@@ -86,11 +86,22 @@
     return Boolean(slide.dataset.animation) || slide.dataset.transition === 'shared-header';
   }
 
+  function lastRevealStep(slide) {
+    const reveals = slide.querySelectorAll('[data-reveal-step]');
+    let lastStep = 0;
+    for (const reveal of reveals) {
+      const step = Number(reveal.dataset.revealStep);
+      lastStep = Math.max(lastStep, step);
+    }
+    return lastStep;
+  }
+
   function setRevealStep(step) {
     const slide = slides[current];
     const reveals = slide.querySelectorAll('[data-reveal-step]');
     const lowerBound = Math.max(0, step);
-    const boundedStep = Math.min(reveals.length, lowerBound);
+    const lastStep = lastRevealStep(slide);
+    const boundedStep = Math.min(lastStep, lowerBound);
     slide.dataset.revealStep = String(boundedStep);
     for (const reveal of reveals) {
       const revealIndex = Number(reveal.dataset.revealStep);
@@ -118,7 +129,9 @@
     }
     const reveals = slide.querySelectorAll('[data-reveal-step]');
     if (reveals.length > 0) {
-      const revealStep = build && lastStep ? reveals.length : 0;
+      const revealContentVisible = build || hasBuild(slide) === false;
+      const finalStep = lastRevealStep(slide);
+      const revealStep = revealContentVisible && lastStep ? finalStep : 0;
       setRevealStep(revealStep);
     }
     updateMediaControls();
@@ -300,8 +313,80 @@
     slideBlend = undefined;
   }
 
+  async function transitionNativeCreate(index) {
+    const outgoing = slides[current];
+    const source = outgoing.querySelector('.native-api-create');
+    const sourceBounds = source.getBoundingClientRect();
+    const sourceHeading = source.querySelector('h2');
+    const sourceStyle = window.getComputedStyle(sourceHeading);
+    const sourceFontSize = sourceStyle.fontSize;
+    const sourceLineHeight = sourceStyle.lineHeight;
+    show(index);
+    const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (motionPreference.matches) return;
+    const incoming = slides[current];
+    const target = incoming.querySelector('.native-api-create');
+    const targetBounds = target.getBoundingClientRect();
+    const targetHeading = target.querySelector('h2');
+    const targetStyle = window.getComputedStyle(targetHeading);
+    const deckBounds = deck.getBoundingClientRect();
+    const scale = deckBounds.width / 1920;
+    const dx = (sourceBounds.left - targetBounds.left) / scale;
+    const dy = (sourceBounds.top - targetBounds.top) / scale;
+    outgoing.hidden = false;
+    source.style.visibility = 'hidden';
+    incoming.classList.add('header-bridging');
+    const movement = target.animate([
+      { transform: `translate(${dx}px, ${dy}px)` },
+      { transform: 'none' }
+    ], { duration: 700, easing: 'cubic-bezier(.22,.75,.2,1)' });
+    const heading = targetHeading.animate([
+      { fontSize: sourceFontSize, lineHeight: sourceLineHeight },
+      { fontSize: targetStyle.fontSize, lineHeight: targetStyle.lineHeight }
+    ], { duration: 700, easing: 'cubic-bezier(.22,.75,.2,1)' });
+    const animations = [movement, heading];
+    const remainderSelector = '.slide-title, .native-api-intro, .native-api-bind, .native-create-points';
+    const departingElements = outgoing.querySelectorAll(remainderSelector);
+    for (const element of departingElements) {
+      const fade = element.animate([{ opacity: 1 }, { opacity: 0 }], {
+        duration: 250,
+        fill: 'forwards'
+      });
+      animations.push(fade);
+    }
+    const arrivingElements = incoming.querySelectorAll(remainderSelector);
+    for (const element of arrivingElements) {
+      const reveal = element.animate([
+        { opacity: 0, transform: 'translateY(14px)' },
+        { opacity: 1, transform: 'none' }
+      ], { duration: 350, delay: 350, fill: 'both', easing: 'ease-out' });
+      animations.push(reveal);
+    }
+    const cleanup = () => {
+      for (const animation of animations) animation.cancel();
+      outgoing.hidden = true;
+      source.style.visibility = '';
+      incoming.classList.remove('header-bridging');
+    };
+    const blend = { cleanup };
+    slideBlend = blend;
+    try {
+      await movement.finished;
+    } catch (error) {
+      if (error.name === 'AbortError') return;
+      throw error;
+    }
+    if (slideBlend !== blend) return;
+    cleanup();
+    slideBlend = undefined;
+  }
+
   function next() {
     const slide = slides[current];
+    if (slide.classList.contains('native-api-recap')) {
+      transitionNativeCreate(current + 1);
+      return;
+    }
     if (slide.classList.contains('cover-original')) {
       shuffleCoverTitle(current + 1);
       return;
@@ -314,14 +399,20 @@
       window.pillMix.mixTo(blendToNext);
       return;
     }
+    const pipelineSlide = slide.classList.contains('sync-pipeline');
+    if (pipelineSlide && slide.dataset.revealStep === '3') {
+      blendToNext();
+      return;
+    }
     const animation = activeAnimation();
     if (hasBuild(slide) && build === false) {
       setBuild(true, false, true);
       return;
     }
-    const reveals = slide.querySelectorAll('[data-reveal-step]');
+    const finalStep = lastRevealStep(slide);
     const revealStep = Number(slide.dataset.revealStep);
-    if (build && revealStep < reveals.length) {
+    const revealContentVisible = build || hasBuild(slide) === false;
+    if (revealContentVisible && revealStep < finalStep) {
       setRevealStep(revealStep + 1);
       writeHash();
       return;
@@ -343,6 +434,10 @@
   }
 
   function previous() {
+    if (slides[current].classList.contains('native-api-focus')) {
+      transitionNativeCreate(current - 1);
+      return;
+    }
     if (slides[current].classList.contains('cover-alternate')) {
       shuffleCoverTitle(current - 1);
       return;
@@ -351,13 +446,13 @@
       window.pillMix.enter(true);
       return;
     }
+    const revealStep = Number(slides[current].dataset.revealStep);
+    if (revealStep > 0) {
+      setRevealStep(revealStep - 1);
+      writeHash();
+      return;
+    }
     if (build) {
-      const revealStep = Number(slides[current].dataset.revealStep);
-      if (revealStep > 0) {
-        setRevealStep(revealStep - 1);
-        writeHash();
-        return;
-      }
       const animation = activeAnimation();
       if (animation) {
         const reversed = animation.previousStep();

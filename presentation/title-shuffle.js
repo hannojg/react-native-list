@@ -1,20 +1,24 @@
 (() => {
   function characters(title, deckBounds, scale) {
-    const text = title.firstChild;
+    const walker = document.createTreeWalker(title, NodeFilter.SHOW_TEXT);
+    let text = walker.nextNode();
     const letters = [];
     const range = document.createRange();
-    for (let index = 0; index < text.length; index += 1) {
-      const character = text.textContent[index];
-      if (character === ' ') continue;
-      range.setStart(text, index);
-      range.setEnd(text, index + 1);
-      const bounds = range.getBoundingClientRect();
-      letters.push({
-        character,
-        x: (bounds.left - deckBounds.left) / scale,
-        y: (bounds.top - deckBounds.top) / scale,
-        used: false
-      });
+    while (text) {
+      for (let index = 0; index < text.length; index += 1) {
+        const character = text.textContent[index];
+        if (character === ' ') continue;
+        range.setStart(text, index);
+        range.setEnd(text, index + 1);
+        const bounds = range.getBoundingClientRect();
+        letters.push({
+          character,
+          x: (bounds.left - deckBounds.left) / scale,
+          y: (bounds.top - deckBounds.top) / scale,
+          used: false
+        });
+      }
+      text = walker.nextNode();
     }
     return letters;
   }

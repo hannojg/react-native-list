@@ -17,6 +17,7 @@
   let current = 0;
   let build = false;
   let controlsTimer;
+  let slideBlend;
 
   function resize() {
     const widthScale = window.innerWidth / 1920;
@@ -75,12 +76,26 @@
     if (build && steppedAnimation && animation.stepIndex >= 0) {
       suffix = `-${slide.dataset.animation}-${animation.stepIndex + 1}`;
     }
+    const revealStep = Number(slide.dataset.revealStep);
+    if (build && revealStep > 0) suffix = `-step-${revealStep}`;
     const hash = `#slide-${current + 1}${suffix}`;
     history.replaceState(null, '', hash);
   }
 
   function hasBuild(slide) {
     return Boolean(slide.dataset.animation) || slide.dataset.transition === 'shared-header';
+  }
+
+  function setRevealStep(step) {
+    const slide = slides[current];
+    const reveals = slide.querySelectorAll('[data-reveal-step]');
+    const lowerBound = Math.max(0, step);
+    const boundedStep = Math.min(reveals.length, lowerBound);
+    slide.dataset.revealStep = String(boundedStep);
+    for (const reveal of reveals) {
+      const revealIndex = Number(reveal.dataset.revealStep);
+      reveal.hidden = revealIndex > boundedStep;
+    }
   }
 
   function setBuild(showBuild, lastStep = false, animate = false) {
@@ -101,11 +116,22 @@
         content.setAttribute('aria-hidden', hidden);
       }
     }
+    const reveals = slide.querySelectorAll('[data-reveal-step]');
+    if (reveals.length > 0) {
+      const revealStep = build && lastStep ? reveals.length : 0;
+      setRevealStep(revealStep);
+    }
     updateMediaControls();
     writeHash();
   }
 
   function show(index, showBuild = false, lastStep = false) {
+    if (slideBlend) {
+      slideBlend.animation.cancel();
+      slideBlend.outgoing.hidden = true;
+      slideBlend = undefined;
+    }
+    window.pillMix.stop();
     for (const animation of animationPlayers) animation.pause();
     for (const slide of slides) {
       slide.hidden = true;
@@ -120,17 +146,53 @@
     current = Math.min(slides.length - 1, boundedIndex);
     const slide = slides[current];
     slide.hidden = false;
+    if (slide.classList.contains('pill-mix')) window.pillMix.enter(lastStep);
     setBuild(showBuild, lastStep);
     counter.value = `${current + 1} / ${slides.length}`;
     previousButton.disabled = current === 0;
     nextButton.disabled = current === slides.length - 1 && activeVideo() === null;
   }
 
+  async function blendToNext() {
+    const outgoing = slides[current];
+    show(current + 1);
+    outgoing.hidden = false;
+    const incoming = slides[current];
+    const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const duration = motionPreference.matches ? 0 : 700;
+    const animation = incoming.animate([{ opacity: 0 }, { opacity: 1 }], {
+      duration,
+      easing: 'ease-out'
+    });
+    const blend = { animation, outgoing };
+    slideBlend = blend;
+    try {
+      await animation.finished;
+    } catch (error) {
+      if (error.name === 'AbortError') return;
+      throw error;
+    }
+    if (slideBlend !== blend) return;
+    outgoing.hidden = true;
+    slideBlend = undefined;
+  }
+
   function next() {
     const slide = slides[current];
+    if (slide.classList.contains('pill-mix')) {
+      window.pillMix.mixTo(blendToNext);
+      return;
+    }
     const animation = activeAnimation();
     if (hasBuild(slide) && build === false) {
       setBuild(true, false, true);
+      return;
+    }
+    const reveals = slide.querySelectorAll('[data-reveal-step]');
+    const revealStep = Number(slide.dataset.revealStep);
+    if (build && revealStep < reveals.length) {
+      setRevealStep(revealStep + 1);
+      writeHash();
       return;
     }
     if (build && animation) {
@@ -150,7 +212,17 @@
   }
 
   function previous() {
+    if (window.pillMix.mixing) {
+      window.pillMix.enter(true);
+      return;
+    }
     if (build) {
+      const revealStep = Number(slides[current].dataset.revealStep);
+      if (revealStep > 0) {
+        setRevealStep(revealStep - 1);
+        writeHash();
+        return;
+      }
       const animation = activeAnimation();
       if (animation) {
         const reversed = animation.previousStep();
@@ -186,6 +258,10 @@
   }
 
   function replay() {
+    if (slides[current].classList.contains('pill-mix')) {
+      window.pillMix.enter();
+      return;
+    }
     const animation = activeAnimation();
     if (build && animation) animation.replay();
     else {
@@ -205,7 +281,7 @@
   }
 
   function readHash() {
-    const match = location.hash.match(/^#slide-(\d+)(-build|-scroll(?:-(30|20))?|-(async|runtime)-(\d+))?$/);
+    const match = location.hash.match(/^#slide-(\d+)(-build|-scroll(?:-(30|20))?|-(async|runtime|step)-(\d+))?$/);
     if (match) {
       const number = Number(match[1]);
       const showBuild = Boolean(match[2]);
@@ -217,7 +293,11 @@
         animation.startScroll(phaseIndex);
         writeHash();
       }
-      if (match[4] && slides[current].dataset.animation === match[4]) {
+      if (match[4] === 'step') {
+        const step = Number(match[5]);
+        setRevealStep(step);
+        writeHash();
+      } else if (match[4] && slides[current].dataset.animation === match[4]) {
         const step = Number(match[5]);
         animation.startStep(step - 1);
         writeHash();

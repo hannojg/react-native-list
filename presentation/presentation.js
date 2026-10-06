@@ -133,10 +133,23 @@
     const boundedStep = Math.min(lastStep, lowerBound);
     slide.dataset.revealStep = String(boundedStep);
     for (const reveal of reveals) {
+      const wasHidden = reveal.hidden;
       const revealIndex = Number(reveal.dataset.revealStep);
       reveal.hidden = revealIndex > boundedStep;
+      const entering = wasHidden && reveal.hidden === false;
+      if (entering && reveal.classList.contains('list-guarantee')) stampGuarantee(reveal);
     }
     updateNextButton();
+  }
+
+  function stampGuarantee(element) {
+    const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (motionPreference.matches) return;
+    element.animate([
+      { opacity: 0, transform: 'rotate(-20deg) scale(1.4)' },
+      { opacity: 1, transform: 'rotate(-12deg) scale(.96)', offset: .7 },
+      { opacity: 1, transform: 'rotate(-12deg) scale(1)' }
+    ], { duration: 450, easing: 'ease-out' });
   }
 
   function setBuild(showBuild, lastStep = false, animate = false) {
@@ -232,6 +245,12 @@
     const sourceLineHeight = sourceStyle.lineHeight;
     const sourceColor = sourceStyle.color;
     const sourceShadow = sourceStyle.textShadow;
+    const departingElements = outgoing.querySelectorAll('.list-introduction-gif, .list-guarantee');
+    const departures = [];
+    for (const element of departingElements) {
+      const style = window.getComputedStyle(element);
+      departures.push({ element, transform: style.transform, opacity: style.opacity });
+    }
     show(current + 1);
     const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
     if (motionPreference.matches) return;
@@ -262,12 +281,17 @@
         textShadow: 'none'
       }
     ], { duration: 700, easing: 'cubic-bezier(.22,.75,.2,1)' });
-    const gif = outgoing.querySelector('.list-introduction-gif');
-    const gifMotion = gif.animate([{ opacity: 1 }, { opacity: 0 }], {
-      duration: 550,
-      fill: 'forwards'
-    });
-    const animations = [titleMotion, gifMotion];
+    const animations = [titleMotion];
+    for (const departure of departures) {
+      const fade = departure.element.animate([
+        { opacity: departure.opacity, transform: departure.transform },
+        { opacity: 0, transform: departure.transform }
+      ], {
+        duration: 550,
+        fill: 'forwards'
+      });
+      animations.push(fade);
+    }
     const content = incoming.querySelectorAll('.slide-subtitle, .worklets-code');
     for (const element of content) {
       const reveal = element.animate([
@@ -421,10 +445,6 @@
       shuffleCoverTitle(current + 1);
       return;
     }
-    if (slide.classList.contains('list-introduction')) {
-      transitionListHeader();
-      return;
-    }
     if (slide.classList.contains('pill-mix')) {
       window.pillMix.mixTo(blendToNext);
       return;
@@ -445,6 +465,10 @@
     if (revealContentVisible && revealStep < finalStep) {
       setRevealStep(revealStep + 1);
       writeHash();
+      return;
+    }
+    if (slide.classList.contains('list-introduction')) {
+      transitionListHeader();
       return;
     }
     if (build && animation) {

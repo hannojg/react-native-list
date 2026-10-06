@@ -1,5 +1,5 @@
 (() => {
-  const slide = document.getElementById('slide-29');
+  const slide = document.querySelector('.shop-benchmark');
   const dataElement = document.getElementById('benchmark-playback-data');
   const dataText = dataElement.textContent;
   const data = JSON.parse(dataText);

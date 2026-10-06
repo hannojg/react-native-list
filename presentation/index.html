@@ -12,8 +12,8 @@
   <script src="runtime-handoff.js" defer></script>
   <script src="pill-mix.js" defer></script>
   <script src="title-shuffle.js?v=line-break" defer></script>
-  <script src="shop-benchmark.js" defer></script>
-  <script src="presentation.js?v=shop-comparison" defer></script>
+  <script src="shop-benchmark.js?v=disadvantages-slide" defer></script>
+  <script src="presentation.js?v=guarantee-exit" defer></script>
 </head>
 <body>
   <main id="deck" aria-label="True native lists presentation">
@@ -32,9 +32,18 @@
       <div class="cover-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide" id="slide-3" data-source-slide="2" aria-label="Slide 3" hidden>
+    <section class="slide shop-teaser" id="slide-3" data-source-slide="2" aria-label="Slide 3: RNL and FlashList scrolling teaser" hidden>
       <div class="burst teaser"><img src="assets/burst.svg" alt=""><span>TEASER</span></div>
-      <p class="teaser-note">TODO: Video comparison</p>
+      <div class="teaser-demos">
+        <figure class="benchmark-demo benchmark-rnl">
+          <figcaption>RNL</figcaption>
+          <video src="assets/benchmarks/teaser-rnl.mp4" poster="assets/benchmarks/teaser-rnl-poster.jpg" muted playsinline preload="metadata" aria-label="RNL Discord Shop scrolling teaser"></video>
+        </figure>
+        <figure class="benchmark-demo benchmark-flashlist">
+          <figcaption>FlashList</figcaption>
+          <video src="assets/benchmarks/teaser-flashlist.mp4" poster="assets/benchmarks/teaser-flashlist-poster.jpg" muted playsinline preload="metadata" aria-label="FlashList Discord Shop scrolling teaser"></video>
+        </figure>
+      </div>
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
@@ -212,6 +221,9 @@
     <section class="slide list-introduction" id="slide-17" aria-label="Slide 17: react-native-list" hidden>
       <img class="list-introduction-gif" src="assets/react-native-list-hello.gif" alt="Ralph Wiggum waving hello in The Simpsons">
       <h1 class="list-introduction-title">react-native-list</h1>
+      <div class="list-guarantee" data-reveal-step="1" hidden>
+        <img src="assets/margelo-human-crafted-guarantee.png" alt="Human handcrafted: no AI engineering, honest work">
+      </div>
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
@@ -620,10 +632,28 @@ dataSource.<span class="code-function">removeItem</span>(<span class="code-numbe
       </div>
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
+    <section class="slide list-disadvantages" id="slide-30" aria-label="Slide 30: RNL disadvantages" hidden>
+      <h1 class="slide-title">It's not all gold and glitter</h1>
+      <p class="slide-subtitle">Disadvantages</p>
+      <ul class="disadvantages-list">
+        <li>Setup right now is a bit tricky to get right (changes to Metro + Webpack)
+          <ul><li>But agents can usually handle it well!</li></ul>
+        </li>
+        <li>React work on the main thread can be significant — careful optimizations and evaluation needed</li>
+        <li>The library hasn't reached stable yet — some perf improvements are still pending</li>
+        <li>It solves blank frames, but doesn't solve frame drops magically lol (no silver bullet)
+          <ul><li>It's a UI/UX decision at some point</li></ul>
+        </li>
+      </ul>
+      <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
+    </section>
+    <section class="slide closing-gif" id="slide-31" aria-label="Slide 31: That's all, folks!" hidden>
+      <img src="assets/looney-tunes-ending.gif" alt="Looney Tunes That's all, folks! animated ending" loading="lazy">
+    </section>
   </main>
   <nav class="controls" aria-label="Presentation controls">
     <button id="previous" type="button" aria-label="Previous slide" title="Previous (←)">←</button>
-    <output id="counter" aria-live="polite">1 / 29</output>
+    <output id="counter" aria-live="polite">1 / 31</output>
     <button id="next" type="button" aria-label="Next slide, build, or animation step" title="Next (→ or Space)">→</button>
     <button id="media" type="button" title="Play or pause (P)" hidden>Play</button>
     <button id="replay" type="button" title="Replay (R)" hidden>Replay</button>

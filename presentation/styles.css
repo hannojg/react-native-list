@@ -365,7 +365,6 @@ h1 {
 }
 .teaser { left: 13px; top: 12.2px; }
 .teaser span { left: 123px; top: 141px; transform: rotate(-18.28deg); }
-.teaser-note { position: absolute; left: 710.4px; top: 514px; font-size: 43px; }
 .virtualview { position: absolute; left: 89px; top: 306.87px; width: 1457px; height: 802px; }
 .virtualview-burst { left: 1462.5px; top: 506px; transform: rotate(39.978deg); }
 .worklets-burst { left: 1462.5px; top: 305px; transform: rotate(39.978deg); }
@@ -442,6 +441,8 @@ h1 {
   height: 900px;
   object-fit: contain;
 }
+.closing-gif { background: #000; }
+.closing-gif img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .list-introduction-title {
   position: absolute;
   left: 50%;
@@ -454,6 +455,15 @@ h1 {
   text-align: center;
   text-shadow: 0 4px 12px #000a;
 }
+.list-guarantee {
+  position: absolute;
+  left: 1370px;
+  top: 520px;
+  width: 420px;
+  height: 420px;
+  transform: rotate(-12deg);
+}
+.list-guarantee img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .slide.header-bridging { background: transparent; z-index: 1; }
 .native-api-intro {
   position: absolute;
@@ -715,6 +725,18 @@ dd { margin: 0; }
   .sync-pipeline [data-reveal-step], .pipeline-to-phone, .pipeline-bind[data-reveal-step="3"] .pipeline-photo { animation: none; }
   .pipeline-node { transition: none; }
 }
+.disadvantages-list {
+  position: absolute;
+  left: 99px;
+  top: 320px;
+  width: 1722px;
+  margin: 0;
+  padding-left: 44px;
+  font-size: 44px;
+  line-height: 1.2;
+}
+.disadvantages-list > li + li { margin-top: 28px; }
+.disadvantages-list ul { margin: 15px 0 0; padding-left: 44px; font-size: 36px; }
 /* Discord Shop measurements and separately recorded scroll demos. */
 .shop-benchmark .slide-title { font-size: 86px; }
 .benchmark-rnl { --benchmark-color: #087ffc; }
@@ -747,6 +769,15 @@ dd { margin: 0; }
   background: #202024;
   cursor: pointer;
 }
+.teaser-demos {
+  position: absolute;
+  left: 610px;
+  top: 95px;
+  display: flex;
+  gap: 180px;
+}
+.shop-teaser .benchmark-demo { width: 390px; }
+.shop-teaser .benchmark-demo video { width: 390px; height: 870px; }
 .benchmark-results {
   position: absolute;
   left: 824px;

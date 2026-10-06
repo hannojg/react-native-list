@@ -1,4 +1,4 @@
-"""Rebuild slide 29's comparison from the supplied Android recordings."""
+"""Rebuild the Shop comparison from the supplied Android recordings."""
 
 import json
 import math

@@ -127,8 +127,7 @@
 
   function show(index, showBuild = false, lastStep = false) {
     if (slideBlend) {
-      slideBlend.animation.cancel();
-      slideBlend.outgoing.hidden = true;
+      slideBlend.cleanup();
       slideBlend = undefined;
     }
     window.pillMix.stop();
@@ -164,7 +163,11 @@
       duration,
       easing: 'ease-out'
     });
-    const blend = { animation, outgoing };
+    const cleanup = () => {
+      animation.cancel();
+      outgoing.hidden = true;
+    };
+    const blend = { cleanup };
     slideBlend = blend;
     try {
       await animation.finished;
@@ -173,12 +176,88 @@
       throw error;
     }
     if (slideBlend !== blend) return;
-    outgoing.hidden = true;
+    cleanup();
+    slideBlend = undefined;
+  }
+
+  async function transitionListHeader() {
+    const outgoing = slides[current];
+    const sourceTitle = outgoing.querySelector('.list-introduction-title');
+    const sourceBounds = sourceTitle.getBoundingClientRect();
+    const sourceStyle = window.getComputedStyle(sourceTitle);
+    const sourceFontSize = sourceStyle.fontSize;
+    const sourceLineHeight = sourceStyle.lineHeight;
+    const sourceColor = sourceStyle.color;
+    const sourceShadow = sourceStyle.textShadow;
+    show(current + 1);
+    const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (motionPreference.matches) return;
+    const incoming = slides[current];
+    const title = incoming.querySelector('.slide-title');
+    const targetBounds = title.getBoundingClientRect();
+    const targetStyle = window.getComputedStyle(title);
+    const deckBounds = deck.getBoundingClientRect();
+    const scale = deckBounds.width / 1920;
+    const dx = (sourceBounds.left - targetBounds.left) / scale;
+    const dy = (sourceBounds.top - targetBounds.top) / scale;
+    outgoing.hidden = false;
+    sourceTitle.style.visibility = 'hidden';
+    incoming.classList.add('header-bridging');
+    const titleMotion = title.animate([
+      {
+        transform: `translate(${dx}px, ${dy}px)`,
+        fontSize: sourceFontSize,
+        lineHeight: sourceLineHeight,
+        color: sourceColor,
+        textShadow: sourceShadow
+      },
+      {
+        transform: 'none',
+        fontSize: targetStyle.fontSize,
+        lineHeight: targetStyle.lineHeight,
+        color: targetStyle.color,
+        textShadow: 'none'
+      }
+    ], { duration: 700, easing: 'cubic-bezier(.22,.75,.2,1)' });
+    const gif = outgoing.querySelector('.list-introduction-gif');
+    const gifMotion = gif.animate([{ opacity: 1 }, { opacity: 0 }], {
+      duration: 550,
+      fill: 'forwards'
+    });
+    const animations = [titleMotion, gifMotion];
+    const content = incoming.querySelectorAll('.slide-subtitle, .worklets-code');
+    for (const element of content) {
+      const reveal = element.animate([
+        { opacity: 0, transform: 'translateY(14px)' },
+        { opacity: 1, transform: 'none' }
+      ], { duration: 350, delay: 350, fill: 'both', easing: 'ease-out' });
+      animations.push(reveal);
+    }
+    const cleanup = () => {
+      for (const animation of animations) animation.cancel();
+      outgoing.hidden = true;
+      sourceTitle.style.visibility = '';
+      incoming.classList.remove('header-bridging');
+    };
+    const blend = { cleanup };
+    slideBlend = blend;
+    try {
+      await titleMotion.finished;
+    } catch (error) {
+      if (error.name === 'AbortError') return;
+      throw error;
+    }
+    if (slideBlend !== blend) return;
+    cleanup();
     slideBlend = undefined;
   }
 
   function next() {
     const slide = slides[current];
+    if (slide.classList.contains('list-introduction')) {
+      transitionListHeader();
+      return;
+    }
     if (slide.classList.contains('pill-mix')) {
       window.pillMix.mixTo(blendToNext);
       return;

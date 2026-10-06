@@ -433,15 +433,17 @@ h1 {
 }
 .list-introduction-title {
   position: absolute;
-  left: 360px;
+  left: 50%;
   top: 120px;
-  width: 1200px;
+  width: max-content;
+  transform: translateX(-50%);
   color: #fff;
   font-size: 112px;
   line-height: 1.15;
   text-align: center;
   text-shadow: 0 4px 12px #000a;
 }
+.slide.header-bridging { background: transparent; }
 .virtualview-burst span {
   left: 98.5px;
   top: 116px;

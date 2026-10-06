@@ -11,7 +11,7 @@
   <script src="async-rendering.js" defer></script>
   <script src="runtime-handoff.js" defer></script>
   <script src="pill-mix.js" defer></script>
-  <script src="presentation.js?v=pill-mix" defer></script>
+  <script src="presentation.js?v=list-header" defer></script>
 </head>
 <body>
   <main id="deck" aria-label="True native lists presentation">
@@ -206,19 +206,35 @@
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide" id="slide-17" data-source-slide="11" aria-label="Slide 17" hidden>
+    <section class="slide code-example basic-idea" id="slide-17" aria-label="Slide 17: The basic idea" hidden>
+      <h1 class="slide-title">react-native-list</h1>
+      <p class="slide-subtitle">The basic idea</p>
+      <pre class="worklets-code"><code><span class="code-keyword">function</span> <span class="code-function">ShopScreen</span>() {
+  <span class="code-keyword">return</span> (
+    &lt;<span class="code-function">List</span>
+      renderItem={({ data, index }) <span class="code-keyword">=&gt;</span> {
+        <span class="code-string">"worklet"</span>;
+        <span class="code-keyword">return</span> &lt;<span class="code-function">ShopItem</span> data={data} /&gt;;
+      }}
+    /&gt;
+  );
+}</code></pre>
+      <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
+    </section>
+
+    <section class="slide" id="slide-18" data-source-slide="11" aria-label="Slide 18" hidden>
       <h1 class="section-title source-11">Some nice features</h1>
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide" id="slide-18" data-source-slide="12" aria-label="Slide 18" hidden>
+    <section class="slide" id="slide-19" data-source-slide="12" aria-label="Slide 19" hidden>
       <h1 class="feature-title">Automatic animations</h1>
       <p class="feature-subtitle">Platform backed</p>
       <video class="feature-demo" src="assets/list-demo.mp4" poster="assets/demo-poster.png" muted playsinline preload="metadata" aria-label="List layout and animation demo"></video>
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide" id="slide-19" data-source-slide="13" aria-label="Slide 19" hidden>
+    <section class="slide" id="slide-20" data-source-slide="13" aria-label="Slide 20" hidden>
       <h1 class="feature-title">Powerful<br>Data API</h1>
       <p class="feature-subtitle">Imperative w/o going through react</p>
       <video class="feature-demo" src="assets/list-demo.mp4" poster="assets/demo-poster.png" muted playsinline preload="metadata" aria-label="List layout and animation demo"></video>
@@ -232,7 +248,7 @@
   </main>
   <nav class="controls" aria-label="Presentation controls">
     <button id="previous" type="button" aria-label="Previous slide" title="Previous (←)">←</button>
-    <output id="counter" aria-live="polite">1 / 19</output>
+    <output id="counter" aria-live="polite">1 / 20</output>
     <button id="next" type="button" aria-label="Next slide, build, or animation step" title="Next (→ or Space)">→</button>
     <button id="media" type="button" title="Play or pause (P)" hidden>Play</button>
     <button id="replay" type="button" title="Replay (R)" hidden>Replay</button>

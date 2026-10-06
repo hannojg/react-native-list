@@ -2,7 +2,7 @@
 
 Open `index.html` in a browser. All fonts, images, and videos are local, so the deck works offline. Keep the `assets` folder beside the HTML.
 
-The deck contains original Keynote slides 1, 2, and 4–13, in order, plus a speaker introduction after the teaser on HTML slide 3, an audience question about concurrent JS execution on HTML slide 10, the Bundle Mode documentation screenshot on HTML slide 12, a Lodash code example on HTML slide 13, an animated ingredient mix on HTML slide 14, a React-on-the-UI-thread question on HTML slide 15, and an animated react-native-list introduction on HTML slide 16. Original Keynote slide 3 is omitted. HTML slides 5 and 6 include editable rendering animations. The remaining draft slides retain their TODO text.
+The deck contains original Keynote slides 1, 2, and 4–13, in order, plus a speaker introduction after the teaser on HTML slide 3, an audience question about concurrent JS execution on HTML slide 10, the Bundle Mode documentation screenshot on HTML slide 12, a Lodash code example on HTML slide 13, an animated ingredient mix on HTML slide 14, a React-on-the-UI-thread question on HTML slide 15, an animated react-native-list introduction on HTML slide 16, and “The basic idea” code example on HTML slide 17. Original Keynote slide 3 is omitted. HTML slides 5 and 6 include editable rendering animations. The remaining draft slides retain their TODO text.
 
 ## Presenting
 
@@ -38,7 +38,9 @@ HTML slide 14 shows eight editable blue pills matching the supplied Keynote refe
 
 HTML slide 15 deliberately poses the question of returning `<FastImage />` inside `scheduleOnUI`, with syntax highlighting and corrected imports. It is a conceptual setup for the next part of the talk, not a working rendering API. Returning JSX creates an element description and does not mount native views. `scheduleOnUI` schedules a callback asynchronously and does not consume its return value; libraries importing React Native are also not supported by ordinary Bundle Mode import forwarding. See [scheduleOnUI](https://docs.swmansion.com/react-native-worklets/docs/threading/scheduleOnUI/), [React elements](https://react.dev/reference/react/createElement), and [Bundle Mode library restrictions](https://docs.swmansion.com/react-native-worklets/docs/bundleMode/usage/).
 
-HTML slide 16 introduces react-native-list using the supplied Simpsons hello GIF with an editable text overlay. The original animated GIF is stored locally and retains its animation.
+HTML slide 16 introduces react-native-list using the supplied Simpsons hello GIF with an editable text overlay. The original animated GIF is stored locally and retains its animation. Advance to carry the white overlay title into slide 17's navy header while the GIF fades away; “The basic idea” and the code fade in beneath it. Reduced-motion preferences skip this transition.
+
+HTML slide 17 keeps react-native-list as the title and uses “The basic idea” as its subtitle. It shows the supplied conceptual `ShopScreen` API: a `List` with a worklet `renderItem` returning `<ShopItem data={data} />`. The syntax-highlighted snippet is completed with closing braces and JSX tags.
 
 - `index.html`: slide text, order, images, and video placement. Imported sections record their original Keynote slide number.
 - `styles.css`: fonts, colors, original 1920 × 1080 layout, and responsive scaling.

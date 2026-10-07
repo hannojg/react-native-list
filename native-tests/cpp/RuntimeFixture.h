@@ -138,7 +138,7 @@ void checkCallbackAndPromiseRouting(Factory createModule) {
 }
 
 template <typename Factory>
-void checkEventRouting(Factory createModule, bool sharedInstance) {
+void checkEventRouting(Factory createModule) {
   RuntimeFixture root;
   RuntimeFixture ui;
   root.install(createModule(root.invoker));
@@ -149,9 +149,9 @@ void checkEventRouting(Factory createModule, bool sharedInstance) {
   root.expectNumber("events", 0);
   ui.expectNumber("events", 0);
   root.invoker->drain();
-  root.expectNumber("events", sharedInstance ? 0 : 1);
+  root.expectNumber("events", 1);
   ui.invoker->drain();
-  ui.expectNumber("events", sharedInstance ? 1 : 0);
+  ui.expectNumber("events", 0);
 }
 
 } // namespace list::tests

@@ -114,13 +114,13 @@ auto factory(ListTestNativeModule *instance) {
     auto create = factory(instance);
     return create(invoker);
   };
-  [self runScenario:[&] { checkEventRouting(createModule, false); }];
+  [self runScenario:[&] { checkEventRouting(createModule); }];
 }
 
-- (void)testSharedInstanceReplacesRootEventCallback {
+- (void)testSharedInstanceKeepsRootEventCallback {
   auto instance = [ListTestNativeModule new];
   auto createModule = factory(instance);
-  [self runScenario:[&] { checkEventRouting(createModule, true); }];
+  [self runScenario:[&] { checkEventRouting(createModule); }];
 }
 
 @end

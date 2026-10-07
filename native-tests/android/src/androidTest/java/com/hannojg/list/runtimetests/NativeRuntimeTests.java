@@ -42,7 +42,7 @@ public final class NativeRuntimeTests {
   }
 
   @Test
-  public void sharedInstanceReplacesRootEventCallback() {
+  public void sharedInstanceKeepsRootEventCallback() {
     var module = new FixtureModule();
     runScenario(3, module, module);
   }

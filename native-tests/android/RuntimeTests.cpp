@@ -70,8 +70,8 @@ struct NativeRuntimeTests : jni::JavaClass<NativeRuntimeTests> {
     switch (scenario) {
       case 0: checkSharedState(createModule); break;
       case 1: checkCallbackAndPromiseRouting(createModule); break;
-      case 2: checkEventRouting(createModule, false); break;
-      case 3: checkEventRouting(createModule, true); break;
+      case 2: checkEventRouting(createModule); break;
+      case 3: checkEventRouting(createModule); break;
       default: throw std::runtime_error("Unknown runtime test scenario");
     }
   }

@@ -2,7 +2,7 @@ import { scheduleOnUI } from 'react-native-worklets'
 import { uiListModule } from './UiListModule'
 import { uiManagerHelper } from './renderer/fabric/UiManagerHelper'
 import { List } from './views/List'
-import { Platform } from 'react-native'
+import { Platform, TurboModuleRegistry } from 'react-native'
 import { getReactFabricRenderer } from './renderer/react/ReactFabricRenderer'
 
 export { ViewHolder } from './specs/ViewHolder.nitro'
@@ -31,10 +31,18 @@ export type {
 const boxed = uiListModule
 const nativeFabricUIManager = globalThis.nativeFabricUIManager
 
+function getWorkletsModuleHolder() {
+  if (Platform.OS !== 'ios') {
+    return null
+  }
+
+  TurboModuleRegistry.getEnforcing('HybridUiListSurfacePresenterRegistry')
+  return uiListModule.iosGetWorkletsModule()
+}
+
 function setup() {
   // TODO: ask SWM if they can remove their JS thread checks, then we could just access this from the UI thread.
-  const iosWorkletsModuleHolder =
-    Platform.OS === 'ios' ? uiListModule.iosGetWorkletsModule() : null
+  const iosWorkletsModuleHolder = getWorkletsModuleHolder()
   scheduleOnUI(() => {
     'worklet'
     globalThis.nativeFabricUIManager = nativeFabricUIManager

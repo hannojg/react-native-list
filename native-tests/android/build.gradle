@@ -1,0 +1,48 @@
+plugins {
+  id 'com.android.library' version '8.13.2'
+}
+
+def reactNativeDir = file('../../node_modules/react-native')
+def packageFile = file("${reactNativeDir}/package.json")
+def jsonParser = new groovy.json.JsonSlurper()
+def reactNativePackage = jsonParser.parse(packageFile)
+def hermesVersions = new Properties()
+def versionsFile = file("${reactNativeDir}/sdks/hermes-engine/version.properties")
+versionsFile.withInputStream { hermesVersions.load(it) }
+def hermesVersion = hermesVersions.getProperty('HERMES_V1_VERSION_NAME')
+
+android {
+  namespace 'com.hannojg.list.runtimetests'
+  compileSdk 36
+  ndkVersion '27.1.12297006'
+
+  defaultConfig {
+    minSdk 24
+    testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+    externalNativeBuild {
+      cmake {
+        arguments '-DANDROID_STL=c++_shared', "-DREACT_NATIVE_DIR=${reactNativeDir.absolutePath}"
+        abiFilters 'arm64-v8a', 'x86_64'
+      }
+    }
+  }
+
+  buildFeatures { prefab true }
+  packaging {
+    jniLibs {
+      pickFirsts += ['**/libc++_shared.so', '**/libfbjni.so', '**/libreactnative.so', '**/libjsi.so', '**/libhermesvm.so']
+    }
+  }
+  externalNativeBuild { cmake { path 'CMakeLists.txt' } }
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_17
+    targetCompatibility JavaVersion.VERSION_17
+  }
+}
+
+dependencies {
+  implementation "com.facebook.react:react-android:${reactNativePackage.version}"
+  implementation "com.facebook.hermes:hermes-android:${hermesVersion}"
+  androidTestImplementation 'androidx.test:runner:1.6.2'
+  androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+}

@@ -1,0 +1,10 @@
+**/.gradle/
+**/.cxx/
+**/build/
+ios/Pods/
+ios/NativeRuntimeTests.xcodeproj/
+ios/NativeRuntimeTests.xcworkspace/
+ios/.xcode.env*
+ios/Podfile.lock
+ios/PrivacyInfo.xcprivacy
+android/local.properties

@@ -4,6 +4,7 @@ const workletsPluginOptions = {
   bundleMode: true,
   importForwarding: {
     moduleNames: [
+      "react",
       "react-native-list",
       "react-native-reanimated",
       "react-native-worklets",

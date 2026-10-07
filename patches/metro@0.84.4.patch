@@ -1,11 +1,11 @@
 diff --git a/src/node-haste/DependencyGraph.js b/src/node-haste/DependencyGraph.js
+index 8222d8c69059bfb3fe444acba9f96ab2cc7bec0b..e082c8f4cc6542a037ecee805b7e0af2bc881fd8 100644
 --- a/src/node-haste/DependencyGraph.js
 +++ b/src/node-haste/DependencyGraph.js
-@@ -114,6 +114,22 @@
-           realPath: result.realPath,
+@@ -115,6 +115,22 @@ class DependencyGraph extends _events.default {
            type: result.type,
          };
-+      }
+       }
 +      if (path.includes("react-native-worklets/.worklets/")) {
 +        // Temporary workaround for bundle-mode preview:
 +        // worklet chunk files are generated during Babel transforms, after
@@ -21,10 +21,11 @@ diff --git a/src/node-haste/DependencyGraph.js b/src/node-haste/DependencyGraph.
 +            type: stat.isDirectory() ? "d" : "f",
 +          };
 +        }
-       }
++      }
        return {
          exists: false,
-@@ -197,6 +213,14 @@
+       };
+@@ -197,6 +213,14 @@ class DependencyGraph extends _events.default {
      return (0, _nullthrows.default)(this._fileSystem).getAllFiles();
    }
    async getOrComputeSha1(mixedPath) {
@@ -39,7 +40,7 @@ diff --git a/src/node-haste/DependencyGraph.js b/src/node-haste/DependencyGraph.
      const result = await this._fileSystem.getOrComputeSha1(mixedPath);
      if (!result || !result.sha1) {
        throw new Error(`Failed to get the SHA-1 for: ${mixedPath}.
-@@ -288,6 +312,12 @@
+@@ -288,6 +312,12 @@ class DependencyGraph extends _events.default {
      return resolution;
    }
    doesFileExist = (filePath) => {

@@ -89,7 +89,7 @@ var require_FabricUIManager = __commonJS((exports2) => {
   exports2.getFabricUIManager = getFabricUIManager;
   var _defineLazyObjectProperty = _interopRequireDefault(require_defineLazyObjectProperty());
   var nativeFabricUIManagerProxy;
-  var CACHED_PROPERTIES = ["createNode", "cloneNode", "cloneNodeWithNewChildren", "cloneNodeWithNewProps", "cloneNodeWithNewChildrenAndProps", "createChildSet", "appendChild", "appendChildToSet", "completeRoot", "measure", "measureInWindow", "measureLayout", "configureNextLayoutAnimation", "sendAccessibilityEvent", "findShadowNodeByTag_DEPRECATED", "setNativeProps", "dispatchCommand", "compareDocumentPosition", "getBoundingClientRect", "unstable_DefaultEventPriority", "unstable_DiscreteEventPriority", "unstable_ContinuousEventPriority", "unstable_IdleEventPriority", "unstable_getCurrentEventPriority"];
+  var CACHED_PROPERTIES = ["createNode", "cloneNode", "cloneNodeWithNewChildren", "cloneNodeWithNewProps", "cloneNodeWithNewChildrenAndProps", "createChildSet", "appendChild", "appendChildToSet", "completeRoot", "measure", "measureInWindow", "measureLayout", "configureNextLayoutAnimation", "sendAccessibilityEvent", "findShadowNodeByTag_DEPRECATED", "setNativeProps", "dispatchCommand", "compareDocumentPosition", "getBoundingClientRect", "setIsJSResponder", "unstable_DefaultEventPriority", "unstable_DiscreteEventPriority", "unstable_ContinuousEventPriority", "unstable_IdleEventPriority", "unstable_getCurrentEventPriority"];
   function getFabricUIManager() {
     if (nativeFabricUIManagerProxy == null && global.nativeFabricUIManager != null) {
       nativeFabricUIManagerProxy = createProxyWithCachedProperties(global.nativeFabricUIManager, CACHED_PROPERTIES);
@@ -98,10 +98,8 @@ var require_FabricUIManager = __commonJS((exports2) => {
   }
   function createProxyWithCachedProperties(implementation, propertiesToCache) {
     var proxy = Object.create(implementation);
-    var _loop = function _loop2(propertyName2) {
-      (0, _defineLazyObjectProperty.default)(proxy, propertyName2, { get: function get() {
-        return implementation[propertyName2];
-      } });
+    var _loop = function(propertyName2) {
+      (0, _defineLazyObjectProperty.default)(proxy, propertyName2, { get: () => implementation[propertyName2] });
     };
     for (var propertyName of propertiesToCache) {
       _loop(propertyName);
@@ -143,9 +141,7 @@ var require_deepDiffer = __commonJS((exports2) => {
   function unstable_setLogListeners(listeners) {
     logListeners = listeners;
   }
-  function deepDiffer(one, two) {
-    var maxDepthOrOptions = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : -1;
-    var maybeOptions = arguments.length > 3 ? arguments[3] : undefined;
+  function deepDiffer(one, two, maxDepthOrOptions = -1, maybeOptions) {
     var options = typeof maxDepthOrOptions === "number" ? maybeOptions : maxDepthOrOptions;
     var maxDepth = typeof maxDepthOrOptions === "number" ? maxDepthOrOptions : -1;
     if (maxDepth === 0) {
@@ -155,7 +151,7 @@ var require_deepDiffer = __commonJS((exports2) => {
       return false;
     }
     if (typeof one === "function" && typeof two === "function") {
-      var unsafelyIgnoreFunctions = options == null ? undefined : options.unsafelyIgnoreFunctions;
+      var unsafelyIgnoreFunctions = options?.unsafelyIgnoreFunctions;
       if (unsafelyIgnoreFunctions == null) {
         if (logListeners && logListeners.onDifferentFunctionsIgnored && (!options || !("unsafelyIgnoreFunctions" in options))) {
           logListeners.onDifferentFunctionsIgnored(one.name, two.name);
@@ -459,11 +455,11 @@ var require_ReactNativeAttributePayload = __commonJS((exports2) => {
 
 // shims/react-fiber-config-fabric.js
 var require_react_fiber_config_fabric = __commonJS((exports2, module2) => {
-  var ReactNativeElement = require("react-native/src/private/webapis/dom/nodes/ReactNativeElement").default;
+  var ReactNativePrivateInterface = require("react-native/Libraries/ReactPrivate/ReactNativePrivateInterface");
   function getPublicInstance(instance) {
     if (instance?.canonical != null) {
       if (instance.canonical.publicInstance == null) {
-        instance.canonical.publicInstance = new ReactNativeElement(instance.canonical.nativeTag, instance.canonical.viewConfig, instance.canonical.internalInstanceHandle, instance.canonical.publicRootInstance ?? null);
+        instance.canonical.publicInstance = ReactNativePrivateInterface.createPublicInstance(instance.canonical.nativeTag, instance.canonical.viewConfig, instance.canonical.internalInstanceHandle, instance.canonical.publicRootInstance ?? null);
         instance.canonical.publicRootInstance = null;
       }
       return instance.canonical.publicInstance;
@@ -552,7 +548,7 @@ var require_EventPluginUtils = __commonJS((exports2) => {
       if (!hasError) {
         hasError = true;
         caughtError = error;
-      } else {}
+      }
     }
     event.currentTarget = null;
   }
@@ -760,9 +756,9 @@ var require_SyntheticEvent = __commonJS((exports2) => {
   exports2.default = undefined;
   var _assign = _interopRequireDefault(require_assign());
   var EVENT_POOL_SIZE = 10;
-  var EventInterface = { type: null, target: null, currentTarget: function currentTarget() {
+  var EventInterface = { type: null, target: null, currentTarget: function() {
     return null;
-  }, eventPhase: null, bubbles: null, cancelable: null, timeStamp: function timeStamp(event) {
+  }, eventPhase: null, bubbles: null, cancelable: null, timeStamp: function(event) {
     return event.timeStamp || Date.now();
   }, defaultPrevented: null, isTrusted: null };
   function functionThatReturnsTrue() {
@@ -812,7 +808,7 @@ var require_SyntheticEvent = __commonJS((exports2) => {
     this.isPropagationStopped = functionThatReturnsFalse;
     return this;
   }
-  (0, _assign.default)(SyntheticEvent.prototype, { preventDefault: function preventDefault() {
+  (0, _assign.default)(SyntheticEvent.prototype, { preventDefault: function() {
     this.defaultPrevented = true;
     var event = this.nativeEvent;
     if (!event) {
@@ -824,7 +820,7 @@ var require_SyntheticEvent = __commonJS((exports2) => {
       event.returnValue = false;
     }
     this.isDefaultPrevented = functionThatReturnsTrue;
-  }, stopPropagation: function stopPropagation() {
+  }, stopPropagation: function() {
     var event = this.nativeEvent;
     if (!event) {
       return;
@@ -835,9 +831,9 @@ var require_SyntheticEvent = __commonJS((exports2) => {
       event.cancelBubble = true;
     }
     this.isPropagationStopped = functionThatReturnsTrue;
-  }, persist: function persist() {
+  }, persist: function() {
     this.isPersistent = functionThatReturnsTrue;
-  }, isPersistent: functionThatReturnsFalse, destructor: function destructor() {
+  }, isPersistent: functionThatReturnsFalse, destructor: function() {
     var Interface = this.constructor.Interface;
     for (var propName in Interface) {
       if (__DEV__) {
@@ -857,14 +853,14 @@ var require_SyntheticEvent = __commonJS((exports2) => {
       Object.defineProperty(this, "nativeEvent", getPooledWarningPropertyDefinition("nativeEvent", null));
       Object.defineProperty(this, "isDefaultPrevented", getPooledWarningPropertyDefinition("isDefaultPrevented", functionThatReturnsFalse));
       Object.defineProperty(this, "isPropagationStopped", getPooledWarningPropertyDefinition("isPropagationStopped", functionThatReturnsFalse));
-      Object.defineProperty(this, "preventDefault", getPooledWarningPropertyDefinition("preventDefault", function() {}));
-      Object.defineProperty(this, "stopPropagation", getPooledWarningPropertyDefinition("stopPropagation", function() {}));
+      Object.defineProperty(this, "preventDefault", getPooledWarningPropertyDefinition("preventDefault", () => {}));
+      Object.defineProperty(this, "stopPropagation", getPooledWarningPropertyDefinition("stopPropagation", () => {}));
     }
   } });
   SyntheticEvent.Interface = EventInterface;
   SyntheticEvent.extend = function(Interface) {
     var Super = this;
-    var E = function E2() {};
+    var E = function() {};
     E.prototype = Super.prototype;
     var prototype = new E;
     function Class() {
@@ -932,7 +928,7 @@ var require_ResponderSyntheticEvent = __commonJS((exports2) => {
   Object.defineProperty(exports2, "__esModule", { value: true });
   exports2.default = undefined;
   var _SyntheticEvent = _interopRequireDefault(require_SyntheticEvent());
-  var ResponderSyntheticEvent = _SyntheticEvent.default.extend({ touchHistory: function touchHistory(nativeEvent) {
+  var ResponderSyntheticEvent = _SyntheticEvent.default.extend({ touchHistory: function(nativeEvent) {
     return null;
   } });
   var _default = exports2.default = ResponderSyntheticEvent;
@@ -992,8 +988,7 @@ var require_ResponderTouchHistoryStore = __commonJS((exports2) => {
     touchRecord.previousPageY = touch.pageY;
     touchRecord.previousTimeStamp = timestampForTouch(touch);
   }
-  function getTouchIdentifier(_ref) {
-    var identifier = _ref.identifier;
+  function getTouchIdentifier({ identifier }) {
     if (identifier == null) {
       throw new Error("Touch object is missing identifier.");
     }
@@ -1063,9 +1058,9 @@ var require_ResponderTouchHistoryStore = __commonJS((exports2) => {
     return printed;
   }
   var instrumentationCallback;
-  var ResponderTouchHistoryStore = { instrument: function instrument(callback) {
+  var ResponderTouchHistoryStore = { instrument(callback) {
     instrumentationCallback = callback;
-  }, recordTouchTrack: function recordTouchTrack(topLevelType, nativeEvent) {
+  }, recordTouchTrack(topLevelType, nativeEvent) {
     if (instrumentationCallback != null) {
       instrumentationCallback(topLevelType, nativeEvent);
     }
@@ -1394,9 +1389,9 @@ var require_ResponderEventPlugin = __commonJS((exports2) => {
     }
     return true;
   }
-  var ResponderEventPlugin = { _getResponder: function _getResponder() {
+  var ResponderEventPlugin = { _getResponder: function() {
     return responderInst;
-  }, eventTypes, extractEvents: function extractEvents(topLevelType, targetInst, nativeEvent, nativeEventTarget, eventSystemFlags) {
+  }, eventTypes, extractEvents: function(topLevelType, targetInst, nativeEvent, nativeEventTarget, eventSystemFlags) {
     if ((0, _ResponderTopLevelEventTypes.isStartish)(topLevelType)) {
       trackedTouchCount += 1;
     } else if ((0, _ResponderTopLevelEventTypes.isEndish)(topLevelType)) {
@@ -1432,7 +1427,7 @@ var require_ResponderEventPlugin = __commonJS((exports2) => {
       changeResponder(null);
     }
     return extracted;
-  }, GlobalResponderHandler: null, injection: { injectGlobalResponderHandler: function injectGlobalResponderHandler(GlobalResponderHandler) {
+  }, GlobalResponderHandler: null, injection: { injectGlobalResponderHandler(GlobalResponderHandler) {
     ResponderEventPlugin.GlobalResponderHandler = GlobalResponderHandler;
   } } };
   var _default = exports2.default = ResponderEventPlugin;
@@ -1450,7 +1445,7 @@ var require_ReactNativeEventPluginOrder = __commonJS((exports2) => {
 var require_ReactFabricGlobalResponderHandler = __commonJS((exports2) => {
   Object.defineProperty(exports2, "__esModule", { value: true });
   exports2.default = undefined;
-  var ReactFabricGlobalResponderHandler = { onChange: function onChange(from, to, blockNativeResponder) {
+  var ReactFabricGlobalResponderHandler = { onChange: function(from, to, blockNativeResponder) {
     if (from && from.stateNode) {
       nativeFabricUIManager.setIsJSResponder(from.stateNode.node, false, blockNativeResponder || false);
     }
@@ -1467,10 +1462,10 @@ var require_ReactGenericBatching = __commonJS((exports2) => {
   exports2.batchedUpdates = batchedUpdates;
   exports2.discreteUpdates = discreteUpdates;
   exports2.setBatchingImplementation = setBatchingImplementation;
-  var batchedUpdatesImpl = function batchedUpdatesImpl2(fn, bookkeeping) {
+  var batchedUpdatesImpl = function(fn, bookkeeping) {
     return fn(bookkeeping);
   };
-  var discreteUpdatesImpl = function discreteUpdatesImpl2(fn, a, b, c, d) {
+  var discreteUpdatesImpl = function(fn, a, b, c, d) {
     return fn(a, b, c, d);
   };
   var isInsideEventHandler = false;

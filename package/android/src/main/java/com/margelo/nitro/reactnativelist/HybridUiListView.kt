@@ -8,7 +8,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.facebook.react.ReactActivity
+import com.facebook.react.ReactApplication
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.interfaces.fabric.ReactSurface
 import com.facebook.react.runtime.ReactSurfaceView
@@ -250,10 +250,10 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
 
         val context: ReactApplicationContext = NitroModules.applicationContext
             ?: throw IllegalStateException("ReactApplicationContext is null! Is Nitro installed?")
-        val reactActivity = context.currentActivity as? ReactActivity
-            ?: throw IllegalStateException("Current activity is not a ReactActivity!")
-        val reactHost = reactActivity.reactActivityDelegate.reactHost
-            ?: throw IllegalStateException("ReactNativeHost is null!")
+        val application = context.applicationContext as? ReactApplication
+            ?: throw IllegalStateException("Application is not a ReactApplication!")
+        val reactHost = application.reactHost
+            ?: throw IllegalStateException("ReactHost is null!")
 
         val surface = reactHost.createSurface(reactContext, "", null)
         val surfaceView = surface.view as? ReactSurfaceView

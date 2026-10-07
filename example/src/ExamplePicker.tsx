@@ -47,7 +47,10 @@ export function ExamplePicker(props: {
         <Button
           title="Hermes gc()"
           onPress={() => {
-            const gc = globalThis?.gc;
+            const hermesRuntime = globalThis as typeof globalThis & {
+              gc?: () => void;
+            };
+            const gc = hermesRuntime.gc;
             if (!gc) {
               return;
             }

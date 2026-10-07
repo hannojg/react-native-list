@@ -4,7 +4,7 @@ import { uiManagerHelper } from './UiManagerHelper'
 import type { ShadowNodeList } from '../../specs/UIManagerHelper.nitro'
 
 export const uiListModuleBoxed = NitroModules.box(uiListModule)
-const capturedOnJS = global.nativeFabricUIManager
+const capturedOnJS = globalThis.nativeFabricUIManager
 const uiManagerHelperBoxed = NitroModules.box(uiManagerHelper)
 
 export function completeRootSyncWorklet(

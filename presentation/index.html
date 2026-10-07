@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
   <title>True native lists in React Native</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=iphone-teaser">
   <script src="list-scene.js" defer></script>
   <script src="sync-rendering.js" defer></script>
   <script src="async-rendering.js" defer></script>
@@ -13,7 +13,7 @@
   <script src="pill-mix.js" defer></script>
   <script src="title-shuffle.js?v=line-break" defer></script>
   <script src="shop-benchmark.js?v=disadvantages-slide" defer></script>
-  <script src="presentation.js?v=guarantee-exit" defer></script>
+  <script src="presentation.js?v=iphone-teaser" defer></script>
 </head>
 <body>
   <main id="deck" aria-label="True native lists presentation">
@@ -32,18 +32,15 @@
       <div class="cover-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
-    <section class="slide shop-teaser" id="slide-3" data-source-slide="2" aria-label="Slide 3: RNL and FlashList scrolling teaser" hidden>
+    <section class="slide shop-teaser" id="slide-3" data-source-slide="2" data-teaser-run="flashlist" aria-label="Slide 3: FlashList then RNL iPhone scrolling teaser" hidden>
       <div class="burst teaser"><img src="assets/burst.svg" alt=""><span>TEASER</span></div>
-      <div class="teaser-demos">
-        <figure class="benchmark-demo benchmark-rnl">
-          <figcaption>RNL</figcaption>
-          <video src="assets/benchmarks/teaser-rnl.mp4" poster="assets/benchmarks/teaser-rnl-poster.jpg" muted playsinline preload="metadata" aria-label="RNL Discord Shop scrolling teaser"></video>
-        </figure>
-        <figure class="benchmark-demo benchmark-flashlist">
-          <figcaption>FlashList</figcaption>
-          <video src="assets/benchmarks/teaser-flashlist.mp4" poster="assets/benchmarks/teaser-flashlist-poster.jpg" muted playsinline preload="metadata" aria-label="FlashList Discord Shop scrolling teaser"></video>
-        </figure>
-      </div>
+      <figure class="teaser-demo">
+        <figcaption class="teaser-label">FlashList</figcaption>
+        <div class="teaser-device">
+          <video src="assets/benchmarks/teaser-flashlist.mp4?v=iphone" poster="assets/benchmarks/teaser-flashlist-poster.jpg?v=iphone" data-run="flashlist" muted loop playsinline preload="metadata" aria-label="FlashList iPhone Discord Shop scrolling teaser"></video>
+          <img class="teaser-frame" src="assets/iphone-17-black.webp" alt="iPhone 17 frame">
+        </div>
+      </figure>
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
 
@@ -339,30 +336,18 @@
 
     <section class="slide code-example sync-pipeline pipeline-overview" id="slide-22" aria-label="Slide 22: Our own React renderer" hidden>
       <h1 class="slide-title">Our own React renderer</h1>
-      <div class="pipeline-phone" aria-label="Native list phone preview">
-        <div class="pipeline-screen">
-          <div class="pipeline-status"><span>9:41</span><span>● ▰</span></div>
-          <h2>Your feed</h2><p class="pipeline-feed-subtitle">Native list</p>
-          <div class="pipeline-feed-rule"></div>
-          <div class="pipeline-native-image" aria-label="Image view, 200 by 120, tag 42"><span class="pipeline-empty-label">Image view</span></div>
-          <div class="pipeline-dimensions">200 × 120</div>
-          <div class="pipeline-view-tag">Native view · tag #42</div>
-          <div class="pipeline-feed-row"><span>02</span><div><b>Item 02</b><i></i><i></i></div></div>
-          <div class="pipeline-feed-row"><span>03</span><div><b>Item 03</b><i></i><i></i></div></div>
-          <div class="pipeline-home"></div>
-        </div>
-      </div>
       <div class="pipeline-thread"><h2>UI thread</h2><div class="pipeline-thread-rule"></div></div>
       <div class="pipeline-runtime"><h3>UI runtime</h3>
         <div class="pipeline-node pipeline-react"><h3>React reconciler</h3><p>Separate instance</p></div>
-        <div class="pipeline-host-group" data-reveal-step="1" hidden><span class="pipeline-arrow">→</span><div class="pipeline-node pipeline-host"><h3>Custom host config</h3><p class="pipeline-host-default">Fabric host operations</p><p class="pipeline-host-clone"><code>cloneNodeWithNewProps()</code></p></div></div>
+        <div class="pipeline-host-group" data-reveal-step="1" hidden><span class="pipeline-arrow">→</span><div class="pipeline-node pipeline-host"><h3>Custom host config</h3><p class="pipeline-host-default">React → Fabric operations</p><p class="pipeline-host-clone"><code>cloneNodeWithNewProps()</code></p></div></div>
       </div>
       <div class="pipeline-fabric-group" data-reveal-step="2" hidden><span class="pipeline-arrow">→</span><div class="pipeline-node pipeline-fabric"><h3>Fabric</h3><p class="pipeline-fabric-default">Commit · mount</p><p class="pipeline-fabric-create">Create view</p><p class="pipeline-fabric-update">Update props</p></div></div>
       <div class="pipeline-sync-capability" data-reveal-step="3" hidden>
         <div class="pipeline-call"><code>syncRender(element)</code><span>React + native mounting finish before return</span></div>
-        <pre class="worklets-code pipeline-code"><code><span class="code-function">updateContainerSync</span>(element);
-<span class="code-function">flushSyncWork</span>();
-<span class="code-function">completeSurface</span>(…, { mountSynchronously: <span class="code-keyword">true</span> });</code></pre>
+        <pre class="worklets-code pipeline-code pipeline-mapped-code"><code><span class="pipeline-code-stage pipeline-code-react"><span class="code-function">updateContainerSync</span>(element);
+<span class="code-function">flushSyncWork</span>();</span>
+<span class="pipeline-code-stage pipeline-code-host pipeline-code-nested">↳ <span class="code-function">createInstance</span>(<span class="code-string">"Image"</span>, props)</span>
+<span class="pipeline-code-stage pipeline-code-fabric pipeline-code-nested">↳ <span class="code-function">completeSurface</span>(…, { mountSynchronously: <span class="code-keyword">true</span> })</span></code></pre>
       </div>
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
@@ -377,32 +362,26 @@
           <div class="pipeline-native-image" aria-label="Image view, 200 by 120, tag 42"><span class="pipeline-empty-label">Image view</span></div>
           <div class="pipeline-dimensions">200 × 120</div>
           <div class="pipeline-view-tag">Native view · tag #42</div>
-          <div class="pipeline-feed-row"><span>02</span><div><b>Item 02</b><i></i><i></i></div></div>
-          <div class="pipeline-feed-row"><span>03</span><div><b>Item 03</b><i></i><i></i></div></div>
           <div class="pipeline-home"></div>
         </div>
       </div>
       <div class="pipeline-thread"><h2>UI thread</h2><div class="pipeline-thread-rule"></div></div>
       <div class="pipeline-runtime"><h3>UI runtime</h3>
         <div class="pipeline-node pipeline-react"><h3>React reconciler</h3><p>Separate instance</p></div>
-        <div class="pipeline-host-group"><span class="pipeline-arrow">→</span><div class="pipeline-node pipeline-host"><h3>Custom host config</h3><p class="pipeline-host-default">Fabric host operations</p><p class="pipeline-host-clone"><code>cloneNodeWithNewProps()</code></p></div></div>
+        <div class="pipeline-host-group"><span class="pipeline-arrow">→</span><div class="pipeline-node pipeline-host"><h3>Custom host config</h3><p class="pipeline-host-default">React → Fabric operations</p><p class="pipeline-host-clone"><code>cloneNodeWithNewProps()</code></p></div></div>
       </div>
       <div class="pipeline-fabric-group"><span class="pipeline-arrow">→</span><div class="pipeline-node pipeline-fabric"><h3>Fabric</h3><p class="pipeline-fabric-default">Commit · mount</p><p class="pipeline-fabric-create">Create view</p><p class="pipeline-fabric-update">Update props</p></div></div>
       <div class="pipeline-call"><code>createView(<span class="code-string">"image"</span>)</code><span>onCreateViewHolder</span></div>
       <div class="pipeline-render-source" data-reveal-step="1" hidden>
-        <pre class="worklets-code pipeline-code"><code><span class="code-keyword">const</span> internalRef = React.<span class="code-function">createRef</span>();
-<span class="code-function">renderItemWorklet</span>({ type: <span class="code-string">"image"</span> })
-&lt;<span class="code-function">Image</span> ref={internalRef}
-       source={{ uri: <span class="code-keyword">undefined</span> }}
-       style={{ width: <span class="code-number">200</span>, height: <span class="code-number">120</span> }} /&gt;</code></pre>
-        <div class="pipeline-sync-label"><code>syncRender()</code></div>
+        <pre class="worklets-code pipeline-code"><code><span class="code-keyword">const</span> element = <span class="code-function">renderItemWorklet</span>({ type: <span class="code-string">"image"</span> });
+<span class="code-function">syncRender</span>(element);</code></pre>
       </div>
       <div class="pipeline-mount-result" data-reveal-step="2" hidden>
         <div class="pipeline-operation"><b>Create native image view</b><code>200 × 120 · tag #42</code></div>
         <div class="pipeline-to-phone" aria-hidden="true">←</div>
       </div>
       <div class="pipeline-lookup-result" data-reveal-step="3" hidden>
-        <pre class="worklets-code pipeline-code"><code><span class="code-keyword">const</span> tag = internalRef.current.__nativeTag;
+        <pre class="worklets-code pipeline-code"><code><span class="code-keyword">const</span> tag = element.ref.nativeTag;
 <span class="code-keyword">const</span> view = <span class="code-function">resolveView</span>(tag);
 <span class="code-keyword">return</span> view;</code></pre>
         <p class="pipeline-return-note">The native list gets the view synchronously</p>
@@ -420,24 +399,20 @@
           <div class="pipeline-native-image" aria-label="Image view, 200 by 120, tag 42"><img class="pipeline-photo" src="assets/sync-image-example.jpg" alt="Cafe photograph after the image source loads"><span class="pipeline-empty-label">Image view</span></div>
           <div class="pipeline-dimensions">200 × 120</div>
           <div class="pipeline-view-tag">Native view · tag #42</div>
-          <div class="pipeline-feed-row"><span>02</span><div><b>Item 02</b><i></i><i></i></div></div>
-          <div class="pipeline-feed-row"><span>03</span><div><b>Item 03</b><i></i><i></i></div></div>
           <div class="pipeline-home"></div>
         </div>
       </div>
       <div class="pipeline-thread"><h2>UI thread</h2><div class="pipeline-thread-rule"></div></div>
       <div class="pipeline-runtime"><h3>UI runtime</h3>
         <div class="pipeline-node pipeline-react"><h3>React reconciler</h3><p>Separate instance</p></div>
-        <div class="pipeline-host-group"><span class="pipeline-arrow">→</span><div class="pipeline-node pipeline-host"><h3>Custom host config</h3><p class="pipeline-host-default">Fabric host operations</p><p class="pipeline-host-clone"><code>cloneNodeWithNewProps()</code></p></div></div>
+        <div class="pipeline-host-group"><span class="pipeline-arrow">→</span><div class="pipeline-node pipeline-host"><h3>Custom host config</h3><p class="pipeline-host-default">React → Fabric operations</p><p class="pipeline-host-clone"><code>cloneNodeWithNewProps()</code></p></div></div>
       </div>
       <div class="pipeline-fabric-group"><span class="pipeline-arrow">→</span><div class="pipeline-node pipeline-fabric"><h3>Fabric</h3><p class="pipeline-fabric-default">Commit · mount</p><p class="pipeline-fabric-create">Create view</p><p class="pipeline-fabric-update">Update props</p></div></div>
-      <div class="pipeline-call"><code>bindView(<span class="code-number">42</span>, item)</code><span>onBindViewHolder</span></div>
+      <div class="pipeline-call"><code>bindView(tag, item)</code><span>onBindViewHolder</span></div>
       <div class="pipeline-before-bind"><p>The view already exists</p><code>source: undefined<br>width: 200 · height: 120</code></div>
       <div class="pipeline-render-source" data-reveal-step="1" hidden>
-        <pre class="worklets-code pipeline-code"><code><span class="code-function">renderItemWorklet</span>({ type: <span class="code-string">"image"</span>, item })
-&lt;<span class="code-function">Image</span> source={{ uri: <span class="code-string">"cafe.jpg"</span> }}
-       style={{ width: <span class="code-number">200</span>, height: <span class="code-number">120</span> }} /&gt;</code></pre>
-        <div class="pipeline-sync-label"><code>syncRender()</code></div>
+        <pre class="worklets-code pipeline-code"><code><span class="code-keyword">const</span> element = <span class="code-function">renderItemWorklet</span>({ type: <span class="code-string">"image"</span>, item });
+<span class="code-function">syncRender</span>(element);</code></pre>
       </div>
       <div class="pipeline-props-diff" data-reveal-step="2" hidden>
         <div class="pipeline-diff"><h3>Changed props</h3><code>source: <span class="code-comment">undefined</span> → <span class="code-string">"cafe.jpg"</span></code><p>Dimensions unchanged · same React key</p></div>
@@ -640,6 +615,7 @@ dataSource.<span class="code-function">removeItem</span>(<span class="code-numbe
           <ul><li>But agents can usually handle it well!</li></ul>
         </li>
         <li>React work on the main thread can be significant — careful optimizations and evaluation needed</li>
+        <li>React context isn't shared — separate React reconciler instance</li>
         <li>The library hasn't reached stable yet — some perf improvements are still pending</li>
         <li>It solves blank frames, but doesn't solve frame drops magically lol (no silver bullet)
           <ul><li>It's a UI/UX decision at some point</li></ul>
@@ -647,13 +623,17 @@ dataSource.<span class="code-function">removeItem</span>(<span class="code-numbe
       </ul>
       <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
     </section>
-    <section class="slide closing-gif" id="slide-31" aria-label="Slide 31: That's all, folks!" hidden>
+    <section class="slide install-slide" id="slide-31" aria-label="Slide 31: Install react-native-list" hidden>
+      <pre class="install-command"><code>npm i <span>react-native-list@alpha</span></code></pre>
+      <div class="slide-footer"><img src="assets/wordmark.png" alt="Margelo"></div>
+    </section>
+    <section class="slide closing-gif" id="slide-32" aria-label="Slide 32: That's all, folks!" hidden>
       <img src="assets/looney-tunes-ending.gif" alt="Looney Tunes That's all, folks! animated ending" loading="lazy">
     </section>
   </main>
   <nav class="controls" aria-label="Presentation controls">
     <button id="previous" type="button" aria-label="Previous slide" title="Previous (←)">←</button>
-    <output id="counter" aria-live="polite">1 / 31</output>
+    <output id="counter" aria-live="polite">1 / 32</output>
     <button id="next" type="button" aria-label="Next slide, build, or animation step" title="Next (→ or Space)">→</button>
     <button id="media" type="button" title="Play or pause (P)" hidden>Play</button>
     <button id="replay" type="button" title="Replay (R)" hidden>Replay</button>

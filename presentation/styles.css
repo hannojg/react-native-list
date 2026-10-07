@@ -642,12 +642,6 @@ dd { margin: 0; }
 .pipeline-create[data-reveal-step="1"] .pipeline-native-image,
 .pipeline-create[data-reveal-step="1"] .pipeline-dimensions,
 .pipeline-create[data-reveal-step="1"] .pipeline-view-tag { visibility: hidden; }
-.pipeline-feed-row { position: absolute; left: 24px; top: 468px; width: 304px; height: 94px; border-radius: 12px; background: #edf0f6; display: flex; align-items: center; gap: 16px; padding: 14px; }
-.pipeline-feed-row + .pipeline-feed-row { top: 575px; }
-.pipeline-feed-row > span { display: grid; place-items: center; width: 52px; height: 56px; background: #dae0ed; border-radius: 10px; font-size: 20px; }
-.pipeline-feed-row b { font-size: 23px; font-weight: 500; }
-.pipeline-feed-row i { display: block; width: 160px; height: 6px; margin-top: 9px; border-radius: 3px; background: #b3bdd3; }
-.pipeline-feed-row i + i { width: 110px; background: #c6cedf; }
 .pipeline-home { position: absolute; width: 112px; height: 5px; left: 120px; bottom: 18px; border-radius: 3px; background: #a8aec0; }
 .pipeline-thread { position: absolute; left: 680px; top: 252px; width: 1130px; display: flex; align-items: center; gap: 24px; }
 .pipeline-thread h2 { margin: 0; font-size: 36px; }
@@ -679,7 +673,23 @@ dd { margin: 0; }
 .pipeline-call > span { font-size: 26px; color: #79839d; }
 .pipeline-overview .pipeline-call { flex-direction: column; gap: 8px; }
 .sync-pipeline .pipeline-code { left: 680px; top: 740px; width: 1130px; padding: 24px 30px; font-size: 30px; line-height: 1.3; }
-.pipeline-sync-label { position: absolute; left: 680px; top: 685px; font-size: 30px; color: #0869a7; }
+.pipeline-overview .pipeline-thread,
+.pipeline-overview .pipeline-runtime,
+.pipeline-overview .pipeline-call,
+.pipeline-overview .pipeline-code { left: 99px; }
+.pipeline-overview .pipeline-fabric-group { left: 869px; }
+.pipeline-moving [data-reveal-step] { animation: none; }
+.pipeline-overview[data-reveal-step="3"] .pipeline-react { border-color: #0086ff; background: #e5f2ff; }
+.pipeline-overview[data-reveal-step="3"] .pipeline-host { border-color: #8a48bc; background: #f3eafb; }
+.pipeline-overview[data-reveal-step="3"] .pipeline-fabric { border-color: #128475; background: #e7f5f1; }
+.pipeline-mapped-code .pipeline-code-stage { display: inline-block; width: 100%; padding-left: 16px; border-left: 4px solid; }
+.pipeline-mapped-code .pipeline-code-nested { margin-left: 36px; width: calc(100% - 36px); }
+.pipeline-mapped-code .pipeline-code-react { border-color: #0086ff; }
+.pipeline-mapped-code .pipeline-code-host { border-color: #8a48bc; }
+.pipeline-mapped-code .pipeline-code-fabric { border-color: #128475; }
+.pipeline-mapped-code .pipeline-code-react .code-function { color: #0075d9; }
+.pipeline-mapped-code .pipeline-code-host .code-function { color: #8a48bc; }
+.pipeline-mapped-code .pipeline-code-fabric .code-function { color: #128475; }
 .pipeline-operation { position: absolute; left: 680px; top: 740px; width: 1130px; padding: 30px; border-top: 3px solid #0086ff; background: #ddecfb; }
 .pipeline-operation b { display: block; font-size: 38px; font-weight: 700; }
 .pipeline-operation code { display: block; margin-top: 15px; font-size: 32px; color: #0869a7; }
@@ -690,7 +700,6 @@ dd { margin: 0; }
 .pipeline-bind[data-reveal-step="2"] .pipeline-render-source,
 .pipeline-bind[data-reveal-step="3"] .pipeline-render-source,
 .pipeline-bind[data-reveal-step="3"] .pipeline-props-diff { display: none; }
-.pipeline-create[data-reveal-step="2"] .pipeline-sync-label { display: none; }
 .pipeline-create .pipeline-mount-result .pipeline-operation { top: 685px; padding: 0; border: 0; background: none; display: flex; align-items: baseline; gap: 25px; }
 .pipeline-create .pipeline-mount-result .pipeline-operation b { font-size: 30px; }
 .pipeline-create .pipeline-mount-result .pipeline-operation code { margin: 0; font-size: 26px; }
@@ -707,7 +716,6 @@ dd { margin: 0; }
 .pipeline-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 55%; visibility: hidden; }
 .pipeline-bind[data-reveal-step="3"] .pipeline-photo { visibility: visible; animation: pipeline-photo-load 1300ms ease-out both; }
 .pipeline-bind[data-reveal-step="3"] .pipeline-empty-label { visibility: hidden; }
-.pipeline-overview[data-reveal-step="3"] .pipeline-node,
 .pipeline-create[data-reveal-step="1"] .pipeline-react,
 .pipeline-bind[data-reveal-step="1"] .pipeline-react,
 .pipeline-create[data-reveal-step="2"] .pipeline-host,
@@ -737,6 +745,19 @@ dd { margin: 0; }
 }
 .disadvantages-list > li + li { margin-top: 28px; }
 .disadvantages-list ul { margin: 15px 0 0; padding-left: 44px; font-size: 36px; }
+.install-slide { display: grid; place-items: center; }
+.install-command {
+  margin: 0;
+  padding: 62px 76px;
+  border: 3px solid #b8d9fc;
+  border-radius: 28px;
+  background: #ffffffd9;
+  box-shadow: 0 18px 48px #2f3f7114;
+  font-size: 84px;
+  line-height: 1.3;
+}
+.install-command code { font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace; }
+.install-command span { color: #0086ff; }
 /* Discord Shop measurements and separately recorded scroll demos. */
 .shop-benchmark .slide-title { font-size: 86px; }
 .benchmark-rnl { --benchmark-color: #087ffc; }
@@ -769,15 +790,40 @@ dd { margin: 0; }
   background: #202024;
   cursor: pointer;
 }
-.teaser-demos {
+.shop-teaser { --teaser-color: #bd6242; }
+.shop-teaser[data-teaser-run="rnl"] { --teaser-color: #087ffc; }
+.teaser-demo {
   position: absolute;
-  left: 610px;
-  top: 95px;
-  display: flex;
-  gap: 180px;
+  left: 754.5px;
+  top: 64px;
+  width: 411px;
+  margin: 0;
 }
-.shop-teaser .benchmark-demo { width: 390px; }
-.shop-teaser .benchmark-demo video { width: 390px; height: 870px; }
+.teaser-label {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 22px;
+  color: var(--teaser-color);
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1.15;
+}
+.teaser-label::before { content: ''; width: 22px; height: 22px; border-radius: 50%; background: var(--teaser-color); }
+.teaser-device { position: relative; width: 411px; height: 850px; }
+.teaser-device video {
+  position: absolute;
+  left: 4.5249%;
+  top: 2.1882%;
+  width: 90.9502%;
+  height: 95.6236%;
+  border-radius: 58px;
+  object-fit: contain;
+  background: #000;
+  cursor: pointer;
+}
+.teaser-frame { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; filter: drop-shadow(0 18px 25px #171b2620); }
 .benchmark-results {
   position: absolute;
   left: 824px;

@@ -107,6 +107,7 @@
   }
 
   function lastRevealStep(slide) {
+    if (slide.classList.contains('shop-teaser')) return 1;
     const reveals = slide.querySelectorAll('[data-reveal-step]');
     let lastStep = 0;
     for (const reveal of reveals) {
@@ -132,6 +133,7 @@
     const lastStep = lastRevealStep(slide);
     const boundedStep = Math.min(lastStep, lowerBound);
     slide.dataset.revealStep = String(boundedStep);
+    if (slide.classList.contains('shop-teaser')) selectTeaserRun(slide, boundedStep);
     for (const reveal of reveals) {
       const wasHidden = reveal.hidden;
       const revealIndex = Number(reveal.dataset.revealStep);
@@ -171,7 +173,7 @@
       }
     }
     const reveals = slide.querySelectorAll('[data-reveal-step]');
-    if (reveals.length > 0) {
+    if (reveals.length > 0 || slide.classList.contains('shop-teaser')) {
       const revealContentVisible = build || hasBuild(slide) === false;
       const finalStep = lastRevealStep(slide);
       const revealStep = revealContentVisible && lastStep ? finalStep : 0;
@@ -435,8 +437,170 @@
     slideBlend = undefined;
   }
 
+  async function transitionPipelineRight() {
+    const outgoing = slides[current];
+    const sourceThread = outgoing.querySelector('.pipeline-thread');
+    const sourceBounds = sourceThread.getBoundingClientRect();
+    const sourceNodes = outgoing.querySelectorAll('.pipeline-node');
+    const nodeStyles = [];
+    for (const node of sourceNodes) {
+      const style = window.getComputedStyle(node);
+      nodeStyles.push({ node, borderColor: style.borderColor, backgroundColor: style.backgroundColor });
+    }
+    show(current + 1);
+    const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (motionPreference.matches) return;
+    const incoming = slides[current];
+    const targetThread = incoming.querySelector('.pipeline-thread');
+    const targetBounds = targetThread.getBoundingClientRect();
+    const deckBounds = deck.getBoundingClientRect();
+    const scale = deckBounds.width / 1920;
+    const dx = (targetBounds.left - sourceBounds.left) / scale;
+    const duration = 850;
+    const easing = 'cubic-bezier(.22,.75,.2,1)';
+    outgoing.classList.add('pipeline-moving');
+    outgoing.hidden = false;
+    incoming.classList.add('header-bridging');
+    const incomingDiagram = incoming.querySelectorAll('.pipeline-thread, .pipeline-runtime, .pipeline-fabric-group');
+    for (const element of incomingDiagram) element.style.visibility = 'hidden';
+    const movingElements = outgoing.querySelectorAll('.pipeline-thread, .pipeline-runtime, .pipeline-fabric-group');
+    const animations = [];
+    for (const element of movingElements) {
+      const movement = element.animate([
+        { transform: 'none' },
+        { transform: `translateX(${dx}px)` }
+      ], { duration, easing, fill: 'forwards' });
+      animations.push(movement);
+    }
+    const targetNodes = incoming.querySelectorAll('.pipeline-node');
+    for (let index = 0; index < nodeStyles.length; index++) {
+      const source = nodeStyles[index];
+      const targetStyle = window.getComputedStyle(targetNodes[index]);
+      const colorChange = source.node.animate([
+        { borderColor: source.borderColor, backgroundColor: source.backgroundColor },
+        { borderColor: targetStyle.borderColor, backgroundColor: targetStyle.backgroundColor }
+      ], { duration, easing, fill: 'forwards' });
+      animations.push(colorChange);
+    }
+    const sourceCode = outgoing.querySelector('.pipeline-sync-capability');
+    const departingCode = sourceCode.animate([
+      { transform: 'none', opacity: 1 },
+      { opacity: 1, offset: 0.45 },
+      { opacity: 0, offset: 0.8 },
+      { transform: `translateX(${dx}px)`, opacity: 0 }
+    ], { duration, easing, fill: 'forwards' });
+    animations.push(departingCode);
+    const sourceTitle = outgoing.querySelector('.slide-title');
+    const titleFade = sourceTitle.animate([{ opacity: 1 }, { opacity: 0 }], {
+      duration: 250, fill: 'forwards'
+    });
+    animations.push(titleFade);
+    const arrivingElements = incoming.querySelectorAll('.slide-title, .pipeline-phone');
+    for (const element of arrivingElements) {
+      const reveal = element.animate([
+        { opacity: 0 }, { opacity: 1 }
+      ], { duration: 400, delay: 350, easing: 'ease-out', fill: 'both' });
+      animations.push(reveal);
+    }
+    const targetCall = incoming.querySelector('.pipeline-call');
+    const arrivingCall = targetCall.animate([
+      { transform: `translateX(${-dx}px)`, opacity: 0 },
+      { opacity: 0, offset: 0.65 },
+      { transform: 'none', opacity: 1 }
+    ], { duration, easing, fill: 'both' });
+    animations.push(arrivingCall);
+    const cleanup = () => {
+      for (const animation of animations) animation.cancel();
+      outgoing.hidden = true;
+      outgoing.classList.remove('pipeline-moving');
+      incoming.classList.remove('header-bridging');
+      for (const element of incomingDiagram) element.style.visibility = '';
+    };
+    const transition = { cleanup };
+    slideBlend = transition;
+    const movement = animations[0];
+    try {
+      await movement.finished;
+    } catch (error) {
+      if (error.name === 'AbortError') return;
+      throw error;
+    }
+    if (slideBlend !== transition) return;
+    cleanup();
+    slideBlend = undefined;
+  }
+
+  function selectTeaserRun(slide, step) {
+    const run = step > 0 ? 'rnl' : 'flashlist';
+    const label = run === 'rnl' ? 'RNL' : 'FlashList';
+    const video = slide.querySelector('video');
+    const caption = slide.querySelector('.teaser-label');
+    slide.dataset.teaserRun = run;
+    caption.textContent = label;
+    video.setAttribute('aria-label', `${label} iPhone Discord Shop scrolling teaser`);
+    if (video.dataset.run !== run) {
+      video.pause();
+      video.src = `assets/benchmarks/teaser-${run}.mp4?v=iphone`;
+      video.poster = `assets/benchmarks/teaser-${run}-poster.jpg?v=iphone`;
+      video.dataset.run = run;
+      video.load();
+    }
+    video.currentTime = 0;
+    slide.dataset.videoStarted = 'true';
+    playVideo(video);
+  }
+
+  async function transitionTeaser(step) {
+    const slide = slides[current];
+    const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (motionPreference.matches) {
+      setRevealStep(step);
+      writeHash();
+      return;
+    }
+    const demo = slide.querySelector('.teaser-demo');
+    const video = slide.querySelector('video');
+    video.pause();
+    const direction = step > 0 ? 1 : -1;
+    const animations = [];
+    const cleanup = () => {
+      for (const animation of animations) animation.cancel();
+    };
+    const transition = { cleanup };
+    slideBlend = transition;
+    const departure = demo.animate([
+      { transform: 'none', opacity: 1 },
+      { transform: `translateX(${-1600 * direction}px)`, opacity: 0 }
+    ], { duration: 320, easing: 'ease-in', fill: 'forwards' });
+    animations.push(departure);
+    try {
+      await departure.finished;
+      if (slideBlend !== transition) return;
+      setRevealStep(step);
+      writeHash();
+      const arrival = demo.animate([
+        { transform: `translateX(${1600 * direction}px)`, opacity: 0 },
+        { transform: 'none', opacity: 1 }
+      ], { duration: 420, easing: 'cubic-bezier(.22,.75,.2,1)', fill: 'both' });
+      animations.push(arrival);
+      await arrival.finished;
+    } catch (error) {
+      if (error.name === 'AbortError') return;
+      throw error;
+    }
+    if (slideBlend !== transition) return;
+    cleanup();
+    slideBlend = undefined;
+  }
+
   function next() {
     const slide = slides[current];
+    if (slide.classList.contains('shop-teaser')) {
+      if (slideBlend) return;
+      if (slide.dataset.revealStep === '0') transitionTeaser(1);
+      else show(current + 1);
+      return;
+    }
     if (slide.classList.contains('native-api-recap')) {
       transitionNativeCreate(current + 1);
       return;
@@ -451,6 +615,10 @@
     }
     const pipelineSlide = slide.classList.contains('sync-pipeline');
     if (pipelineSlide && slide.dataset.revealStep === '3') {
+      if (slide.classList.contains('pipeline-overview')) {
+        transitionPipelineRight();
+        return;
+      }
       blendToNext();
       return;
     }
@@ -488,6 +656,12 @@
   }
 
   function previous() {
+    const slide = slides[current];
+    if (slide.classList.contains('shop-teaser') && slide.dataset.revealStep === '1') {
+      if (slideBlend) return;
+      transitionTeaser(0);
+      return;
+    }
     if (slides[current].classList.contains('native-api-focus')) {
       transitionNativeCreate(current - 1);
       return;

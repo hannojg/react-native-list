@@ -11,27 +11,26 @@
     "react-native-worklets": "catalog:"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "^5 || ^6"
   },
   "workspaces": [
-    "package/",
-    "example/"
+    "package",
+    "example"
   ],
   "patchedDependencies": {
-    "metro@0.83.7": "patches/metro@0.83.7.patch",
-    "metro-runtime@0.83.7": "patches/metro-runtime@0.83.7.patch",
-    "react-native@0.83.6": "patches/react-native@0.83.6.patch"
+    "metro@0.84.4": "patches/metro@0.84.4.patch",
+    "metro-runtime@0.84.4": "patches/metro-runtime@0.84.4.patch"
   },
   "scripts": {},
   "dependencies": {
-    "expo": "~55.0.19",
-    "react": "19.2.0",
-    "react-native": "0.83.6"
+    "expo": "~57.0.13",
+    "react": "19.2.3",
+    "react-native": "0.86.2"
   },
   "catalog": {
-    "react": "19.2.0",
-    "react-native": "0.83.6",
-    "react-native-worklets": "0.10.0",
+    "react": "19.2.3",
+    "react-native": "0.86.2",
+    "react-native-worklets": "0.10.1",
     "nitrogen": "^0.35.6",
     "react-native-nitro-modules": "^0.35.6"
   }

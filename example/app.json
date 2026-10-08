@@ -34,7 +34,8 @@
             "buildReactNativeFromSource": true
           },
           "ios": {
-            "buildReactNativeFromSource": true
+            "buildReactNativeFromSource": true,
+            "enableSceneSupport": true
           }
         }
       ]

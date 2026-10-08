@@ -16,9 +16,8 @@ function getReactNativeRendererProxy() {
 
 function getNodeFromInternalInstanceHandle(internalInstanceHandle) {
   if (isReactNativeRuntime()) {
-    return getReactNativeRendererProxy().getNodeFromInternalInstanceHandle(
-      internalInstanceHandle
-    )
+    const renderer = getReactNativeRendererProxy()
+    return renderer.getNodeFromInternalInstanceHandle(internalInstanceHandle)
   }
 
   const stateNode = internalInstanceHandle?.stateNode
@@ -30,7 +29,8 @@ function getNodeFromInternalInstanceHandle(internalInstanceHandle) {
 
 function getPublicInstanceFromInternalInstanceHandle(internalInstanceHandle) {
   if (isReactNativeRuntime()) {
-    return getReactNativeRendererProxy().getPublicInstanceFromInternalInstanceHandle(
+    const renderer = getReactNativeRendererProxy()
+    return renderer.getPublicInstanceFromInternalInstanceHandle(
       internalInstanceHandle
     )
   }
@@ -49,7 +49,8 @@ function getPublicInstanceFromInternalInstanceHandle(internalInstanceHandle) {
 
 function getPublicInstanceFromRootTag(rootTag) {
   if (isReactNativeRuntime()) {
-    return getReactNativeRendererProxy().getPublicInstanceFromRootTag(rootTag)
+    const renderer = getReactNativeRendererProxy()
+    return renderer.getPublicInstanceFromRootTag(rootTag)
   }
 
   if (global.rootInstance?.containerTag === Number(rootTag)) {
@@ -59,7 +60,43 @@ function getPublicInstanceFromRootTag(rootTag) {
   return null
 }
 
+function dispatchCommand(handle, command, args) {
+  if (isReactNativeRuntime()) {
+    const renderer = getReactNativeRendererProxy()
+    renderer.dispatchCommand(handle, command, args)
+    return
+  }
+
+  // Public refs resolve through the runtime-local fiber, including after cloning a native node.
+  const publicInstances = require('react-native/Libraries/ReactNative/ReactFabricPublicInstance/ReactFabricPublicInstance')
+  const node = publicInstances.getNodeFromPublicInstance(handle)
+  if (node == null) {
+    return
+  }
+
+  global.nativeFabricUIManager.dispatchCommand(node, command, args)
+}
+
+function findNodeHandle(handle) {
+  if (isReactNativeRuntime()) {
+    const renderer = getReactNativeRendererProxy()
+    return renderer.findNodeHandle(handle)
+  }
+
+  if (handle == null) {
+    return null
+  }
+  if (typeof handle === 'number') {
+    return handle
+  }
+
+  const publicInstances = require('react-native/Libraries/ReactNative/ReactFabricPublicInstance/ReactFabricPublicInstance')
+  return publicInstances.getNativeTagFromPublicInstance(handle)
+}
+
 module.exports = {
+  dispatchCommand,
+  findNodeHandle,
   getNodeFromInternalInstanceHandle,
   getPublicInstanceFromInternalInstanceHandle,
   getPublicInstanceFromRootTag,

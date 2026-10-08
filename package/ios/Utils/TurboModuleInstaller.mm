@@ -3,13 +3,11 @@
 #import "WorkletsUiCallInvoker.hpp"
 #import "ErrorUtils.h"
 #import "HybridUiManagerHelper.hpp"
+#import "TurboModuleManager.h"
 
-#import <React/RCTBridge+Private.h>
-#import <React/RCTBridge.h>
 #import <React/RCTBridgeModule.h>
 #import <React/RCTBridgeModuleDecorator.h>
 #import <React/RCTBridgeProxy.h>
-#import <React/RCTBridgeProxy+Cxx.h>
 #import <React/RCTScheduler.h>
 #import <React/RCTSurfacePresenter.h>
 #import <ReactCommon/CallInvoker.h>
@@ -36,20 +34,25 @@ static std::shared_ptr<facebook::react::CallInvoker> uiCallInvoker = nullptr;
 
 @interface HybridWorkletsModuleProxyHolderBox ()
 
-- (instancetype)initWithWorkletsModuleProxy:(std::shared_ptr<WorkletsModuleProxy>)workletsModuleProxy;
+- (instancetype)initWithWorkletsModuleProxy:(std::shared_ptr<WorkletsModuleProxy>)workletsModuleProxy
+                              moduleRegistry:(RCTModuleRegistry *)moduleRegistry;
 - (std::shared_ptr<WorkletsModuleProxy>)workletsModuleProxy;
+- (RCTModuleRegistry *)moduleRegistry;
 
 @end
 
 @implementation HybridWorkletsModuleProxyHolderBox {
   std::shared_ptr<WorkletsModuleProxy> _workletsModuleProxy;
+  RCTModuleRegistry *_moduleRegistry;
 }
 
 - (instancetype)initWithWorkletsModuleProxy:(std::shared_ptr<WorkletsModuleProxy>)workletsModuleProxy
+                              moduleRegistry:(RCTModuleRegistry *)moduleRegistry
 {
   self = [super init];
   if (self != nil) {
     _workletsModuleProxy = std::move(workletsModuleProxy);
+    _moduleRegistry = moduleRegistry;
   }
   return self;
 }
@@ -57,6 +60,11 @@ static std::shared_ptr<facebook::react::CallInvoker> uiCallInvoker = nullptr;
 - (std::shared_ptr<WorkletsModuleProxy>)workletsModuleProxy
 {
   return _workletsModuleProxy;
+}
+
+- (RCTModuleRegistry *)moduleRegistry
+{
+  return _moduleRegistry;
 }
 
 @end
@@ -67,31 +75,25 @@ static std::shared_ptr<facebook::react::CallInvoker> uiCallInvoker = nullptr;
     (NSError *__autoreleasing _Nullable * _Nullable)error
 {
   @try {
-    RCTBridge *bridge = [RCTBridge currentBridge];
-    if (bridge == nil) {
-      assignError(error, @"Could not access RCTBridge.currentBridge.");
-      return nil;
-    }
-
     if (!IsJavaScriptQueue()) {
       assignError(error, @"iosGetWorkletsModule() must run on the JavaScript queue.");
       return nil;
     }
 
-    // Prime the registry module while we're on the JS queue.
-    id registryModule = [bridge moduleForClass:SurfacePresenterRegistry.class];
-    if (registryModule == nil) {
-      assignError(error, @"Could not initialize HybridUiListSurfacePresenterRegistry.");
+    RCTModuleRegistry *moduleRegistry = [SurfacePresenterRegistry currentModuleRegistry];
+    if (moduleRegistry == nil) {
+      assignError(error, @"RCTModuleRegistry was not injected into HybridUiListSurfacePresenterRegistry.");
       return nil;
     }
+
     if ([SurfacePresenterRegistry currentSurfacePresenter] == nil) {
       assignError(error, @"SurfacePresenter was not injected into HybridUiListSurfacePresenterRegistry.");
       return nil;
     }
 
-    WorkletsModule *workletsModule = [bridge moduleForClass:WorkletsModule.class];
+    WorkletsModule *workletsModule = [moduleRegistry moduleForClass:WorkletsModule.class];
     if (workletsModule == nil) {
-      assignError(error, @"WorkletsModule is not available from the bridge.");
+      assignError(error, @"WorkletsModule is not available from RCTModuleRegistry.");
       return nil;
     }
 
@@ -101,7 +103,8 @@ static std::shared_ptr<facebook::react::CallInvoker> uiCallInvoker = nullptr;
       return nil;
     }
 
-    return [[HybridWorkletsModuleProxyHolderBox alloc] initWithWorkletsModuleProxy:std::move(workletsModuleProxy)];
+    return [[HybridWorkletsModuleProxyHolderBox alloc] initWithWorkletsModuleProxy:std::move(workletsModuleProxy)
+                                                                  moduleRegistry:moduleRegistry];
   } @catch (NSException *exception) {
     assignError(error, [NSString stringWithFormat:@"Failed to create WorkletsModuleProxy holder: %@", exception.reason]);
     return nil;
@@ -159,15 +162,9 @@ static std::shared_ptr<facebook::react::CallInvoker> uiCallInvoker = nullptr;
       return YES;
     }
 
-    RCTBridge *bridge = [RCTBridge currentBridge];
-    if (bridge == nil) {
-      assignError(error, @"Could not access RCTBridge.currentBridge.");
-      return NO;
-    }
-
-    RCTModuleRegistry *moduleRegistry = [bridge moduleRegistry];
+    RCTModuleRegistry *moduleRegistry = [holder moduleRegistry];
     if (moduleRegistry == nil) {
-      assignError(error, @"Could not access moduleRegistry from the bridge.");
+      assignError(error, @"IOSWorkletsModuleProxyHolder does not contain an RCTModuleRegistry.");
       return NO;
     }
 
@@ -185,9 +182,6 @@ static std::shared_ptr<facebook::react::CallInvoker> uiCallInvoker = nullptr;
     }
 
     RCTBridgeProxy *bridgeProxy = [rootTurboModuleManager valueForKey:@"_bridgeProxy"];
-    if (bridgeProxy == nil && [bridge isKindOfClass:[RCTBridgeProxy class]]) {
-      bridgeProxy = (RCTBridgeProxy *)bridge;
-    }
     if (bridgeProxy == nil) {
       assignError(error, @"Could not access RCTBridgeProxy.");
       return NO;
@@ -203,7 +197,8 @@ static std::shared_ptr<facebook::react::CallInvoker> uiCallInvoker = nullptr;
         return [NSThread isMainThread];
     });
 
-    RCTTurboModuleManager *uiTurboModuleManager = [[RCTTurboModuleManager alloc] initWithBridgeProxy:bridgeProxy
+    RCTTurboModuleManager *uiTurboModuleManager = [[TurboModuleManager alloc] initWithRootManager:rootTurboModuleManager
+                                                                       bridgeProxy:bridgeProxy
                                                            bridgeModuleDecorator:bridgeModuleDecorator
                                                                         delegate:delegate
                                                                        jsInvoker:uiCallInvoker];

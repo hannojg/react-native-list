@@ -7,6 +7,14 @@ import com.facebook.react.turbomodule.core.interfaces.TurboModule;
 
 public final class FixtureModule extends BaseJavaModule implements TurboModule {
   private double counter;
+  public int initializations;
+  public int invalidations;
+
+  @Override
+  public void initialize() { ++initializations; }
+
+  @Override
+  public void invalidate() { ++invalidations; }
 
   @Override
   public String getName() { return "ListTestNativeModule"; }

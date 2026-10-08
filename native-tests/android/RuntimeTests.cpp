@@ -3,10 +3,12 @@
 #include <folly/dynamic.h>
 #include <jsi/JSIDynamic.h>
 #include "../cpp/RuntimeFixture.h"
+#include "../../package/android/src/main/cpp/TurboModuleManagerDelegate.h"
 
 using namespace facebook;
 using namespace facebook::react;
 using namespace list::tests;
+using namespace margelo::nitro::reactnativelist;
 
 namespace {
 
@@ -47,8 +49,39 @@ class FixtureModule final : public JavaTurboModule {
   }
 };
 
-struct JFixtureModule : jni::JavaClass<JFixtureModule> {
+struct JFixtureModule : jni::JavaClass<JFixtureModule, JNativeModule> {
   static constexpr auto kJavaDescriptor = "Lcom/hannojg/list/runtimetests/FixtureModule;";
+};
+
+class FixtureTurboModuleManagerDelegate : public jni::HybridClass<
+    FixtureTurboModuleManagerDelegate, facebook::react::TurboModuleManagerDelegate> {
+ public:
+  static constexpr auto kJavaDescriptor = "Lcom/hannojg/list/runtimetests/FixtureTurboModuleManagerDelegate;";
+
+  static jni::local_ref<jhybriddata> initHybridForTests(jni::alias_ref<jclass>) {
+    return makeCxxInstance();
+  }
+
+  static void registerNatives() {
+    registerHybrid({makeNativeMethod("initHybridForTests", initHybridForTests)});
+  }
+
+  std::shared_ptr<TurboModule> getTurboModule(
+      const std::string &, const JavaTurboModule::InitParams &) override {
+    return nullptr;
+  }
+
+  std::shared_ptr<TurboModule> getTurboModule(
+      const std::string &name, const std::shared_ptr<CallInvoker> &invoker) override {
+    if (name == "HandwrittenCppModule") {
+      return std::make_shared<HandwrittenCppModule>(invoker);
+    }
+    return nullptr;
+  }
+
+ private:
+  friend HybridBase;
+  FixtureTurboModuleManagerDelegate() = default;
 };
 
 struct NativeRuntimeTests : jni::JavaClass<NativeRuntimeTests> {
@@ -56,8 +89,9 @@ struct NativeRuntimeTests : jni::JavaClass<NativeRuntimeTests> {
 
   static void runScenario(jni::alias_ref<jclass>, jint scenario, jni::alias_ref<JFixtureModule> root, jni::alias_ref<JFixtureModule> ui) {
     size_t wrappers = 0;
-    auto createModule = [&](const std::shared_ptr<CallInvoker> &invoker) {
-      auto instance = wrappers == 0 ? root : ui;
+    auto createModule = [&](const std::shared_ptr<CallInvoker> &invoker) -> std::shared_ptr<TurboModule> {
+      bool isUi = scenario == 6 ? wrappers == 0 : wrappers > 0;
+      auto instance = isUi ? ui : root;
       ++wrappers;
       JavaTurboModule::InitParams params{
         .moduleName = "ListTestNativeModule",
@@ -65,6 +99,14 @@ struct NativeRuntimeTests : jni::JavaClass<NativeRuntimeTests> {
         .jsInvoker = invoker,
         .nativeMethodCallInvoker = std::make_shared<InlineNativeInvoker>(),
       };
+      if (isUi) {
+        auto nativeModule = jni::static_ref_cast<JNativeModule::javaobject>(instance);
+        auto borrowed = JBorrowedModule::create(nativeModule);
+        auto metadataParams = params;
+        metadataParams.instance = borrowed;
+        auto metadata = std::make_shared<FixtureModule>(metadataParams);
+        return std::make_shared<RuntimeLocalJavaTurboModule>(params, *metadata);
+      }
       return std::make_shared<FixtureModule>(params);
     };
     switch (scenario) {
@@ -72,8 +114,24 @@ struct NativeRuntimeTests : jni::JavaClass<NativeRuntimeTests> {
       case 1: checkCallbackAndPromiseRouting(createModule); break;
       case 2: checkEventRouting(createModule); break;
       case 3: checkEventRouting(createModule); break;
+      case 5: checkRootEventsAfterUiTeardown(createModule); break;
+      case 6: checkUiWrapperBeforeRoot(createModule); break;
       default: throw std::runtime_error("Unknown runtime test scenario");
     }
+  }
+
+  static void runCppScenario(jni::alias_ref<jclass>,
+      jni::alias_ref<facebook::react::TurboModuleManagerDelegate::javaobject> root,
+      jni::alias_ref<facebook::react::TurboModuleManagerDelegate::javaobject> ui) {
+    auto rootDelegate = root->cthis();
+    auto uiDelegate = ui->cthis();
+    size_t wrappers = 0;
+    auto createModule = [&](const std::shared_ptr<CallInvoker> &invoker) {
+      auto delegate = wrappers == 0 ? rootDelegate : uiDelegate;
+      ++wrappers;
+      return delegate->getTurboModule("HandwrittenCppModule", invoker);
+    };
+    checkSharedState(createModule);
   }
 };
 
@@ -83,6 +141,9 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *) {
   return jni::initialize(vm, [] {
     NativeRuntimeTests::javaClassLocal()->registerNatives({
       makeNativeMethod("runScenario", NativeRuntimeTests::runScenario),
+      makeNativeMethod("runCppScenario", NativeRuntimeTests::runCppScenario),
     });
+    FixtureTurboModuleManagerDelegate::registerNatives();
+    margelo::nitro::reactnativelist::TurboModuleManagerDelegate::registerNatives();
   });
 }

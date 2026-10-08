@@ -15,5 +15,6 @@ target_include_directories(ListRuntimeTests PRIVATE
   "${REACT_NATIVE_DIR}/ReactCommon/react/nativemodule/core"
   "${REACT_NATIVE_DIR}/ReactCommon/react/nativemodule/core/platform/android"
   "${REACT_NATIVE_DIR}/ReactAndroid/src/main/jni"
+  "${REACT_NATIVE_DIR}/ReactAndroid/src/main/jni/react/turbomodule"
 )
 target_link_libraries(ListRuntimeTests ReactAndroid::reactnative ReactAndroid::jsi hermes-engine::hermesvm fbjni::fbjni)

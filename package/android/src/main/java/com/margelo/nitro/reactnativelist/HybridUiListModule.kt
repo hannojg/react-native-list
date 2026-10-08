@@ -3,7 +3,6 @@ package com.margelo.nitro.reactnativelist
 import androidx.annotation.Keep
 import com.facebook.proguard.annotations.DoNotStrip
 import com.facebook.react.ReactApplication
-import com.facebook.react.ReactPackage
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.RuntimeExecutor
 import com.facebook.react.bridge.UiThreadUtil
@@ -11,8 +10,7 @@ import com.facebook.react.common.annotations.FrameworkAPI
 import com.facebook.react.common.annotations.UnstableReactNativeAPI
 import com.facebook.react.fabric.FabricUIManager
 import com.facebook.react.internal.turbomodule.core.TurboModuleManager
-import com.facebook.react.modules.core.DefaultHardwareBackBtnHandler
-import com.facebook.react.runtime.ReactHostDelegate
+import com.facebook.react.internal.turbomodule.core.TurboModuleManagerDelegate as ReactTurboModuleManagerDelegate
 import com.facebook.react.runtime.ReactHostImpl
 import com.facebook.react.turbomodule.core.CallInvokerHolderImpl
 import com.facebook.react.turbomodule.core.interfaces.NativeMethodCallInvokerHolder
@@ -20,7 +18,6 @@ import com.facebook.react.uimanager.UIManagerHelper
 import com.facebook.react.uimanager.common.UIManagerType
 import com.margelo.nitro.NitroModules
 import com.swmansion.worklets.WorkletsModule
-import java.util.ArrayList
 import kotlin.concurrent.Volatile
 
 @DoNotStrip
@@ -56,11 +53,6 @@ class HybridUiListModule : HybridUiListModuleSpec() {
             val reactHostImpl = reactHost as? ReactHostImpl
                 ?: throw IllegalStateException("ReactHost is not a ReactHostImpl! Is the New Architecture enabled?")
 
-            val reactHostDelegateField = reactHostImpl.javaClass.getDeclaredField("reactHostDelegate")
-            reactHostDelegateField.isAccessible = true
-            val reactHostDelegate = reactHostDelegateField.get(reactHostImpl) as? ReactHostDelegate
-                ?: throw IllegalStateException("ReactHostDelegate is null! Is the New Architecture enabled?")
-
             // Get nativeMethodCallInvokerHolder from reactInstance, which lives on reactHostImpl
             val reactInstanceField = reactHostImpl.javaClass.getDeclaredField("reactInstance")
             reactInstanceField.isAccessible = true
@@ -71,20 +63,15 @@ class HybridUiListModule : HybridUiListModuleSpec() {
             val nativeMethodCallInvokerHolder = getNativeMethodCallInvokerHolderMethod.invoke(reactInstance) as? NativeMethodCallInvokerHolder
                 ?: throw IllegalStateException("NativeMethodCallInvokerHolder is null! Is the New Architecture enabled?")
 
-            val reactPackages: MutableList<ReactPackage> = ArrayList<ReactPackage>()
-            val coreReactPackageClass = Class.forName("com.facebook.react.runtime.CoreReactPackage")
-            val constructor = coreReactPackageClass.declaredConstructors.first()
-            constructor.isAccessible = true
-            // TODO: this will create dev support modules on the UI runtime which is unnecessary overhead we don't need!
-            //       In a past version i simply put in the most important core modules from JS, which was somewhat nicer.
-            val coreReactPackage = constructor.newInstance(reactHost.devSupportManager, DefaultHardwareBackBtnHandler {}) as ReactPackage
-            reactPackages.add(coreReactPackage)
-            reactPackages.addAll(reactHostDelegate.reactPackages)
-
-            val turboModuleManagerDelegate = reactHostDelegate.turboModuleManagerDelegateBuilder
-                .setPackages(reactPackages)
-                .setReactApplicationContext(context)
-                .build()
+            val rootManagerField = reactInstance.javaClass.getDeclaredField("turboModuleManager")
+            rootManagerField.isAccessible = true
+            val rootManager = rootManagerField.get(reactInstance) as? TurboModuleManager
+                ?: throw IllegalStateException("Root TurboModuleManager is null!")
+            val rootDelegateField = rootManager.javaClass.getDeclaredField("delegate")
+            rootDelegateField.isAccessible = true
+            val rootDelegate = rootDelegateField.get(rootManager) as? ReactTurboModuleManagerDelegate
+                ?: throw IllegalStateException("Root TurboModuleManagerDelegate is null!")
+            val turboModuleManagerDelegate = TurboModuleManagerDelegate(rootManager, rootDelegate)
 
             val uiCallInvokerHolder = getUiCallInvokerHolder(workletsModule)
             val uiRuntimeExecutor = getUiRuntimeExecutor(workletsModule)

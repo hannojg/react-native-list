@@ -28,6 +28,12 @@ android {
   }
 
   buildFeatures { prefab true }
+  sourceSets {
+    main.java {
+      srcDirs = ['../../package/android/src/main/java']
+      include '**/BorrowedModule.java', '**/TurboModuleManagerDelegate.java'
+    }
+  }
   packaging {
     jniLibs {
       pickFirsts += ['**/libc++_shared.so', '**/libfbjni.so', '**/libreactnative.so', '**/libjsi.so', '**/libhermesvm.so']

@@ -42,6 +42,27 @@ Everything lives outside the published package and its build configuration.
 The runtimes and headers come from the installed RN version (currently 0.86.2),
 with RN's default Hermes V1. This is not a cross-version compatibility suite.
 
+## Renderer routing
+
+Run the lightweight Metro/proxy regression tests without building an app:
+
+```sh
+node --test native-tests/metro/RendererRouting.test.cjs
+```
+
+These check routing for native commands, public refs, text input state, and DOM internals; command
+dispatch through the current UI-runtime Fabric node; native tag lookup; unmounted refs; and lazy
+delegation to RN's renderer in the main runtime. They use Node's built-in test
+runner and mocked native bindings, not a React Native runtime. App launches are
+still required to verify the real component import and native mounting paths.
+
+Metro routes RN's native command and public-ref imports through a
+runtime-switching proxy. Otherwise component imports initialize RN's main
+renderer in the UI runtime and reach the absent `RN$registerCallableModule`.
+There is no no-op registration stub. The alternative is upstream support for
+selecting a renderer per runtime; the current resolver depends on RN's private
+file layout.
+
 ## iOS
 
 After `bun install`, with CocoaPods and its `xcodeproj` Ruby gem available:

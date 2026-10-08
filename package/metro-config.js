@@ -72,13 +72,40 @@ function createTurboModuleRegistryResolution() {
 }
 //#endregion
 
-function isReactNativeDomInternalsImporter(originModulePath) {
+function isReactNativeRendererConsumer(originModulePath) {
   if (typeof originModulePath !== 'string') {
     return false
   }
 
-  return originModulePath.includes(
+  const isDomInternals = originModulePath.includes(
     `${path.sep}node_modules${path.sep}react-native${path.sep}src${path.sep}private${path.sep}webapis${path.sep}dom${path.sep}nodes${path.sep}internals${path.sep}`
+  )
+  const nativeCommandsPath = path.join(
+    'react-native',
+    'Libraries',
+    'Utilities',
+    'codegenNativeCommands.js'
+  )
+  const isNativeCommands = originModulePath.endsWith(nativeCommandsPath)
+  const publicInstancePath = path.join(
+    'react-native',
+    'Libraries',
+    'ReactNative',
+    'ReactFabricPublicInstance',
+    'ReactFabricPublicInstance.js'
+  )
+  const isPublicInstance = originModulePath.endsWith(publicInstancePath)
+  const textInputStatePath = path.join(
+    'react-native',
+    'Libraries',
+    'Components',
+    'TextInput',
+    'TextInputState.js'
+  )
+  const isTextInputState = originModulePath.endsWith(textInputStatePath)
+
+  return (
+    isDomInternals || isNativeCommands || isPublicInstance || isTextInputState
   )
 }
 
@@ -91,10 +118,10 @@ function getReactNativeListMetroConfig(config) {
       return createTurboModuleRegistryResolution()
     }
 
-    // Redirect only React Native DOM internals to a runtime-switching proxy.
+    // Components and refs must not initialize RN's main renderer inside a worklet runtime.
     if (
       isRendererProxyImport(moduleName) &&
-      isReactNativeDomInternalsImporter(context.originModulePath)
+      isReactNativeRendererConsumer(context.originModulePath)
     ) {
       return {
         type: 'sourceFile',

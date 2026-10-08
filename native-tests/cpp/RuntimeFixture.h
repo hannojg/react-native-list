@@ -86,6 +86,8 @@ class RuntimeFixture final {
     return runtime_->evaluateJavaScript(std::move(buffer), "native-runtime-test.js");
   }
 
+  jsi::Runtime &runtime() { return *runtime_; }
+
   void expectNumber(const std::string &expression, double expected) {
     auto value = evaluate(expression);
     if (!value.isNumber() || value.getNumber() != expected) {
@@ -153,5 +155,54 @@ void checkEventRouting(Factory createModule) {
   ui.invoker->drain();
   ui.expectNumber("events", 0);
 }
+
+template <typename Factory>
+void checkRootEventsAfterUiTeardown(Factory createModule) {
+  RuntimeFixture root;
+  root.install(createModule(root.invoker));
+  root.evaluate("globalThis.events = 0; native.onChanged(() => { events++; });");
+  {
+    RuntimeFixture ui;
+    ui.install(createModule(ui.invoker));
+    ui.evaluate("native.onChanged(() => {});");
+  }
+  root.evaluate("native.emit();");
+  root.invoker->drain();
+  root.expectNumber("events", 1);
+}
+
+template <typename Factory>
+void checkUiWrapperBeforeRoot(Factory createModule) {
+  RuntimeFixture root;
+  RuntimeFixture ui;
+  ui.install(createModule(ui.invoker));
+  ui.evaluate("globalThis.events = 0; native.onChanged(() => { events++; });");
+  root.install(createModule(root.invoker));
+  root.evaluate("globalThis.events = 0; native.onChanged(() => { events++; });");
+  ui.evaluate("native.emit();");
+  root.invoker->drain();
+  root.expectNumber("events", 1);
+  ui.invoker->drain();
+  ui.expectNumber("events", 0);
+}
+
+class HandwrittenCppModule final : public react::TurboModule {
+ public:
+  explicit HandwrittenCppModule(const std::shared_ptr<react::CallInvoker> &invoker)
+      : TurboModule("HandwrittenCppModule", invoker) {}
+
+ private:
+  double counter_ = 0;
+
+  jsi::Value create(jsi::Runtime &runtime, const jsi::PropNameID &name) override {
+    if (name.utf8(runtime) == "increment") {
+      return jsi::Function::createFromHostFunction(runtime, name, 0,
+          [this](jsi::Runtime &, const jsi::Value &, const jsi::Value *, size_t) {
+            return jsi::Value(++counter_);
+          });
+    }
+    return jsi::Value::undefined();
+  }
+};
 
 } // namespace list::tests

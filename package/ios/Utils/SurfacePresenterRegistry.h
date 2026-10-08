@@ -5,11 +5,12 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /**
- * A module whos purpose it is to receive the surface presenter.
- * (RN injects this during module instantiation).
+ * Receives the per-instance React dependencies used by the UI-runtime installer.
+ * React Native injects these dependencies during module instantiation.
  */
 @interface SurfacePresenterRegistry : NSObject <RCTBridgeModule>
 
++ (nullable RCTModuleRegistry *)currentModuleRegistry;
 + (nullable id)currentSurfacePresenter;
 
 @end

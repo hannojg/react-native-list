@@ -9,8 +9,6 @@
 #import "SurfacePresenterRegistry.h"
 #import "ErrorUtils.h"
 
-#import <React/RCTBridge+Private.h>
-#import <React/RCTBridge.h>
 #import <React/RCTFabricSurface.h>
 #import <React/RCTSurfacePresenterStub.h>
 #import <React/RCTSurfacePresenter.h>
@@ -34,7 +32,7 @@ namespace {
       return surfaces;
     }
 
-    inline RCTSurfacePresenter* _Nullable resolveSurfacePresenter(RCTBridge *bridge)
+    inline RCTSurfacePresenter* _Nullable resolveSurfacePresenter()
     {
       id<RCTSurfacePresenterStub> surfacePresenter =
           (id<RCTSurfacePresenterStub>)[SurfacePresenterRegistry currentSurfacePresenter];
@@ -42,7 +40,7 @@ namespace {
         return surfacePresenter;
       }
 
-      return [bridge surfacePresenter];
+      return nil;
     }
 } // namespace
 
@@ -56,13 +54,7 @@ namespace {
       return nil;
     }
 
-    RCTBridge *bridge = [RCTBridge currentBridge];
-    if (bridge == nil) {
-      assignError(error, @"Could not access RCTBridge.currentBridge.");
-      return nil;
-    }
-
-    RCTSurfacePresenter *surfacePresenter = resolveSurfacePresenter(bridge);
+    RCTSurfacePresenter *surfacePresenter = resolveSurfacePresenter();
     if (surfacePresenter == nil) {
       assignError(error, @"Could not access an active RCTSurfacePresenter.");
       return nil;
@@ -118,13 +110,7 @@ namespace {
       return nil;
     }
 
-    RCTBridge *bridge = [RCTBridge currentBridge];
-    if (bridge == nil) {
-      assignError(error, @"Could not access RCTBridge.currentBridge.");
-      return nil;
-    }
-
-    RCTSurfacePresenter *surfacePresenter = resolveSurfacePresenter(bridge);
+    RCTSurfacePresenter *surfacePresenter = resolveSurfacePresenter();
     if (surfacePresenter == nil) {
       assignError(error, @"Could not access an active RCTSurfacePresenter.");
       return nil;

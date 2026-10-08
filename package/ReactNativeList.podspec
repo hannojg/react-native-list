@@ -25,6 +25,10 @@ Pod::Spec.new do |s|
     "ios/**/*.h",
     "cpp/**/*.hpp",
   ]
+  s.private_header_files = [
+    "ios/Utils/BorrowedModule.h",
+    "ios/Utils/TurboModuleManager.h",
+  ]
   s.pod_target_xcconfig = {
     "HEADER_SEARCH_PATHS" => [
       '"$(PODS_TARGET_SRCROOT)/ReactCommon"',

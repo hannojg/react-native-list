@@ -1,0 +1,18 @@
+apply plugin: 'com.android.library'
+apply plugin: 'expo-module-gradle-plugin'
+
+group = 'com.hannojg.listbenchmark'
+version = '1.0.0'
+
+android {
+  namespace 'com.hannojg.listbenchmark'
+  defaultConfig {
+    minSdkVersion 31
+    versionCode 1
+    versionName '1.0.0'
+  }
+}
+
+dependencies {
+  implementation 'androidx.recyclerview:recyclerview:1.4.0'
+}

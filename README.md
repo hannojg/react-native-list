@@ -213,6 +213,9 @@ renderItemWorklet: ({ item }) => {
 
 ## Development
 
+For local main-versus-branch performance tests on connected iPhone and Android
+devices, see [the performance harness](perf/README.md).
+
 First clone init the submodules:
 
 ```sh

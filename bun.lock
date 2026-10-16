@@ -75,8 +75,10 @@
     },
   },
   "patchedDependencies": {
-    "metro@0.84.4": "patches/metro@0.84.4.patch",
+    "metro-runtime@0.84.5": "patches/metro-runtime@0.84.5.patch",
     "metro-runtime@0.84.4": "patches/metro-runtime@0.84.4.patch",
+    "metro@0.84.5": "patches/metro@0.84.5.patch",
+    "metro@0.84.4": "patches/metro@0.84.4.patch",
   },
   "catalog": {
     "nitrogen": "^0.35.6",

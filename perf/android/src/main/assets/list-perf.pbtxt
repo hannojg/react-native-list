@@ -1,0 +1,48 @@
+buffers { size_kb: 65536 fill_policy: RING_BUFFER }
+buffers { size_kb: 4096 fill_policy: RING_BUFFER }
+data_sources {
+  config {
+    name: "linux.ftrace"
+    target_buffer: 0
+    ftrace_config {
+      buffer_size_kb: 8192
+      drain_period_ms: 100
+      compact_sched { enabled: true }
+      ftrace_events: "sched/sched_switch"
+      ftrace_events: "sched/sched_waking"
+      ftrace_events: "sched/sched_process_exit"
+      ftrace_events: "sched/sched_process_free"
+      ftrace_events: "task/task_newtask"
+      ftrace_events: "task/task_rename"
+      ftrace_events: "kmem/rss_stat"
+      atrace_categories: "gfx"
+      atrace_categories: "view"
+      atrace_categories: "wm"
+      atrace_categories: "am"
+      atrace_apps: "com.hannojg.list.perf"
+      atrace_apps: "com.hannojg.list.perf.tests"
+    }
+  }
+}
+data_sources { config { name: "android.surfaceflinger.frametimeline" target_buffer: 0 } }
+data_sources {
+  config {
+    name: "linux.process_stats"
+    target_buffer: 1
+    process_stats_config {
+      scan_all_processes_on_start: true
+      proc_stats_poll_ms: 250
+    }
+  }
+}
+data_sources { config { name: "android.packages_list" target_buffer: 1 } }
+data_sources {
+  config {
+    name: "track_event"
+    target_buffer: 0
+    track_event_config { disabled_categories: "*" enabled_categories: "rendering" }
+  }
+}
+write_into_file: true
+file_write_period_ms: 1000
+flush_period_ms: 2000

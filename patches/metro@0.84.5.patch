@@ -1,0 +1,55 @@
+diff --git a/src/node-haste/DependencyGraph.js b/src/node-haste/DependencyGraph.js
+index 8222d8c69059bfb3fe444acba9f96ab2cc7bec0b..e082c8f4cc6542a037ecee805b7e0af2bc881fd8 100644
+--- a/src/node-haste/DependencyGraph.js
++++ b/src/node-haste/DependencyGraph.js
+@@ -115,6 +115,22 @@ class DependencyGraph extends _events.default {
+           type: result.type,
+         };
+       }
++      if (path.includes("react-native-worklets/.worklets/")) {
++        // Temporary workaround for bundle-mode preview:
++        // worklet chunk files are generated during Babel transforms, after
++        // Metro has already built its initial file-map snapshot. Fall back to
++        // the real filesystem so a cold release bundle can resolve a just-
++        // generated `.worklets` module without requiring a second build.
++        const fs = require("fs");
++        if (fs.existsSync(path)) {
++          const stat = fs.statSync(path);
++          return {
++            exists: true,
++            realPath: fs.realpathSync(path),
++            type: stat.isDirectory() ? "d" : "f",
++          };
++        }
++      }
+       return {
+         exists: false,
+       };
+@@ -197,6 +213,14 @@ class DependencyGraph extends _events.default {
+     return (0, _nullthrows.default)(this._fileSystem).getAllFiles();
+   }
+   async getOrComputeSha1(mixedPath) {
++    if (mixedPath.includes("react-native-worklets/.worklets/")) {
++      const createHash = require("crypto").createHash;
++      return {
++        sha1: createHash("sha1")
++          .update(performance.now().toString())
++          .digest("hex"),
++      };
++    }
+     const result = await this._fileSystem.getOrComputeSha1(mixedPath);
+     if (!result || !result.sha1) {
+       throw new Error(`Failed to get the SHA-1 for: ${mixedPath}.
+@@ -288,6 +312,12 @@ class DependencyGraph extends _events.default {
+     return resolution;
+   }
+   doesFileExist = (filePath) => {
++    if (filePath.includes("react-native-worklets/.worklets/")) {
++      // Keep this in sync with `fileSystemLookup` above so resolution paths
++      // that still use `doesFileExist` can see generated bundle-mode worklets
++      // before Metro's file map has observed them.
++      return require("fs").existsSync(filePath);
++    }
+     return this._fileSystem.exists(filePath);
+   };
+   getHasteName(filePath) {

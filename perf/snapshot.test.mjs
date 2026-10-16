@@ -1,0 +1,65 @@
+import assert from 'node:assert/strict';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import test from 'node:test';
+import { command } from './process.mjs';
+import { snapshot } from './snapshot.mjs';
+
+test('snapshots preserve dirty files, additions and deletions without changing the checkout', async () => {
+  const temporary = tmpdir();
+  const prefix = path.join(temporary, 'list-perf-snapshot-test-');
+  const directory = await mkdtemp(prefix);
+  const root = path.join(directory, 'repo');
+  await mkdir(root);
+  const options = { cwd: root, capture: true };
+  const source = path.join(root, 'source.txt');
+  const deleted = path.join(root, 'deleted.txt');
+  const added = path.join(root, 'added file.txt');
+  const ignored = path.join(root, 'node_modules');
+  const ignoredFile = path.join(ignored, 'ignored.txt');
+  const gitignore = path.join(root, '.gitignore');
+  try {
+    await command('git', ['init', '--quiet'], options);
+    await command('git', ['config', 'user.name', 'Test'], options);
+    await command('git', ['config', 'user.email', 'test@example.com'], options);
+    await writeFile(source, 'main');
+    await writeFile(deleted, 'delete me');
+    await writeFile(gitignore, 'node_modules\n');
+    await command('git', ['add', '.'], options);
+    await command('git', ['commit', '--quiet', '-m', 'initial'], options);
+    const initial = await command('git', ['rev-parse', 'HEAD'], options);
+    await writeFile(source, 'current');
+    await writeFile(added, 'untracked');
+    await rm(deleted);
+    await mkdir(ignored);
+    await writeFile(ignoredFile, 'ignored');
+    const before = await command('git', ['status', '--porcelain'], options);
+    const current = path.join(directory, 'current');
+    const main = path.join(directory, 'main');
+    const currentSource = await snapshot(root, current, 'HEAD', { current: true });
+    const mainSource = await snapshot(root, main, initial);
+    const currentFile = path.join(current, 'source.txt');
+    const mainFile = path.join(main, 'source.txt');
+    const currentText = await readFile(currentFile, 'utf8');
+    const mainText = await readFile(mainFile, 'utf8');
+    assert.equal(currentText, 'current');
+    assert.equal(mainText, 'main');
+    const addedSnapshot = path.join(current, 'added file.txt');
+    const addition = await readFile(addedSnapshot, 'utf8');
+    assert.equal(addition, 'untracked');
+    const deletedSnapshot = path.join(current, 'deleted.txt');
+    const ignoredSnapshot = path.join(current, 'node_modules/ignored.txt');
+    const readDeleted = readFile(deletedSnapshot);
+    await assert.rejects(readDeleted);
+    const readIgnored = readFile(ignoredSnapshot);
+    await assert.rejects(readIgnored);
+    assert.notEqual(currentSource.sourceHash, mainSource.sourceHash);
+    assert.equal(currentSource.dirty, true);
+    assert.equal(mainSource.dirty, false);
+    const after = await command('git', ['status', '--porcelain'], options);
+    assert.equal(after, before);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});

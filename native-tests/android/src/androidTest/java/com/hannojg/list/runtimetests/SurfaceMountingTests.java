@@ -2,9 +2,11 @@ package com.hannojg.list.runtimetests;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
+import com.facebook.react.bridge.RetryableMountingLayerException;
 import com.facebook.react.fabric.mounting.MountItemDispatcher;
 import com.facebook.react.fabric.mounting.MountingManager;
 import com.facebook.react.fabric.mounting.mountitems.MountItem;
+import com.facebook.react.fabric.mounting.mountitems.DispatchCommandMountItem;
 import com.facebook.react.soloader.OpenSourceMergedSoMapping;
 import com.facebook.react.uimanager.ViewManager;
 import com.facebook.react.uimanager.ViewManagerRegistry;
@@ -168,6 +170,63 @@ public final class SurfaceMountingTests {
       fixture.dispatcher.tryDispatchMountItems();
       fixture.dispatcher.tryDispatchMountItems();
       fixture.assertEvents("allocate", "create");
+    });
+  }
+
+  @Test public void viewCommandsStayOnRnDispatchAndRetryPath() {
+    onMain(() -> {
+      Fixture fixture = new Fixture();
+      DispatchCommandMountItem command = new DispatchCommandMountItem() {
+        @Override public int getSurfaceId() { return 21; }
+        @Override public void execute(MountingManager manager) {
+          if (getRetries() == 0) {
+            fixture.events.add("command-attempt");
+            throw new RetryableMountingLayerException("fixture command needs its view");
+          }
+          fixture.events.add("command-retry");
+        }
+      };
+      fixture.dispatcher.addMountItem(command);
+      fixture.add(21, "holder");
+      fixture.ledger.flush(21, fixture.manager);
+      fixture.assertEvents("holder");
+      fixture.dispatcher.tryDispatchMountItems();
+      fixture.assertEvents("holder", "command-attempt");
+      fixture.dispatcher.tryDispatchMountItems();
+      fixture.assertEvents("holder", "command-attempt", "command-retry");
+      int retries = command.getRetries();
+      assertEquals(1, retries);
+    });
+  }
+
+  @Test public void distinctHolderCanMountInsideAnotherHolder() {
+    onMain(() -> {
+      Fixture fixture = new Fixture();
+      fixture.addAction(21, () -> {
+        fixture.events.add("holder-start");
+        fixture.add(31, "nested-holder");
+        fixture.ledger.flush(31, fixture.manager);
+        fixture.assertDispatcherStillMounting();
+        fixture.assertEvents("holder-start", "nested-holder");
+        fixture.events.add("holder-end");
+      });
+      fixture.dispatcher.tryDispatchMountItems();
+      fixture.dispatcher.tryDispatchMountItems();
+      fixture.assertEvents("holder-start", "nested-holder", "holder-end");
+    });
+  }
+
+  @Test public void flushIncludesWorkEnqueuedWhileItsSurfaceIsMounting() {
+    onMain(() -> {
+      Fixture fixture = new Fixture();
+      fixture.addAction(21, () -> {
+        fixture.events.add("first");
+        fixture.add(21, "follow-up");
+      });
+      fixture.ledger.flush(21, fixture.manager);
+      fixture.assertEvents("first", "follow-up");
+      fixture.dispatcher.tryDispatchMountItems();
+      fixture.assertEvents("first", "follow-up");
     });
   }
 

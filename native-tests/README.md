@@ -1,10 +1,11 @@
 # Native runtime tests
 
-This is a standalone XCTest / Android instrumented JUnit experiment. Each test
-creates two Hermes runtimes and real React Native `ObjCTurboModule` or
-`JavaTurboModule` wrappers around tiny native fixtures. It does not launch Expo,
-Metro, a React root, or the example app. Android still needs a device/emulator for
-JNI; iOS uses a hostless XCTest bundle on a simulator.
+This is a standalone XCTest / Android instrumented JUnit harness. TurboModule
+tests create two Hermes runtimes and real React Native `ObjCTurboModule` or
+`JavaTurboModule` wrappers around tiny native fixtures. Surface-mounting tests
+use RN's native mounting machinery without creating a JS runtime. Neither suite
+launches Expo, Metro, a React root, or the example app. Android still needs a
+device/emulator for JNI; iOS uses a hostless XCTest bundle on a simulator.
 
 The shared C++ fixture explicitly drains each runtime's callback queue and Hermes
 microtasks. Tests have no sleeps or timing-dependent expectations. This borrows
@@ -63,6 +64,13 @@ Run the lightweight Metro/proxy regression tests without building an app:
 node --test native-tests/metro/RendererRouting.test.cjs
 ```
 
+These check routing for native commands, public refs, text input state, and DOM
+internals; command dispatch through the current UI-runtime Fabric node; native tag
+lookup; unmounted refs; and lazy delegation to RN's renderer in the main runtime.
+They use Node's built-in test runner and mocked native bindings, not a React
+Native runtime. App launches are still required to verify the real component
+import and native mounting paths.
+
 The holder-root regression tests run the production `List.tsx` callbacks with
 mocked native mounting, using the existing TypeScript dependency and Node runner:
 
@@ -89,7 +97,14 @@ flushes pending app mutations. Removing a surface at that point would try to
 upgrade the shadow-tree registry's read lock to a write lock on the same thread.
 Both the list disposal and individual holder retirement are idempotent.
 
-### Surface-scoped synchronous mounting prototype
+### Surface-scoped synchronous mounting
+
+Each list holder owns a Fabric surface so a rebind only commits that holder's
+React tree. A synchronous React commit alone does not guarantee its native views
+exist: RecyclerView layout can request the holder while Fabric is mounting the
+app surface, and RN's manager-wide mounting guard defers the nested mutations.
+The list must resolve and measure the holder's native content before returning
+from that layout callback, not on the next frame.
 
 `completeRootSync` now asks a platform adapter to flush that holder surface after
 `completeSurface` returns. Neither adapter clears RN's global mounting guard,
@@ -103,6 +118,16 @@ The original backing queues and RN's completion/report-mount path remain in plac
 View commands retain RN's concrete types and normal retry path. Reflection into
 `mountItems` and `preMountItems` is isolated in `SurfaceMounting`; consumer rules
 preserve those fields in minified apps.
+
+Installation and surface registration/retirement are UI-thread-only. Background
+queue producers share a synchronized ledger with the UI thread; the ledger does
+not hold its monitor while executing native mutations. The holder root must be
+attached before its first commit because the explicit flush executes mutations
+directly rather than using RN's wait-for-root-attachment path. Tickets release
+their mutation payload before executing, so a partially failing batch is not
+replayed. Unregistering a surface retires tickets already drained into RN's local
+batch as well as those still in its queues. Completion notifications remain on
+RN's normal dispatcher path and may follow the early native mutations.
 
 iOS uses the holder's mounting coordinator with RN's private `performTransaction:`
 entry point. The normal mutation implementation, observers, and presenter delegate
@@ -124,16 +149,31 @@ it checks nested surface isolation, completion callbacks, the unchanged outer
 guard, and same-surface rejection. These tests need no JS runtime or app launch,
 but app smoke tests are still needed to validate actual native view creation.
 
+The Android tests also verify that distinct holder surfaces can nest, that a
+flush includes follow-up work enqueued during a mutation, and that view commands
+remain deferred to RN and retain their one-retry behavior.
+
+#### Validation before release or a React Native upgrade
+
+- Run the holder/renderer JS regressions and both native suites above.
+- Build both example apps, including a minified Android release. The native
+  Android harness exercises the queue/ledger directly, not reflection-based
+  adapter installation; the app checks must cover that installation and R8 rules.
+- On both platforms check initial chat rendering, scrolling/recycling, row-height
+  changes, item removal, and navigation back/reopening the list. These cover real
+  native view creation and surface retirement that the native fixtures do not.
+- Check reload/React-instance replacement separately from cold launches. Surface
+  ownership must not transfer work to the replacement instance's mounting manager.
+- Run the physical-device comparison in `perf/README.md` before claiming a speedup.
+
+The private integration is currently validated on RN 0.86.2 only. A successful
+field/selector lookup does not prove equivalent behavior on another RN version.
+This checklist does not establish a broader version support range.
+
 Prototype smoke checks use cold app launches. Reloads during live native/package
 edits emitted disposed-HybridObject and duplicate `UiListView` registration errors;
 the final cold-launch checks did not. Their root cause remains unconfirmed, and
 this prototype does not establish reload-lifecycle compatibility.
-
-These check routing for native commands, public refs, text input state, and DOM internals; command
-dispatch through the current UI-runtime Fabric node; native tag lookup; unmounted refs; and lazy
-delegation to RN's renderer in the main runtime. They use Node's built-in test
-runner and mocked native bindings, not a React Native runtime. App launches are
-still required to verify the real component import and native mounting paths.
 
 ## Initialization constraints and alternatives
 

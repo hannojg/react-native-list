@@ -13,9 +13,25 @@ import java.util.Queue;
 import java.util.Set;
 
 /**
- * Tracks owned work before Fabric drains its queue into an inaccessible local batch.
- * Early execution leaves an exactly-once ticket in RN's batch, preserving its normal
- * completion notifications without replaying mutations when the outer mount resumes.
+ * Gives SurfaceMounting a surface-specific view of RN's pending native mutations.
+ *
+ * <p>RN removes items from its shared queue into a local batch before executing them.
+ * A holder render can happen partway through that batch, so searching the shared queue
+ * during the render would miss older mutations for the same holder. Instead, offer wraps
+ * each registered surface's item in a ticket and records it in a per-surface ledger.
+ * Polling a ticket out of RN's queue does not remove it from the ledger.
+ *
+ * <p>Both RN's normal dispatch and an explicit surface flush execute through that ledger.
+ * Reaching a ticket first executes any earlier tickets for its surface, including pending
+ * preallocations from the other wrapped queue. Each ticket releases its mutation before
+ * executing it, so the original ticket becomes a no-op if RN encounters it again. Leaving
+ * tickets in RN's batches preserves its later completion/report-mount notifications;
+ * those notifications are not brought forward with the native mutations.
+ *
+ * <p>The regular and preallocation queues must share one ledger. Its monitor protects
+ * ordering against background producers, but is released before native mutations execute.
+ * Nested mounting of another surface is allowed; pending work on the actively mounting
+ * surface is rejected to avoid interleaving mutations within that surface's current batch.
  */
 public final class SurfaceMountingQueue extends AbstractQueue<MountItem> {
   private final Queue<MountItem> delegate;
@@ -64,6 +80,8 @@ public final class SurfaceMountingQueue extends AbstractQueue<MountItem> {
     }
 
     public synchronized void unregister(int surfaceId) {
+      // Tickets may already live in RN's local batch. Retire them there as well as
+      // in the shared queues, and release their references to native mutation data.
       ArrayDeque<Ticket> pending = surfaces.remove(surfaceId);
       if (pending != null) {
         for (Ticket ticket : pending) ticket.item = null;
@@ -99,6 +117,7 @@ public final class SurfaceMountingQueue extends AbstractQueue<MountItem> {
           if (pending == null) return;
           next = pending.removeFirst();
           item = next.item;
+          // A failed mutation may be partially applied; it must not be replayed.
           next.item = null;
           mounting.add(surfaceId);
         }

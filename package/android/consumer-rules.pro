@@ -7,7 +7,7 @@
     com.facebook.react.internal.turbomodule.core.TurboModuleManager turboModuleManager;
 }
 
-# Surface-scoped mounting prototype replaces these queues before creating holders.
+# SurfaceMounting wraps these queues by field name before starting holder surfaces.
 -keepclassmembers class com.facebook.react.fabric.mounting.MountItemDispatcher {
     java.util.Queue mountItems;
     java.util.Queue preMountItems;

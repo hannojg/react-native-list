@@ -24,6 +24,8 @@
 using namespace facebook;
 using namespace facebook::react;
 
+// Fabric's guard is manager-wide; we need per-surface activity to allow a holder
+// inside another surface's mount without reentering the holder's own transaction.
 @interface ListSurfaceMountingObserver : NSObject <RCTSurfacePresenterObserver>
 @property (nonatomic, strong) NSMutableSet<NSNumber *> *mountingSurfaceIds;
 @property (nonatomic, weak) RCTSurfacePresenter *presenter;
@@ -58,6 +60,9 @@ namespace {
       return observer;
     }
 
+    // Keep each surface paired with its original presenter across React instance changes.
+    // Resolving the currently active presenter at flush time could mount through the
+    // wrong component-view registry. These ownership maps are main-thread confined.
     NSMutableDictionary<NSNumber *, ListSurfaceMountingObserver *> *surfaceMountingObservers() {
       static NSMutableDictionary<NSNumber *, ListSurfaceMountingObserver *> *observers =
           [NSMutableDictionary new];

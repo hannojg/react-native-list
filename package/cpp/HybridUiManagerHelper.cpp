@@ -42,6 +42,9 @@ namespace margelo::nitro::reactnativelist
                 .mountSynchronously = true,
                 .source = react::ShadowTree::CommitSource::Unknown,
             });
+        // mountSynchronously commits the shadow tree, but an outer Fabric mount can
+        // still defer native mutations. Complete only this holder's mounting work
+        // before the caller resolves/measures its native view.
         flushSurfaceMounting(targetSurfaceId);
     }
 

@@ -12,9 +12,29 @@ import java.util.Map;
 import java.util.Queue;
 
 /**
- * Prototype of a Fabric flushSurface(surfaceId) API. Private access is confined
- * here; neither Fabric's global reentrancy flag nor unrelated queues are flushed.
- * The adapter must be installed before the first holder surface is registered.
+ * Makes a list holder's native views available before its synchronous render returns.
+ *
+ * <p>Each holder owns a separate Fabric surface. RecyclerView can request a holder while
+ * Fabric is mounting the app surface. Although our UI-runtime React commit is synchronous,
+ * Fabric's dispatcher refuses to reenter and leaves the holder's native mutations queued.
+ * The list cannot measure or resolve those views until the mutations have executed.
+ *
+ * <p>Install one adapter per FabricUIManager before creating holder surfaces, then register
+ * each holder with that adapter. The adapter wraps RN's regular and preallocation queues;
+ * SurfaceMountingQueue records pending work for registered surfaces only. After a holder
+ * commits, flushSurface executes that surface's recorded work without draining app work or
+ * resetting the dispatcher's global inDispatch guard. View commands stay on RN's normal
+ * dispatch/retry path; this is not a synchronous command-flushing API.
+ *
+ * <p>Installation, surface ownership, and flushing run on the UI thread. Queue producers
+ * may run on other threads; the shared ledger synchronizes their bookkeeping. Surface IDs
+ * route flushes back to the manager that created them, including across React instances.
+ *
+ * <p>RN exposes no public surface-scoped flush API. Reflection is isolated here and depends
+ * on the private field layout validated with RN 0.86.2. consumer-rules.pro preserves the
+ * reflected fields in minified apps. Missing fields fail installation rather than leave
+ * views silently unmounted. RN upgrades require the native tests and app smoke checks
+ * documented in native-tests/README.md.
  */
 @Keep
 public final class SurfaceMounting extends SurfaceMountingQueue.Ledger {
@@ -59,8 +79,8 @@ public final class SurfaceMounting extends SurfaceMountingQueue.Ledger {
     preMountField.setAccessible(true);
     Queue<MountItem> mounts = (Queue<MountItem>) mountField.get(dispatcher);
     Queue<MountItem> preMounts = (Queue<MountItem>) preMountField.get(dispatcher);
-    // Keep the original backing queue: a producer already holding its reference
-    // can still enqueue unrelated work during installation without losing it.
+    // Preserve work already queued before installation. Install before starting holder
+    // surfaces: only offers through the wrapper can be tracked for an early flush.
     SurfaceMountingQueue mountQueue = new SurfaceMountingQueue(mounts, this);
     SurfaceMountingQueue preMountQueue = new SurfaceMountingQueue(preMounts, this);
     mountField.set(dispatcher, mountQueue);

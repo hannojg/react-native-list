@@ -46,12 +46,13 @@ test('frame SQL keeps drops separate and excludes unknown classifications from t
         (120,5,1,'Late Present','App Deadline Missed'),
         (130,5,1,'Dropped Frame','Dropped Frame'),
         (140,5,1,'Early Present','Unknown Jank'),
+        (145,5,1,'Late Present','App Deadline Missed, Unknown Jank'),
         (210,5,1,'Late Present','App Deadline Missed'),
         (150,5,2,'Late Present','App Deadline Missed');
     `);
     const statement = database.prepare(queries[1]);
     const row = statement.get();
-    assert.equal(row.frames, 3);
+    assert.equal(row.frames, 4);
     assert.equal(row.classified, 2);
     assert.equal(row.janky, 1);
     assert.equal(row.dropped, 1);

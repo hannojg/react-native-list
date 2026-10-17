@@ -111,8 +111,12 @@ FrameTimeline data for jank/drop counts. Per-iteration `cpu-threads` JSON files
 retain CPU time, native names and IDs for each active thread. They are stored
 separately so changing thread names cannot make Macrobenchmark drop iterations. Each
 frame distribution contributes one P95 value per iteration to the comparison.
-Memory counters and frame classifications must be present; missing required
-metrics invalidate the run.
+Memory counters and presented frame data must be present; missing required
+metrics invalidate the run. Frame classification coverage and classified/janky
+frame counts are retained for every iteration, including zero-coverage iterations.
+If any iteration in either revision has incomplete classification, the report
+marks the jank comparison unavailable rather than scoring a classified subset.
+Other valid metrics remain comparable; unknown frames never become smooth frames.
 
 The small Perfetto configuration records scheduler, app markers, FrameTimeline
 and process memory data, with explicit buffers and 250 ms memory polling. Trace

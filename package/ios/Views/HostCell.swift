@@ -11,8 +11,14 @@ final class HostCell: UICollectionViewCell {
     var reactTag: Int?
     var itemKey: String?
     var itemType: String?
+    var renderedContentView: UIView?
+    var releaseSurface: (() -> Void)?
     var hostedContentView: UIView? {
         return hostedView
+    }
+
+    deinit {
+        releaseSurface?()
     }
 
     func install(
@@ -95,6 +101,7 @@ final class HostCell: UICollectionViewCell {
         }
 
         hostedView = nil
+        renderedContentView = nil
         reactTag = nil
         itemKey = nil
         itemType = nil

@@ -3,6 +3,7 @@
 //
 
 #include "HybridUiManagerHelper.hpp"
+#include "SurfaceMounting.hpp"
 #include <react/renderer/core/EventTarget.h>
 #include <react/renderer/mounting/ShadowTree.h>
 #include <react/renderer/uimanager/UIManager.h>
@@ -41,6 +42,10 @@ namespace margelo::nitro::reactnativelist
                 .mountSynchronously = true,
                 .source = react::ShadowTree::CommitSource::Unknown,
             });
+        // mountSynchronously commits the shadow tree, but an outer Fabric mount can
+        // still defer native mutations. Complete only this holder's mounting work
+        // before the caller resolves/measures its native view.
+        flushSurfaceMounting(targetSurfaceId);
     }
 
     void HybridUiManagerHelper::registerManagedSurface(double surfaceId)

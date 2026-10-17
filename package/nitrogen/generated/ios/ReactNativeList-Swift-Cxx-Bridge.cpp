@@ -109,11 +109,11 @@ namespace margelo::nitro::reactnativelist::bridge::swift {
     return swiftPart.toUnsafe();
   }
   
-  // pragma MARK: std::function<double(const std::string& /* type */)>
-  Func_double_std__string create_Func_double_std__string(void* NON_NULL swiftClosureWrapper) noexcept {
-    auto swiftClosure = ReactNativeList::Func_double_std__string::fromUnsafe(swiftClosureWrapper);
-    return [swiftClosure = std::move(swiftClosure)](const std::string& type) mutable -> double {
-      auto __result = swiftClosure.call(type);
+  // pragma MARK: std::function<double(const std::string& /* type */, double /* surfaceId */)>
+  Func_double_std__string_double create_Func_double_std__string_double(void* NON_NULL swiftClosureWrapper) noexcept {
+    auto swiftClosure = ReactNativeList::Func_double_std__string_double::fromUnsafe(swiftClosureWrapper);
+    return [swiftClosure = std::move(swiftClosure)](const std::string& type, double surfaceId) mutable -> double {
+      auto __result = swiftClosure.call(type, surfaceId);
       return __result;
     };
   }
@@ -127,6 +127,14 @@ namespace margelo::nitro::reactnativelist::bridge::swift {
     };
   }
   
+  // pragma MARK: std::function<bool(double /* surfaceId */)>
+  Func_bool_double create_Func_bool_double(void* NON_NULL swiftClosureWrapper) noexcept {
+    auto swiftClosure = ReactNativeList::Func_bool_double::fromUnsafe(swiftClosureWrapper);
+    return [swiftClosure = std::move(swiftClosure)](double surfaceId) mutable -> bool {
+      auto __result = swiftClosure.call(surfaceId);
+      return __result;
+    };
+  }
   // pragma MARK: std::shared_ptr<HybridUiListViewSpec>
   std::shared_ptr<HybridUiListViewSpec> create_std__shared_ptr_HybridUiListViewSpec_(void* NON_NULL swiftUnsafePointer) noexcept {
     ReactNativeList::HybridUiListViewSpec_cxx swiftPart = ReactNativeList::HybridUiListViewSpec_cxx::fromUnsafe(swiftUnsafePointer);

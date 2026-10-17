@@ -97,19 +97,22 @@ class FrameStatsMetric : TraceMetric() {
     val row = rows.single()
     val frames = row.long("frames")
     val classified = row.long("classified")
-    check(frames > 0 && classified > 0) { "Missing classified app FrameTimeline data" }
-    check(classified == frames) { "App frame classification is incomplete" }
+    check(frames > 0) { "Missing app FrameTimeline data" }
     val dropped = row.long("dropped")
     val janky = row.long("janky")
     val elapsed = row.long("elapsedNs")
     check(elapsed > 0)
     val frameCount = frames.toDouble()
     val droppedCount = dropped.toDouble()
+    val classifiedCount = classified.toDouble()
+    val jankyCount = janky.toDouble()
     val frameMetric = Measurement("presentedSurfaceFrames", frameCount)
     val dropMetric = Measurement("droppedFrames", droppedCount)
-    val jankMetric = Measurement("jankRatePercent", janky * 100.0 / classified)
+    // Export counts even at zero coverage; the report must not score partial jank data.
+    val classifiedMetric = Measurement("classifiedSurfaceFrames", classifiedCount)
+    val jankMetric = Measurement("jankyClassifiedFrames", jankyCount)
     val coverageMetric = Measurement("classificationCoveragePercent", classified * 100.0 / frames)
     val fpsMetric = Measurement("interactionPresentedFps", frameCount * 1_000_000_000.0 / elapsed)
-    return listOf(frameMetric, dropMetric, jankMetric, coverageMetric, fpsMetric)
+    return listOf(frameMetric, dropMetric, classifiedMetric, jankMetric, coverageMetric, fpsMetric)
   }
 }

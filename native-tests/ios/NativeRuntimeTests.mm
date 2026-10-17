@@ -3,9 +3,123 @@
 #include "../cpp/RuntimeFixture.h"
 #import "../../package/ios/Utils/BorrowedModule.mm"
 #import "../../package/ios/Utils/TurboModuleManager.mm"
+#import "../../package/ios/Utils/SurfaceMountingSupport.hpp"
+#include <react/renderer/components/root/RootComponentDescriptor.h>
+#include <react/renderer/mounting/ShadowTree.h>
+#include <react/renderer/mounting/ShadowTreeDelegate.h>
 
 using namespace facebook::react;
 using namespace list::tests;
+
+namespace {
+class MountingTestShadowTreeDelegate final : public ShadowTreeDelegate {
+ public:
+  RootShadowNode::Unshared shadowTreeWillCommit(
+      const ShadowTree &, const RootShadowNode::Shared &,
+      const RootShadowNode::Unshared &root, const ShadowTree::CommitOptions &) const override {
+    return root;
+  }
+  void shadowTreeDidFinishTransaction(std::shared_ptr<const MountingCoordinator>, bool) const override {}
+  void shadowTreeDidFinishReactCommit(const ShadowTree &) const override {}
+  void shadowTreeDidPromoteReactRevision(const ShadowTree &) const override {}
+};
+
+struct MountingTestSurface {
+  ContextContainer context;
+  MountingTestShadowTreeDelegate delegate;
+  ShadowTree tree;
+  std::shared_ptr<const MountingCoordinator> coordinator;
+
+  explicit MountingTestSurface(SurfaceId surfaceId)
+      : tree(surfaceId, {}, {}, delegate, context) {
+    tree.commit([](const RootShadowNode &root) {
+      auto clone = root.ShadowNode::clone({});
+      return std::static_pointer_cast<RootShadowNode>(clone);
+    }, {.mountSynchronously = true, .source = ShadowTree::CommitSource::Unknown});
+    coordinator = tree.getMountingCoordinator();
+  }
+};
+}
+
+@interface ListMountingTestDelegate : NSObject <RCTMountingManagerDelegate>
+@property(nonatomic, strong) NSMutableArray<NSString *> *events;
+@property(nonatomic, copy) void (^willMount)(RCTMountingManager *, ReactTag);
+@end
+
+@implementation ListMountingTestDelegate
+- (instancetype)init {
+  if (self = [super init]) _events = [NSMutableArray new];
+  return self;
+}
+- (void)mountingManager:(RCTMountingManager *)manager willMountComponentsWithRootTag:(ReactTag)tag {
+  [_events addObject:[NSString stringWithFormat:@"will:%ld", (long)tag]];
+  if (_willMount) _willMount(manager, tag);
+}
+- (void)mountingManager:(RCTMountingManager *)manager didMountComponentsWithRootTag:(ReactTag)tag {
+  [_events addObject:[NSString stringWithFormat:@"did:%ld", (long)tag]];
+}
+@end
+
+@interface SurfaceMountingTests : XCTestCase
+@end
+
+@implementation SurfaceMountingTests
+- (void)testNestedSurfaceMountPreservesOuterGuardAndCompletionCallbacks {
+  MountingTestSurface outerSurface(11);
+  MountingTestSurface holderSurface(21);
+  MountingTestSurface unrelatedSurface(31);
+  auto outer = outerSurface.coordinator;
+  auto holder = holderSurface.coordinator;
+  auto unrelated = unrelatedSurface.coordinator;
+  RCTMountingManager *manager = [RCTMountingManager new];
+  UIView *outerView = [UIView new];
+  UIView *holderView = [UIView new];
+  UIView *unrelatedView = [UIView new];
+  [manager attachSurfaceToView:outerView surfaceId:11];
+  [manager attachSurfaceToView:holderView surfaceId:21];
+  [manager attachSurfaceToView:unrelatedView surfaceId:31];
+  ListMountingTestDelegate *delegate = [ListMountingTestDelegate new];
+  manager.delegate = delegate;
+  delegate.willMount = ^(RCTMountingManager *mountingManager, ReactTag tag) {
+    if (tag != 11) return;
+    // Both schedule calls hit RN's real guard. Only our explicit flush may
+    // consume holder's coordinator; unrelated must remain untouched.
+    [mountingManager scheduleTransaction:holder];
+    [mountingManager scheduleTransaction:unrelated];
+    margelo::nitro::reactnativelist::flushSurfaceTransaction(mountingManager, *holder, false);
+    NSNumber *inFlight = [mountingManager valueForKey:@"transactionInFlight"];
+    XCTAssertTrue(inFlight.boolValue);
+    XCTAssertFalse(holder->hasPendingTransactions());
+    XCTAssertTrue(unrelated->hasPendingTransactions());
+    margelo::nitro::reactnativelist::flushSurfaceTransaction(mountingManager, *holder, false);
+  };
+  [manager scheduleTransaction:outer];
+  NSArray *expected = @[@"will:11", @"will:21", @"did:21", @"did:11"];
+  XCTAssertEqualObjects(delegate.events, expected);
+  NSNumber *inFlight = [manager valueForKey:@"transactionInFlight"];
+  XCTAssertFalse(inFlight.boolValue);
+  XCTAssertTrue(unrelated->hasPendingTransactions());
+}
+
+- (void)testSameSurfaceReentrancyIsRejectedWithoutConsumingItsTransaction {
+  MountingTestSurface holderSurface(21);
+  auto holder = holderSurface.coordinator;
+  RCTMountingManager *manager = [RCTMountingManager new];
+  UIView *holderView = [UIView new];
+  [manager attachSurfaceToView:holderView surfaceId:21];
+  bool rejected = false;
+  try {
+    margelo::nitro::reactnativelist::flushSurfaceTransaction(manager, *holder, true);
+  } catch (const std::runtime_error &error) {
+    std::string message = error.what();
+    rejected = message.find("Cannot reenter mounting") != std::string::npos;
+  }
+  XCTAssertTrue(rejected);
+  XCTAssertTrue(holder->hasPendingTransactions());
+  margelo::nitro::reactnativelist::flushSurfaceTransaction(manager, *holder, false);
+  XCTAssertFalse(holder->hasPendingTransactions());
+}
+@end
 
 @interface ListTestNativeModule : NSObject <RCTBridgeModule, RCTTurboModule> {
   EventEmitterCallback _eventCallback;

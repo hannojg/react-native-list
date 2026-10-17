@@ -90,6 +90,7 @@ class HybridUiListModule : HybridUiListModuleSpec() {
             ?: throw IllegalStateException("Fabric UIManager is null! Is the Fabric architecture enabled?")
         val fabricUIManager = uiManager as? FabricUIManager
             ?: throw IllegalStateException("UIManager is not a FabricUIManager! Is the Fabric architecture enabled?")
+        SurfaceMounting.install(fabricUIManager)
         setupEventInterceptor(fabricUIManager)
     }
 

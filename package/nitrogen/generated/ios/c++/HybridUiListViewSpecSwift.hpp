@@ -81,8 +81,8 @@ namespace margelo::nitro::reactnativelist {
 
   public:
     // Methods
-    inline void setListCallbacks(const std::shared_ptr<HybridUiListModuleSpec>& uiListModule, const std::function<double(const std::string& /* type */)>& createView, const std::function<bool(double /* reactTag */, const NativeListItem& /* item */, double /* index */)>& updateView) override {
-      auto __result = _swiftPart.setListCallbacks(uiListModule, createView, updateView);
+    inline void setListCallbacks(const std::shared_ptr<HybridUiListModuleSpec>& uiListModule, const std::function<double(const std::string& /* type */, double /* surfaceId */)>& createView, const std::function<bool(double /* reactTag */, const NativeListItem& /* item */, double /* index */)>& updateView, const std::function<bool(double /* surfaceId */)>& disposeView) override {
+      auto __result = _swiftPart.setListCallbacks(uiListModule, createView, updateView, disposeView);
       if (__result.hasError()) [[unlikely]] {
         std::rethrow_exception(__result.error());
       }
@@ -98,14 +98,6 @@ namespace margelo::nitro::reactnativelist {
       if (__result.hasError()) [[unlikely]] {
         std::rethrow_exception(__result.error());
       }
-    }
-    inline double getSurfaceId() override {
-      auto __result = _swiftPart.getSurfaceId();
-      if (__result.hasError()) [[unlikely]] {
-        std::rethrow_exception(__result.error());
-      }
-      auto __value = std::move(__result.value());
-      return __value;
     }
     inline void disposeRendererSurface() override {
       auto __result = _swiftPart.disposeRendererSurface();

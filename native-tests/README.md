@@ -166,6 +166,11 @@ remain deferred to RN and retain their one-retry behavior.
   ownership must not transfer work to the replacement instance's mounting manager.
 - Run the physical-device comparison in `perf/README.md` before claiming a speedup.
 
+The [recorded per-holder comparison](../perf/measurements/per-holder-surfaces.md) covers
+the 10,000-message chat workload on physical iOS and Android devices. Its timing
+and CPU results are within the 5% unchanged band; iOS peak-memory and Android
+frame-timing comparisons remain inconclusive. It does not demonstrate a speedup.
+
 The private integration is currently validated on RN 0.86.2 only. A successful
 field/selector lookup does not prove equivalent behavior on another RN version.
 This checklist does not establish a broader version support range.

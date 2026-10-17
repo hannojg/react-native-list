@@ -10,6 +10,14 @@ High-performance list for React Native.
 
 https://github.com/user-attachments/assets/4a2684bf-7337-45e0-bb17-ee7b8a382943
 
+## React Native compatibility
+
+The holder-surface integration is validated with React Native 0.86.2. It uses
+private Fabric mounting APIs on both platforms; other React Native versions need
+the native tests and example-app checks in [native-tests/README.md](native-tests/README.md).
+Missing private fields or methods fail explicitly. A successful build on another
+version does not establish runtime compatibility.
+
 ## Installation
 
 > [!WARNING]

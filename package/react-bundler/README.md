@@ -1,13 +1,7 @@
 # react-bundler
 
 The core architectural piece is that we basically run react / react-reconciler on a seperate thread/runtime.
-For that we need to bundle:
-
-- react
-- react-reconciler
-- the Fabric config for react-reconciler
-
-into one JS file that can be loaded in the runtime.
+The mirror bundle contains the Fabric host configuration and React Native internals needed by the custom renderer.
 
 The "entry point" to that bundle is `./src/renderer/react/ReactFabricMirror.ts`.
 The output of the bundler is `./src/renderer/react/ReactFabricMirror.bundle.js`.
@@ -16,10 +10,8 @@ There are some special things we have to do to make this bundle work:
 
 - we bundle with bun because its awesome and fast. However, we have to strip any flow types as this doesn't play well with bun (see: `stip-flow-plugin.ts`)
 
-- we don't want bun to include the source code of `react`/`react-reconciler` manually into our bundle file. As we are running in bundle mode, we
-  want those modules to be actually required from the same place. Otherwise we'd ship two copies of react and react-reconciler in our bundle, which
-  is not what we want. To achieve this, we use the `external` option of bun to mark those modules as external dependencies. This way, bun will not
-  include their code in the bundle, but will instead require them at runtime.
+- `react` and `react-reconciler` stay external so Metro resolves them through the app's bundle and selects their development or production builds.
+  React is a peer dependency. The reconciler is a regular dependency of this library, so installing `react-native-list` installs it transitively.
 
 - some internal react / react-native files we can't import as they are, as we kind of need to "patch" them to work on a seperate runtime. For that,
   we have some `./shims` files that `./react-submodule-resolve-plugin.ts` will resolve to instead of the original files.

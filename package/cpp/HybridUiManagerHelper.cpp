@@ -3,6 +3,7 @@
 //
 
 #include "HybridUiManagerHelper.hpp"
+#include "SurfaceMounting.hpp"
 #include <react/renderer/core/EventTarget.h>
 #include <react/renderer/mounting/ShadowTree.h>
 #include <react/renderer/uimanager/UIManager.h>
@@ -41,6 +42,7 @@ namespace margelo::nitro::reactnativelist
                 .mountSynchronously = true,
                 .source = react::ShadowTree::CommitSource::Unknown,
             });
+        flushSurfaceMounting(targetSurfaceId);
     }
 
     void HybridUiManagerHelper::registerManagedSurface(double surfaceId)

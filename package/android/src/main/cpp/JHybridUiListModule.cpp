@@ -1,6 +1,7 @@
 #include "JHybridUiListModule.h"
 #include "WorkletsUiCallInvoker.hpp"
 #include "HybridUiManagerHelper.hpp"
+#include "SurfaceMounting.hpp"
 
 #include <NitroModules/CallInvokerDispatcher.hpp>
 #include <NitroModules/InstallNitro.hpp>
@@ -10,6 +11,19 @@
 
 namespace margelo::nitro::reactnativelist
 {
+    struct JSurfaceMounting : public jni::JavaClass<JSurfaceMounting>
+    {
+        static constexpr auto kJavaDescriptor =
+            "Lcom/margelo/nitro/reactnativelist/SurfaceMounting;";
+    };
+
+    void flushSurfaceMounting(react::SurfaceId surfaceId)
+    {
+        static const auto flush = JSurfaceMounting::javaClassStatic()->getStaticMethod<void(jint)>("flushSurface");
+        auto mountingClass = JSurfaceMounting::javaClassStatic();
+        flush(mountingClass, surfaceId);
+    }
+
     static bool isOnAndroidUiThread()
     {
         return getpid() == gettid();

@@ -7,9 +7,11 @@ import androidx.recyclerview.widget.RecyclerView
 import com.facebook.react.uimanager.ThemedReactContext
 import kotlin.math.roundToInt
 
+internal data class HostedItemView(val root: View, val content: View, val reactTag: Int)
+
 internal class NativeListAdapter(
     private val reactContext: ThemedReactContext,
-    private val createView: (type: String) -> View,
+    private val createView: (type: String) -> HostedItemView,
     private val updateView: (reactTag: Double, item: NativeListItem, index: Double) -> Boolean
 ) : RecyclerView.Adapter<NativeListAdapter.ViewHolder>() {
 
@@ -22,6 +24,7 @@ internal class NativeListAdapter(
 
     class ViewHolder(val container: FrameLayout) : RecyclerView.ViewHolder(container) {
         var hostedView: View? = null
+        var surfaceView: View? = null
         var itemType: String? = null
         var reactTag: Int? = null
     }
@@ -58,15 +61,13 @@ internal class NativeListAdapter(
         )
         val itemType = itemTypeByViewType[viewType]
             ?: throw IllegalStateException("Missing item type for viewType $viewType.")
-        val child = createView(itemType)
-        val existingParent = child.parent as? ViewGroup
-        existingParent?.removeView(child)
-
-        container.addView(child)
+        val hosted = createView(itemType)
+        container.addView(hosted.root)
         val holder = ViewHolder(container)
-        holder.hostedView = child
+        holder.hostedView = hosted.content
+        holder.surfaceView = hosted.root
         holder.itemType = itemType
-        holder.reactTag = child.id
+        holder.reactTag = hosted.reactTag
         return holder
     }
 
@@ -84,7 +85,8 @@ internal class NativeListAdapter(
         captureMeasuredContentSize(item.key, child)
         val contentSize = resolvedContentSize(item)
         bindContainerLayout(holder.container, contentSize)
-        bindChildLayout(child, contentSize)
+        val root = holder.surfaceView ?: throw IllegalStateException("Missing holder surface.")
+        bindChildLayout(root, contentSize)
     }
 
     override fun getItemCount(): Int {

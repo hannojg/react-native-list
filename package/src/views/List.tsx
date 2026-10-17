@@ -36,6 +36,7 @@ type NativeTaggedRef = {
 
 type RenderedElementRecord = {
   element: React.ReactElement
+  surfaceId: number
   /**
    * Stable React element key for a rendered slot in our tree.
    */
@@ -54,14 +55,13 @@ type RenderedElementRecord = {
 }
 
 type ListState = {
-  elementRecords: RenderedElementRecord[]
-  reactTagToRecordIndex: Record<number, number>
+  recordsBySurfaceId: Record<number, RenderedElementRecord>
+  recordsByReactTag: Record<number, RenderedElementRecord>
   reactTagToReactKey: Record<number, number>
   reactTagToDataKey: Record<number, string>
   dataKeyToReactTag: Record<string, number>
   nextReactKey: number
   isDisposed: boolean
-  surfaceId: number | null
 }
 
 export type ListRenderer<TItem extends ListItem> = {
@@ -91,9 +91,9 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
 
   const listState = useMemo(() => {
     return createShareable<ListState>(UIRuntimeId, {
-      elementRecords: [],
+      recordsBySurfaceId: {},
       nextReactKey: 0,
-      reactTagToRecordIndex: {},
+      recordsByReactTag: {},
       reactTagToReactKey: {},
       // Maintain two reverse lookups that are one-to-one
       // Used for O(1) operations in element updates and removals,
@@ -102,7 +102,6 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
       reactTagToDataKey: {},
       dataKeyToReactTag: {},
       isDisposed: false,
-      surfaceId: null,
     })
   }, [])
 
@@ -150,7 +149,8 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
       'worklet'
 
       const state = getListState()
-      state.elementRecords.forEach((record) => {
+      const records = Object.values(state.recordsBySurfaceId)
+      records.forEach((record) => {
         record.dataKey = null
       })
 
@@ -186,14 +186,7 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
         return
       }
 
-      const position = state.reactTagToRecordIndex[reactTag]
-      if (position == null) {
-        delete state.dataKeyToReactTag[dataKey]
-        delete state.reactTagToDataKey[reactTag]
-        return
-      }
-
-      const record = state.elementRecords[position]
+      const record = state.recordsByReactTag[reactTag]
       if (record == null) {
         delete state.dataKeyToReactTag[dataKey]
         delete state.reactTagToDataKey[reactTag]
@@ -221,7 +214,6 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
   useEffect(() => {
     return () => {
       const ref = nativeListRef.current
-      const didSetup = isSetup.current
 
       nativeListRef.current = null
       isSetup.current = false
@@ -236,28 +228,7 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
         const state = getListState()
         state.isDisposed = true
 
-        if (!didSetup) {
-          ref.disposeRendererSurface()
-          return
-        }
-
-        const surfaceId = state.surfaceId
         ref.disposeRendererSurface()
-        state.surfaceId = null
-
-        if (surfaceId == null) {
-          return
-        }
-
-        const { disposeReactRoot } = getReactFabricRenderer()
-        unregisterManagedSurfaceWorklet(surfaceId)
-        // @ts-expect-error TODO: fix this one day
-        disposeReactRoot(surfaceId, completeRootSyncWorklet)
-        state.elementRecords = []
-
-        for (const key of Object.keys(state.reactTagToRecordIndex)) {
-          delete state.reactTagToRecordIndex[Number(key)]
-        }
 
         for (const key of Object.keys(state.reactTagToReactKey)) {
           delete state.reactTagToReactKey[Number(key)]
@@ -299,48 +270,29 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
 
           const { reactRender } = getReactFabricRenderer()
           const state = getListState()
-          const surfaceId = ref.getSurfaceId()
           state.isDisposed = false
-          state.surfaceId = surfaceId
-          registerManagedSurfaceWorklet(surfaceId)
 
-          function renderListElements() {
-            'worklet'
-
-            return state.elementRecords.map((record) => {
-              const wrapperStyle = {
-                // Why are we rendering position absolute?
-                // This will layout all items at (0x0).This is important because the native lists will relayout the views.
-                // In one iteration I was rendering all items just regularly. When then the items position in the elements changed or items were added before,
-                // fabric was thinking it had to update the layout position of those items, breaking the layout in the list.
-                // If fabric thinks all items are always at (0x0) it won't get the idea to relocate them!
-                position: 'absolute' as const,
-                left: 0,
-                top: 0,
-              }
-              const wrapperKey = 'reactkey-wrapper-' + record.reactKey
-              return (
-                <View key={wrapperKey} style={wrapperStyle} collapsable={false}>
-                  {record.element}
-                </View>
-              )
-            })
-          }
-
-          function rebuildTagPositions() {
-            'worklet'
-
-            for (const key of Object.keys(state.reactTagToRecordIndex)) {
-              delete state.reactTagToRecordIndex[Number(key)]
+          function disposeViewCallback(surfaceId: number) {
+            const record = state.recordsBySurfaceId[surfaceId]
+            if (record == null) return false
+            delete state.recordsBySurfaceId[surfaceId]
+            delete state.recordsByReactTag[record.reactTag]
+            delete state.reactTagToReactKey[record.reactTag]
+            delete state.reactTagToDataKey[record.reactTag]
+            if (
+              record.dataKey != null &&
+              state.dataKeyToReactTag[record.dataKey] === record.reactTag
+            ) {
+              delete state.dataKeyToReactTag[record.dataKey]
             }
-
-            state.elementRecords.forEach((record, index) => {
-              if (record.reactTag < 0) {
-                return
-              }
-
-              state.reactTagToRecordIndex[record.reactTag] = index
-            })
+            const { disposeReactRoot } = getReactFabricRenderer()
+            try {
+              // @ts-expect-error TODO: type renderer child sets
+              disposeReactRoot(surfaceId, completeRootSyncWorklet)
+            } finally {
+              unregisterManagedSurfaceWorklet(surfaceId)
+            }
+            return true
           }
 
           function bindDataKeyToReactTag(dataKey: string, reactTag: number) {
@@ -357,13 +309,9 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
             if (previousReactTag != null && previousReactTag !== reactTag) {
               // This dataKey used to point at another reactTag.
               // If it is now being assigned to this reactTag, clear the old tag's binding
-              const previousPosition =
-                state.reactTagToRecordIndex[previousReactTag]
-              if (previousPosition != null) {
-                const previousRecord = state.elementRecords[previousPosition]
-                if (previousRecord != null) {
-                  previousRecord.dataKey = null
-                }
+              const previousRecord = state.recordsByReactTag[previousReactTag]
+              if (previousRecord != null) {
+                previousRecord.dataKey = null
               }
               delete state.reactTagToDataKey[previousReactTag]
             }
@@ -372,23 +320,23 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
             state.dataKeyToReactTag[dataKey] = reactTag
           }
 
-          function renderContentInReact() {
+          function renderContentInReact(record: RenderedElementRecord) {
             'worklet'
 
             if (state.isDisposed) {
               return
             }
 
-            const elements = renderListElements()
-            const parentContainer = <View>{elements}</View>
+            const parentContainer = (
+              <View collapsable={false}>{record.element}</View>
+            )
             reactRender(
-              surfaceId,
+              record.surfaceId,
               parentContainer,
               () => {},
               // @ts-expect-error TODO: fix this one day
               completeRootSyncWorklet
             )
-            rebuildTagPositions()
           }
 
           function setNativeListDataSource() {
@@ -400,7 +348,7 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
             ref.setLayout(nativeLayout)
           }
 
-          function createViewCallback(type: string) {
+          function createViewCallback(type: string, surfaceId: number) {
             if (state.isDisposed) {
               throw new Error('Cannot create view after list was disposed')
             }
@@ -430,17 +378,14 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
 
             const newRecord: RenderedElementRecord = {
               element: newElementWithKey,
+              surfaceId,
               reactKey,
               dataKey: null,
               reactTag: -1,
             }
-            const newLength = state.elementRecords.push(newRecord)
-            const currentIndex = newLength - 1
-
-            // Why for rendering one item we have to render the whole content?!
-            // Thats because react/react-native would issue remove transitions if we'd only render the item we need, and then swap it for another item.
-            // When rendering all content react-reconciler will only update the diff on the native side, which is just this one item, so performance wise this seems to be okay.
-            renderContentInReact()
+            state.recordsBySurfaceId[surfaceId] = newRecord
+            registerManagedSurfaceWorklet(surfaceId)
+            renderContentInReact(newRecord)
 
             if (nativeRef.current == null) {
               throw new Error('Ref is null after render')
@@ -448,7 +393,7 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
 
             const reactTag = nativeRef.current.__nativeTag
             newRecord.reactTag = reactTag
-            state.reactTagToRecordIndex[reactTag] = currentIndex
+            state.recordsByReactTag[reactTag] = newRecord
             state.reactTagToReactKey[reactTag] = reactKey
 
             return reactTag
@@ -490,12 +435,7 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
               newProps
             )
 
-            const position = state.reactTagToRecordIndex[reactTag]
-            if (position == null) {
-              throw new Error('No position for reactTag ' + reactTag)
-            }
-
-            const record = state.elementRecords[position]
+            const record = state.recordsByReactTag[reactTag]
             if (record == null) {
               throw new Error('No record for reactTag ' + reactTag)
             }
@@ -504,7 +444,7 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
             record.element = newElementWithKey
             record.dataKey = item.key
 
-            renderContentInReact()
+            renderContentInReact(record)
 
             return true
           }
@@ -513,7 +453,8 @@ function ListInner<TItem extends ListItem>(props: ListProps<TItem>) {
           ref.setListCallbacks(
             uiListModuleUnboxed,
             createViewCallback,
-            updateViewCallback
+            updateViewCallback,
+            disposeViewCallback
           )
           setNativeListDataSource()
         })

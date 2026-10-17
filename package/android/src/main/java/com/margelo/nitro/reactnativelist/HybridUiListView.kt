@@ -10,19 +10,15 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.facebook.proguard.annotations.DoNotStrip
-import com.facebook.react.ReactApplication
-import com.facebook.react.bridge.ReactApplicationContext
-import com.facebook.react.interfaces.fabric.ReactSurface
-import com.facebook.react.runtime.ReactSurfaceView
 import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.UIManagerHelper
 import com.facebook.react.uimanager.common.UIManagerType
-import com.margelo.nitro.NitroModules
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicReference
 
 typealias CreateViewCallbackType = (
-    type: String
+    type: String,
+    surfaceId: Double
 ) -> Double
 typealias UpdateViewCallbackType = (
     reactTag: Double,
@@ -41,9 +37,8 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
     private var dataSource: HybridNativeListDataSource? = null
     private var isRecyclerViewLayoutScheduled = false
     private var itemContentInsets = ItemContentInsets(horizontal = 0, vertical = 0)
-    private var rendererSurface: ReactSurface? = null
-    private var rendererSurfaceId: Int? = null
-    private var isRendererSurfaceStarted = false
+    private val rendererSurfaces = mutableMapOf<Int, RendererSurface>()
+    private var disposeViewCallback: ((Double) -> Boolean)? = null
     private var isDisposed = false
 
     override val view: RecyclerView by lazy {
@@ -60,28 +55,22 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
     override fun setListCallbacks(
         uiListModule: HybridUiListModuleSpec,
         createView: CreateViewCallbackType,
-        updateView: UpdateViewCallbackType
+        updateView: UpdateViewCallbackType,
+        disposeView: (Double) -> Boolean
     ) {
         isDisposed = false
         createViewCallback = createView
         updateViewCallback = updateView
+        disposeViewCallback = disposeView
         runOnMain {
             ensureAdapter()
         }
     }
 
-    override fun getSurfaceId(): Double {
-        val surfaceId = runOnMainSync {
-            ensureRendererSurface()
-        }
-        return surfaceId.toDouble()
-    }
-
     override fun disposeRendererSurface() {
         runOnMainSync {
+            if (isDisposed) return@runOnMainSync
             isDisposed = true
-            createViewCallback = null
-            updateViewCallback = null
             dataSource?.observer = null
             dataSource = null
             adapter?.dataSource = null
@@ -93,18 +82,12 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
             view.layoutManager?.removeAllViews()
             isRecyclerViewLayoutScheduled = false
 
-            val surface = rendererSurface
-            rendererSurface = null
-            rendererSurfaceId = null
-            isRendererSurfaceStarted = false
-
-            if (surface == null) {
-                return@runOnMainSync
-            }
-
-            surface.stop()
-            surface.clear()
-            surface.detach()
+            val tags = rendererSurfaces.keys.toList()
+            for (tag in tags) releaseNativeView(tag)
+            view.recycledViewPool.clear()
+            createViewCallback = null
+            updateViewCallback = null
+            disposeViewCallback = null
         }
     }
 
@@ -225,87 +208,12 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
         nativeAdapter.itemContentInsets = itemContentInsets
         nativeAdapter.dataSource = dataSource
         adapter = nativeAdapter
-        attachAdapterIfRendererReady()
+        view.setRecycledViewPool(HolderPool { tag -> releaseNativeView(tag) })
+        view.adapter = nativeAdapter
         return nativeAdapter
     }
 
-    private fun attachAdapterIfRendererReady() {
-        val nativeAdapter = adapter
-            ?: return
-
-        val surfaceId = rendererSurfaceId
-        if (surfaceId != null && !isRendererSurfaceStarted) {
-            return
-        }
-
-        val currentAdapter = view.adapter
-        if (currentAdapter === nativeAdapter) {
-            return
-        }
-
-        view.adapter = nativeAdapter
-    }
-
-    private fun ensureRendererSurface(): Int {
-        val existingSurfaceId = rendererSurfaceId
-        if (existingSurfaceId != null) {
-            return existingSurfaceId
-        }
-
-        val context: ReactApplicationContext = NitroModules.applicationContext
-            ?: throw IllegalStateException("ReactApplicationContext is null! Is Nitro installed?")
-        // A ReactHost belongs to the application and does not require an attached Activity.
-        val application = context.applicationContext as? ReactApplication
-            ?: throw IllegalStateException("Application is not a ReactApplication!")
-        val reactHost = application.reactHost
-            ?: throw IllegalStateException("ReactHost is null!")
-
-        val surface = reactHost.createSurface(reactContext, "", null)
-        val surfaceView = surface.view as? ReactSurfaceView
-            ?: throw IllegalStateException("Surface view is not a ReactSurfaceView!")
-        val surfaceId = surfaceView.getRootViewTag()
-
-        rendererSurface = surface
-        rendererSurfaceId = surfaceId
-        isRendererSurfaceStarted = false
-        isDisposed = false
-
-        val startTask = surface.start()
-        val waitThread = Thread {
-            try {
-                startTask.waitForCompletion()
-                view.post {
-                    val startError = startTask.getError()
-                    if (startError != null) {
-                        throw startError
-                    }
-
-                    if (isDisposed) {
-                        return@post
-                    }
-
-                    val currentSurfaceId = rendererSurfaceId
-                    if (currentSurfaceId != surfaceId) {
-                        return@post
-                    }
-
-                    isRendererSurfaceStarted = true
-                    attachAdapterIfRendererReady()
-                    scheduleRecyclerViewLayout()
-                }
-            } catch (throwable: Throwable) {
-                view.post {
-                    throw throwable
-                }
-            }
-        }
-        waitThread.name = "UiListSurfaceStart-$surfaceId"
-        waitThread.start()
-
-        return surfaceId
-    }
-
-    private fun createNativeView(type: String): View {
+    private fun createNativeView(type: String): HostedItemView {
         if (isDisposed) {
             throw IllegalStateException("Cannot create view after list was disposed.")
         }
@@ -313,33 +221,25 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
         val capturedCallback = createViewCallback
             ?: throw IllegalStateException("CreateView callback is not set.")
 
-        val viewTag = capturedCallback(type).toInt()
-        val fabricUiManager = UIManagerHelper.getUIManager(reactContext, UIManagerType.FABRIC)
-            ?: throw IllegalStateException("Fabric UIManager is null. Is Fabric enabled?")
-
-        val resolvedView = fabricUiManager.resolveView(viewTag)
-            ?: throw IllegalStateException("Could not resolve view with tag $viewTag.")
-
-        val parent = resolvedView.parent as? ViewGroup
-            ?: throw IllegalStateException("View with tag $viewTag has no parent.")
-        val childIndex = parent.indexOfChild(resolvedView)
-        parent.removeViewAt(childIndex)
-
-        if (resolvedView.parent != null) {
-            throw IllegalStateException("View with tag $viewTag still has a parent after removing.")
+        val surface = RendererSurface(reactContext)
+        val surfaceId = surface.surfaceId.toDouble()
+        try {
+            val rawTag = capturedCallback(type, surfaceId)
+            val viewTag = rawTag.toInt()
+            val fabricUiManager = UIManagerHelper.getUIManager(reactContext, UIManagerType.FABRIC)
+                ?: throw IllegalStateException("Fabric UIManager is null. Is Fabric enabled?")
+            val resolvedView = fabricUiManager.resolveView(viewTag)
+                ?: throw IllegalStateException("Could not resolve view with tag $viewTag.")
+            rendererSurfaces[viewTag] = surface
+            return HostedItemView(surface.view, resolvedView, viewTag)
+        } catch (error: Throwable) {
+            disposeViewCallback?.invoke(surfaceId)
+            surface.stop()
+            throw error
         }
-
-        parent.addView(View(reactContext), childIndex)
-
-        return resolvedView
     }
 
     private fun scheduleRecyclerViewLayout() {
-        val surfaceId = rendererSurfaceId
-        if (surfaceId != null && !isRendererSurfaceStarted) {
-            return
-        }
-
         if (isRecyclerViewLayoutScheduled) {
             return
         }
@@ -365,6 +265,54 @@ class HybridUiListView(val reactContext: ThemedReactContext) :
         val heightSpec = View.MeasureSpec.makeMeasureSpec(viewHeight, View.MeasureSpec.EXACTLY)
         view.measure(widthSpec, heightSpec)
         view.layout(view.left, view.top, view.right, view.bottom)
+    }
+
+    private fun releaseNativeView(reactTag: Int) {
+        val surface = rendererSurfaces.remove(reactTag) ?: return
+        try {
+            disposeViewCallback?.invoke(surface.surfaceId.toDouble())
+        } finally {
+            surface.stop()
+        }
+    }
+
+    // RecyclerView has no holder-destruction callback. Pool admission/eviction is the
+    // ownership boundary: cached holders retain their roots, discarded holders release them.
+    private class HolderPool(val release: (Int) -> Unit) : RecyclerView.RecycledViewPool() {
+        private val pooled = mutableSetOf<NativeListAdapter.ViewHolder>()
+
+        override fun putRecycledView(scrap: RecyclerView.ViewHolder) {
+            val holder = scrap as NativeListAdapter.ViewHolder
+            val type = holder.itemViewType
+            val before = getRecycledViewCount(type)
+            super.putRecycledView(scrap)
+            if (getRecycledViewCount(type) > before) {
+                pooled.add(holder)
+            } else {
+                holder.reactTag?.let(release)
+            }
+        }
+
+        override fun getRecycledView(viewType: Int): RecyclerView.ViewHolder? {
+            val holder = super.getRecycledView(viewType)
+            pooled.remove(holder)
+            return holder
+        }
+
+        override fun clear() {
+            for (holder in pooled) holder.reactTag?.let(release)
+            pooled.clear()
+            super.clear()
+        }
+
+        override fun setMaxRecycledViews(viewType: Int, max: Int) {
+            // Retire the bucket explicitly rather than letting RecyclerView silently drop roots.
+            while (true) {
+                val holder = getRecycledView(viewType) as? NativeListAdapter.ViewHolder ?: break
+                holder.reactTag?.let(release)
+            }
+            super.setMaxRecycledViews(viewType, max)
+        }
     }
 
     private fun runOnMain(block: () -> Unit) {

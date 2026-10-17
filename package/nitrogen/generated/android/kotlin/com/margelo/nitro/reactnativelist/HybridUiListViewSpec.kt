@@ -29,12 +29,12 @@ abstract class HybridUiListViewSpec: HybridView() {
   
 
   // Methods
-  abstract fun setListCallbacks(uiListModule: HybridUiListModuleSpec, createView: (type: String) -> Double, updateView: (reactTag: Double, item: NativeListItem, index: Double) -> Boolean): Unit
+  abstract fun setListCallbacks(uiListModule: HybridUiListModuleSpec, createView: (type: String, surfaceId: Double) -> Double, updateView: (reactTag: Double, item: NativeListItem, index: Double) -> Boolean, disposeView: (surfaceId: Double) -> Boolean): Unit
   
   @DoNotStrip
   @Keep
-  private fun setListCallbacks_cxx(uiListModule: HybridUiListModuleSpec, createView: Func_double_std__string, updateView: Func_bool_double_NativeListItem_double): Unit {
-    val __result = setListCallbacks(uiListModule, createView, updateView)
+  private fun setListCallbacks_cxx(uiListModule: HybridUiListModuleSpec, createView: Func_double_std__string_double, updateView: Func_bool_double_NativeListItem_double, disposeView: Func_bool_double): Unit {
+    val __result = setListCallbacks(uiListModule, createView, updateView, disposeView)
     return __result
   }
   
@@ -45,10 +45,6 @@ abstract class HybridUiListViewSpec: HybridView() {
   @DoNotStrip
   @Keep
   abstract fun setLayout(layout: HybridNativeListLayoutSpec): Unit
-  
-  @DoNotStrip
-  @Keep
-  abstract fun getSurfaceId(): Double
   
   @DoNotStrip
   @Keep

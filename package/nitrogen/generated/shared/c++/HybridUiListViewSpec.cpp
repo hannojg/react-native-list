@@ -17,7 +17,6 @@ namespace margelo::nitro::reactnativelist {
       prototype.registerHybridMethod("setListCallbacks", &HybridUiListViewSpec::setListCallbacks);
       prototype.registerHybridMethod("setDataSource", &HybridUiListViewSpec::setDataSource);
       prototype.registerHybridMethod("setLayout", &HybridUiListViewSpec::setLayout);
-      prototype.registerHybridMethod("getSurfaceId", &HybridUiListViewSpec::getSurfaceId);
       prototype.registerHybridMethod("disposeRendererSurface", &HybridUiListViewSpec::disposeRendererSurface);
     });
   }

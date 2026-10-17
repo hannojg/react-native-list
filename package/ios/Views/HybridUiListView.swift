@@ -64,12 +64,6 @@ final class CollectionViewDelegateProxy: NSObject, UICollectionViewDelegateFlowL
     }
 }
 
-private struct HostedFabricViewRestorePoint {
-    let view: UIView
-    let originalSuperview: UIView
-    let originalIndex: Int
-}
-
 class HybridUiListView : HybridUiListViewSpec {
     let view: UIView
 
@@ -82,13 +76,12 @@ class HybridUiListView : HybridUiListViewSpec {
     private var measuredContentSizeByItemKey: [String: CGSize] = [:]
     private var hasScheduledLayoutInvalidation = false
     private let measuredSizeTolerance: CGFloat = 0.5
-    private var rendererSurfaceId: ReactTag?
-    // Fabric unmount asserts that a child is still mounted under its original parent.
-    // Cells temporarily host those views, so teardown must restore the parent first.
-    private var fabricRestorePointsByReactTag: [ReactTag: HostedFabricViewRestorePoint] = [:]
+    private var rendererSurfaceIds = Set<ReactTag>()
+    private var isDisposed = false
     private let hostedCells = NSHashTable<HostCell>.weakObjects()
 
-    private var createViewCallback: ((_ type: String) -> Double)?
+    private var createViewCallback: ((_ type: String, _ surfaceId: Double) -> Double)?
+    private var disposeViewCallback: ((Double) -> Bool)?
     private var updateViewCallback: ((_ reactTag: Double, _ item: NativeListItem, _ index: Double) -> Bool)?
 
     override init() {
@@ -96,58 +89,17 @@ class HybridUiListView : HybridUiListViewSpec {
         super.init()
     }
 
-    func getSurfaceId() throws -> Double {
-        if let rendererSurfaceId {
-            return Double(rendererSurfaceId)
-        }
-
-        var createdSurfaceId: ReactTag?
-        var capturedError: Error?
-
-        let createSurface = {
-            do {
-                let surfaceId = try SurfaceHelper.createExternalSurface()
-                createdSurfaceId = ReactTag(truncating: surfaceId)
-            } catch {
-                capturedError = error
-            }
-        }
-
-        if Thread.isMainThread {
-            createSurface()
-        } else {
-            DispatchQueue.main.sync(execute: createSurface)
-        }
-
-        if let capturedError {
-            let message = String(describing: capturedError)
-            throw RuntimeError.error(withMessage: message)
-        }
-
-        guard let createdSurfaceId else {
-            throw RuntimeError.error(withMessage: "Could not create renderer surface.")
-        }
-
-        rendererSurfaceId = createdSurfaceId
-        return Double(createdSurfaceId)
-    }
-
     func disposeRendererSurface() throws {
-        let surfaceId = rendererSurfaceId
-        rendererSurfaceId = nil
-        createViewCallback = nil
-        updateViewCallback = nil
-
         var capturedError: Error?
 
         let disposeSurface = {
+            if self.isDisposed { return }
+            self.isDisposed = true
             self.dataSource?.observer = nil
             self.dataSource = nil
             self.collectionView?.dataSource = nil
             self.collectionView?.delegate = nil
-            // RCTFabricSurface.stop() commits an empty tree. Let Fabric perform that cleanup
-            // after the UIKit hierarchy matches Fabric's expected parent-child structure again (otherwise we crash).
-            self.restoreFabricViewHierarchy()
+            self.detachHostedCells()
             self.collectionView?.removeFromSuperview()
             self.collectionView = nil
             self.collectionDataSourceProxy = nil
@@ -156,15 +108,17 @@ class HybridUiListView : HybridUiListViewSpec {
             self.measuredContentSizeByItemKey.removeAll()
             self.hasScheduledLayoutInvalidation = false
 
-            guard let surfaceId else {
-                return
+            let surfaceIds = self.rendererSurfaceIds
+            for surfaceId in surfaceIds {
+                do {
+                    try self.releaseSurface(surfaceId)
+                } catch {
+                    capturedError = error
+                }
             }
-
-            do {
-                _ = try SurfaceHelper.releaseExternalSurface(surfaceId)
-            } catch {
-                capturedError = error
-            }
+            self.createViewCallback = nil
+            self.updateViewCallback = nil
+            self.disposeViewCallback = nil
         }
 
         if Thread.isMainThread {
@@ -189,11 +143,14 @@ class HybridUiListView : HybridUiListViewSpec {
 
     func setListCallbacks(
         uiListModule: any HybridUiListModuleSpec,
-        createView: @escaping (String) -> Double,
-        updateView: @escaping (Double, NativeListItem, Double) -> Bool
+        createView: @escaping (String, Double) -> Double,
+        updateView: @escaping (Double, NativeListItem, Double) -> Bool,
+        disposeView: @escaping (Double) -> Bool
     ) throws {
+        isDisposed = false
         createViewCallback = createView
         updateViewCallback = updateView
+        disposeViewCallback = disposeView
         runOnMain { [weak self] in
             self?.configureCollectionViewIfNeeded()
         }
@@ -259,85 +216,27 @@ class HybridUiListView : HybridUiListViewSpec {
         self.collectionView = collectionView
     }
 
-    private func makeView(type: String) throws -> (UIView, ReactTag) {
-        guard let createViewCallback else {
-            throw RuntimeError.error(withMessage: "Can only call makeView after setListCallbacks.")
+    private func releaseSurface(_ surfaceId: ReactTag) throws {
+        guard rendererSurfaceIds.remove(surfaceId) != nil else { return }
+        _ = disposeViewCallback?(Double(surfaceId))
+        // A row commit can flush the outer list's removal and re-enter onDropView.
+        // Wait for that Fabric transaction to unwind before removing a shadow tree.
+        DispatchQueue.main.async {
+            do {
+                _ = try SurfaceHelper.releaseExternalSurface(surfaceId)
+            } catch {
+                preconditionFailure("Could not stop holder surface: \(error)")
+            }
         }
-
-        let rawViewTag = createViewCallback(type)
-        let viewTag = ReactTag(rawViewTag)
-        let resolvedView = try SurfaceHelper.getViewByTag(viewTag)
-        try recordFabricRestorePoint(for: resolvedView, viewTag: viewTag)
-        resolvedView.removeFromSuperview()
-        return (resolvedView, viewTag)
-    }
-
-    private func recordFabricRestorePoint(for resolvedView: UIView, viewTag: ReactTag) throws {
-        guard let originalSuperview = resolvedView.superview else {
-            throw RuntimeError.error(
-                withMessage: "Fabric view \(viewTag) must have a superview before being hosted by the list."
-            )
-        }
-
-        guard let originalIndex = originalSuperview.subviews.firstIndex(of: resolvedView) else {
-            throw RuntimeError.error(
-                withMessage: "Fabric view \(viewTag) must be present in its Fabric parent before being hosted by the list."
-            )
-        }
-
-        let restorePoint = HostedFabricViewRestorePoint(
-            view: resolvedView,
-            originalSuperview: originalSuperview,
-            originalIndex: originalIndex
-        )
-        fabricRestorePointsByReactTag[viewTag] = restorePoint
-    }
-
-    private func restoreFabricViewHierarchy() {
-        detachHostedCells()
-
-        let restorePoints = fabricRestorePointsByReactTag.values.sorted { firstPoint, secondPoint in
-            return firstPoint.originalIndex < secondPoint.originalIndex
-        }
-
-        for restorePoint in restorePoints {
-            restoreFabricView(restorePoint)
-        }
-
-        fabricRestorePointsByReactTag.removeAll()
     }
 
     private func detachHostedCells() {
         let cells = hostedCells.allObjects
         for cell in cells {
+            cell.releaseSurface = nil
             cell.detachHostedView()
         }
         hostedCells.removeAllObjects()
-    }
-
-    private func restoreFabricView(_ restorePoint: HostedFabricViewRestorePoint) {
-        let hostedView = restorePoint.view
-        let originalSuperview = restorePoint.originalSuperview
-
-        if hostedView.superview === originalSuperview {
-            let currentIndex = originalSuperview.subviews.firstIndex(of: hostedView)
-            if currentIndex == restorePoint.originalIndex {
-                return
-            }
-            hostedView.removeFromSuperview()
-        }
-
-        precondition(hostedView.superview == nil, "Fabric view must be detached before restoring it.")
-
-        let subviewCount = originalSuperview.subviews.count
-        let insertionIndex: Int
-        if restorePoint.originalIndex <= subviewCount {
-            insertionIndex = restorePoint.originalIndex
-        } else {
-            insertionIndex = subviewCount
-        }
-
-        originalSuperview.insertSubview(hostedView, at: insertionIndex)
     }
 
     private func measure(view: UIView) -> CGSize? {
@@ -465,16 +364,42 @@ class HybridUiListView : HybridUiListViewSpec {
             return
         }
 
-        let result = try makeView(type: item.type)
-        cell.install(
-            view: result.0,
-            contentSize: contentSize,
-            contentInset: layoutProvider.itemContentInset(),
-            itemKey: item.key,
-            itemType: item.type
-        )
-        cell.reactTag = result.1
-        hostedCells.add(cell)
+        guard let createViewCallback else {
+            throw RuntimeError.error(withMessage: "List callbacks are not installed.")
+        }
+        let rawSurfaceId = try SurfaceHelper.createExternalSurface()
+        let surfaceId = ReactTag(truncating: rawSurfaceId)
+        rendererSurfaceIds.insert(surfaceId)
+        do {
+            let rawTag = createViewCallback(item.type, Double(surfaceId))
+            let tag = ReactTag(rawTag)
+            let content = try SurfaceHelper.getViewByTag(tag)
+            let root = try SurfaceHelper.getSurfaceView(surfaceId)
+            cell.install(
+                view: root,
+                contentSize: contentSize,
+                contentInset: layoutProvider.itemContentInset(),
+                itemKey: item.key,
+                itemType: item.type
+            )
+            cell.reactTag = tag
+            cell.renderedContentView = content
+            cell.releaseSurface = { [weak self] in
+                let release = { [weak self] in
+                    do {
+                        try self?.releaseSurface(surfaceId)
+                    } catch {
+                        preconditionFailure("Could not release holder surface: \(error)")
+                    }
+                }
+                if Thread.isMainThread { release() }
+                else { DispatchQueue.main.async(execute: release) }
+            }
+            hostedCells.add(cell)
+        } catch {
+            try releaseSurface(surfaceId)
+            throw error
+        }
     }
 
     private func retainMeasuredContent(in dataSource: HybridNativeListDataSource) {
@@ -598,7 +523,7 @@ class HybridUiListView : HybridUiListViewSpec {
             _ = updateViewCallback?(Double(reactTag), item, Double(indexPath.item))
         }
 
-        if let hostedView = cell.hostedContentView, needsMeasuredContentSize(for: item) {
+        if let hostedView = cell.renderedContentView, needsMeasuredContentSize(for: item) {
             let didMeasureNewSize = captureMeasuredContentSize(for: item, view: hostedView)
             let measuredContentSize = resolvedHostedContentSize(for: item)
             cell.updateContentLayout(

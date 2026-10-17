@@ -16,15 +16,15 @@ export interface UiListViewProps extends HybridViewProps {}
 export interface UiListViewMethods extends HybridViewMethods {
   setListCallbacks(
     uiListModule: UiListModule,
-    createView: Sync<(type: string) => number>,
+    createView: Sync<(type: string, surfaceId: number) => number>,
     updateView: Sync<
       (reactTag: number, item: NativeListItem, index: number) => boolean
-    >
+    >,
+    disposeView: Sync<(surfaceId: number) => boolean>
   ): void
 
   setDataSource(dataSource: NativeListDataSource): void
   setLayout(layout: NativeListLayout): void
-  getSurfaceId(): number
   disposeRendererSurface(): void
 }
 

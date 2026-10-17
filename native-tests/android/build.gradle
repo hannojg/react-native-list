@@ -32,6 +32,8 @@ android {
     main.java {
       srcDirs = ['../../package/android/src/main/java']
       include '**/BorrowedModule.java', '**/TurboModuleManagerDelegate.java'
+      include '**/SurfaceMountingQueue.java'
+      exclude '**/RendererSurface.java', '**/SurfaceMounting.java'
     }
   }
   packaging {

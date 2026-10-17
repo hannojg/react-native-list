@@ -63,6 +63,72 @@ Run the lightweight Metro/proxy regression tests without building an app:
 node --test native-tests/metro/RendererRouting.test.cjs
 ```
 
+The holder-root regression tests run the production `List.tsx` callbacks with
+mocked native mounting, using the existing TypeScript dependency and Node runner:
+
+```sh
+node --test native-tests/metro/HolderSurfaces.test.cjs
+```
+
+They cover 64 independent roots, holder-local rebinds, re-entrant retirement,
+cleanup failures, and idempotent list teardown. They do not prove Fabric mounting, touch routing, or native pool
+eviction. Validate those in the example on both platforms, then use `perf/README.md`
+for physical-device main-versus-branch comparisons.
+
+Holder surfaces start directly through Fabric on the UI thread, without an
+AppRegistry application, ReactHost startup tasks, or a fixed-size warm pool.
+Android's `RendererSurface.java` isolates the version-sensitive
+`SurfaceHandlerBinding` interop (Kotlin-internal, accessible from Java). iOS uses
+the registered `RCTFabricSurface` handler and mounting manager. These are native
+RN integration APIs, not a stable cross-version embedding contract; currently
+the example validates RN 0.86.2. No React Native patch is required.
+
+Native surface stops are posted to the main queue after React-root cleanup.
+Fabric can re-enter the list's drop callback while a synchronous row unmount
+flushes pending app mutations. Removing a surface at that point would try to
+upgrade the shadow-tree registry's read lock to a write lock on the same thread.
+Both the list disposal and individual holder retirement are idempotent.
+
+### Surface-scoped synchronous mounting prototype
+
+`completeRootSync` now asks a platform adapter to flush that holder surface after
+`completeSurface` returns. Neither adapter clears RN's global mounting guard,
+flushes unrelated surfaces, or requires a React Native patch.
+
+Android installs `SurfaceMountingQueue` around the dispatcher's existing regular
+and preallocation queues before creating holder surfaces. Exactly-once tickets
+remain in RN's queues/local batches, so a targeted flush can include older work
+already drained by RN without replaying it when the outer transaction resumes.
+The original backing queues and RN's completion/report-mount path remain in place.
+View commands retain RN's concrete types and normal retry path. Reflection into
+`mountItems` and `preMountItems` is isolated in `SurfaceMounting`; consumer rules
+preserve those fields in minified apps.
+
+iOS uses the holder's mounting coordinator with RN's private `performTransaction:`
+entry point. The normal mutation implementation, observers, and presenter delegate
+notifications still run. A presenter observer tracks surfaces currently mounting.
+The support header is packaged with the iOS sources, not exported to Swift.
+
+Both adapters reject synchronous reentry into the **same** surface with pending
+work. This prototype only enables a distinct holder surface inside an outer
+surface's mount; it is not a general recursive-mount API. Private access is
+currently validated against RN 0.86.2, not a cross-version compatibility promise.
+Unsupported private APIs fail explicitly rather than silently deferring a mount.
+
+`SurfaceMountingTests` in the existing Android instrumentation harness runs RN's
+real dispatcher with fake mount actions. It checks isolation, the unchanged global
+guard, older drained batches, exactly-once preallocation, retirement, reentry, and
+exception cleanup. The iOS XCTest class of the same name uses real shadow trees,
+mounting coordinators, and the real mounting manager with root-only transactions;
+it checks nested surface isolation, completion callbacks, the unchanged outer
+guard, and same-surface rejection. These tests need no JS runtime or app launch,
+but app smoke tests are still needed to validate actual native view creation.
+
+Prototype smoke checks use cold app launches. Reloads during live native/package
+edits emitted disposed-HybridObject and duplicate `UiListView` registration errors;
+the final cold-launch checks did not. Their root cause remains unconfirmed, and
+this prototype does not establish reload-lifecycle compatibility.
+
 These check routing for native commands, public refs, text input state, and DOM internals; command
 dispatch through the current UI-runtime Fabric node; native tag lookup; unmounted refs; and lazy
 delegation to RN's renderer in the main runtime. They use Node's built-in test

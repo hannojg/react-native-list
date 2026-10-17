@@ -295,27 +295,27 @@ namespace margelo::nitro::reactnativelist::bridge::swift {
     return Result<std::shared_ptr<HybridIOSWorkletsModuleProxyHolderSpec>>::withError(error);
   }
   
-  // pragma MARK: std::function<double(const std::string& /* type */)>
+  // pragma MARK: std::function<double(const std::string& /* type */, double /* surfaceId */)>
   /**
-   * Specialized version of `std::function<double(const std::string&)>`.
+   * Specialized version of `std::function<double(const std::string&, double)>`.
    */
-  using Func_double_std__string = std::function<double(const std::string& /* type */)>;
+  using Func_double_std__string_double = std::function<double(const std::string& /* type */, double /* surfaceId */)>;
   /**
-   * Wrapper class for a `std::function<double(const std::string& / * type * /)>`, this can be used from Swift.
+   * Wrapper class for a `std::function<double(const std::string& / * type * /, double / * surfaceId * /)>`, this can be used from Swift.
    */
-  class Func_double_std__string_Wrapper final {
+  class Func_double_std__string_double_Wrapper final {
   public:
-    explicit Func_double_std__string_Wrapper(std::function<double(const std::string& /* type */)>&& func): _function(std::make_unique<std::function<double(const std::string& /* type */)>>(std::move(func))) {}
-    inline double call(std::string type) const noexcept {
-      auto __result = _function->operator()(type);
+    explicit Func_double_std__string_double_Wrapper(std::function<double(const std::string& /* type */, double /* surfaceId */)>&& func): _function(std::make_unique<std::function<double(const std::string& /* type */, double /* surfaceId */)>>(std::move(func))) {}
+    inline double call(std::string type, double surfaceId) const noexcept {
+      auto __result = _function->operator()(type, surfaceId);
       return __result;
     }
   private:
-    std::unique_ptr<std::function<double(const std::string& /* type */)>> _function;
+    std::unique_ptr<std::function<double(const std::string& /* type */, double /* surfaceId */)>> _function;
   } SWIFT_NONCOPYABLE;
-  Func_double_std__string create_Func_double_std__string(void* NON_NULL swiftClosureWrapper) noexcept;
-  inline Func_double_std__string_Wrapper wrap_Func_double_std__string(Func_double_std__string value) noexcept {
-    return Func_double_std__string_Wrapper(std::move(value));
+  Func_double_std__string_double create_Func_double_std__string_double(void* NON_NULL swiftClosureWrapper) noexcept;
+  inline Func_double_std__string_double_Wrapper wrap_Func_double_std__string_double(Func_double_std__string_double value) noexcept {
+    return Func_double_std__string_double_Wrapper(std::move(value));
   }
   
   // pragma MARK: std::function<bool(double /* reactTag */, const NativeListItem& /* item */, double /* index */)>
@@ -341,6 +341,28 @@ namespace margelo::nitro::reactnativelist::bridge::swift {
     return Func_bool_double_NativeListItem_double_Wrapper(std::move(value));
   }
   
+  // pragma MARK: std::function<bool(double /* surfaceId */)>
+  /**
+   * Specialized version of `std::function<bool(double)>`.
+   */
+  using Func_bool_double = std::function<bool(double /* surfaceId */)>;
+  /**
+   * Wrapper class for a `std::function<bool(double / * surfaceId * /)>`, this can be used from Swift.
+   */
+  class Func_bool_double_Wrapper final {
+  public:
+    explicit Func_bool_double_Wrapper(std::function<bool(double /* surfaceId */)>&& func): _function(std::make_unique<std::function<bool(double /* surfaceId */)>>(std::move(func))) {}
+    inline bool call(double surfaceId) const noexcept {
+      auto __result = _function->operator()(surfaceId);
+      return __result;
+    }
+  private:
+    std::unique_ptr<std::function<bool(double /* surfaceId */)>> _function;
+  } SWIFT_NONCOPYABLE;
+  Func_bool_double create_Func_bool_double(void* NON_NULL swiftClosureWrapper) noexcept;
+  inline Func_bool_double_Wrapper wrap_Func_bool_double(Func_bool_double value) noexcept {
+    return Func_bool_double_Wrapper(std::move(value));
+  }
   // pragma MARK: std::shared_ptr<HybridUiListViewSpec>
   /**
    * Specialized version of `std::shared_ptr<HybridUiListViewSpec>`.

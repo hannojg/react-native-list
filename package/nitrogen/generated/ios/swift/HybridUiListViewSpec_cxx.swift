@@ -125,22 +125,28 @@ open class HybridUiListViewSpec_cxx {
 
   // Methods
   @inline(__always)
-  public final func setListCallbacks(uiListModule: bridge.std__shared_ptr_HybridUiListModuleSpec_, createView: bridge.Func_double_std__string, updateView: bridge.Func_bool_double_NativeListItem_double) -> bridge.Result_void_ {
+  public final func setListCallbacks(uiListModule: bridge.std__shared_ptr_HybridUiListModuleSpec_, createView: bridge.Func_double_std__string_double, updateView: bridge.Func_bool_double_NativeListItem_double, disposeView: bridge.Func_bool_double) -> bridge.Result_void_ {
     do {
       try self.__implementation.setListCallbacks(uiListModule: { () -> any HybridUiListModuleSpec in
         let __unsafePointer = bridge.get_std__shared_ptr_HybridUiListModuleSpec_(uiListModule)
         let __instance = HybridUiListModuleSpec_cxx.fromUnsafe(__unsafePointer)
         return __instance.getHybridUiListModuleSpec()
-      }(), createView: { () -> (String) -> Double in
-        let __wrappedFunction = bridge.wrap_Func_double_std__string(createView)
-        return { (__type: String) -> Double in
-          let __result = __wrappedFunction.call(std.string(__type))
+      }(), createView: { () -> (String, Double) -> Double in
+        let __wrappedFunction = bridge.wrap_Func_double_std__string_double(createView)
+        return { (__type: String, __surfaceId: Double) -> Double in
+          let __result = __wrappedFunction.call(std.string(__type), __surfaceId)
           return __result
         }
       }(), updateView: { () -> (Double, NativeListItem, Double) -> Bool in
         let __wrappedFunction = bridge.wrap_Func_bool_double_NativeListItem_double(updateView)
         return { (__reactTag: Double, __item: NativeListItem, __index: Double) -> Bool in
           let __result = __wrappedFunction.call(__reactTag, __item, __index)
+          return __result
+        }
+      }(), disposeView: { () -> (Double) -> Bool in
+        let __wrappedFunction = bridge.wrap_Func_bool_double(disposeView)
+        return { (__surfaceId: Double) -> Bool in
+          let __result = __wrappedFunction.call(__surfaceId)
           return __result
         }
       }())
@@ -178,18 +184,6 @@ open class HybridUiListViewSpec_cxx {
     } catch (let __error) {
       let __exceptionPtr = __error.toCpp()
       return bridge.create_Result_void_(__exceptionPtr)
-    }
-  }
-  
-  @inline(__always)
-  public final func getSurfaceId() -> bridge.Result_double_ {
-    do {
-      let __result = try self.__implementation.getSurfaceId()
-      let __resultCpp = __result
-      return bridge.create_Result_double_(__resultCpp)
-    } catch (let __error) {
-      let __exceptionPtr = __error.toCpp()
-      return bridge.create_Result_double_(__exceptionPtr)
     }
   }
   

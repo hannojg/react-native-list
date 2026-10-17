@@ -29,7 +29,7 @@ version does not establish runtime compatibility.
 Once that's out of the way, you can start with the regular setup of the library:
 
 ```sh
-bun add react-native-list@alpha
+bun add react-native-list
 ```
 
 ### Configuring Metro
